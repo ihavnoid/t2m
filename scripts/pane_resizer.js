@@ -68,7 +68,6 @@ paneResizer = (function() {
 			$body.addClass("no-selection");
 			const mouseDownPos = mousedownEvent.pageX;
 			const initialLeftPaneWidth = $editorPane.width();
-			const initialRightPaneWidth = $viewerPane.width();
 	
 			// Resize the panes based on the current mouse position relative to
 			// the position of the dragbar when it was clicked.
@@ -77,7 +76,7 @@ paneResizer = (function() {
 					const deltaPageX = mousemoveEvent.pageX - mouseDownPos;
 					const unit = $paneContainer.width() / 100;
 					const newEditorPanePercentage = (initialLeftPaneWidth + deltaPageX) / unit;
-					const newViewerPanePercentage = (initialRightPaneWidth - deltaPageX) / unit;
+					const newViewerPanePercentage = 100 - newEditorPanePercentage;
 					editorPanePercentage = newEditorPanePercentage;
 					viewerPanePercentage = newViewerPanePercentage;
 					if (editorPanePercentage < minPaneWidth / unit) {
