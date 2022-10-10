@@ -36,7 +36,7 @@ fileImport = (function() {
 		}
 		const content = event.target.result;
 
-		documentTitle.setTitle(fileName.replace("/\.txt$/", ""));
+		documentTitle.setTitle(fileName.replace(/\.mindtxt$/, ""));
 		$("#textArea").val(content);
 		mindmap.render();
 		unsavedChanges.setHasChanges(false);

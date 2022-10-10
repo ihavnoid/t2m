@@ -27,7 +27,7 @@ appFunctions = (function() {
 		fileSave() {
 			const content = $("#textArea").val();
 			const title = documentTitle.getTitle();
-			const type = ".txt";
+			const type = ".mindtxt";
 			fileExport.saveFile(content, title, type);
 			unsavedChanges.setHasChanges(false);
 			settings.setSetting("documentTitle", settings.getDefaultValue("documentTitle"));
