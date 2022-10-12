@@ -34,11 +34,21 @@
         $("#textArea").val(settings.getSetting("documentContent"));
         mindmap.render();
     
+        var updateStack = 0;
+        var lastUpdateTime = 0;
         function updateMindMap() {
-            const value = $("#textArea").val();
-            unsavedChanges.setHasChanges(value !== settings.getDefaultValue("documentContent"));
-            settings.setSetting("documentContent", value);
-            mindmap.render();
+            updateStack++;
+            setTimeout(() => {
+                updateStack--;
+                if(updateStack > 0 || lastUpdateTime > Date.now() - 200) {
+                    return;
+                }
+                lastUpdateTime = Date.now()
+                const value = $("#textArea").val();
+                unsavedChanges.setHasChanges(value !== settings.getDefaultValue("documentContent"));
+                settings.setSetting("documentContent", value);
+                mindmap.render();
+            }, 200);
         }
 
         $('#textArea').on("input propertychange", updateMindMap);

@@ -3,6 +3,9 @@
 	width: 50%;
 	display: inline-block;
 	background-color: #f0f0f0;
+    position: fixed;
+    left: 0;
+    top: 50px;
 }
 
 #editor-pane {
