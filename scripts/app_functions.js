@@ -13,6 +13,7 @@ appFunctions = (function() {
 			unsavedChanges.setHasChanges(false);
 			settings.setSetting("documentContent", settings.getDefaultValue("documentContent"));
 			settings.setSetting("documentTitle", settings.getDefaultValue("documentTitle"));
+            settings.clearUndoHistory();
 		},
 
 		// Open a markdown file from the user's computer
@@ -32,6 +33,7 @@ appFunctions = (function() {
 			unsavedChanges.setHasChanges(false);
 			settings.setSetting("documentTitle", settings.getDefaultValue("documentTitle"));
 			settings.setSetting("documentContent", settings.getDefaultValue("documentContent"));
+            settings.clearUndoHistory();
 		},
 
 		// Set the focus on the input box for renaming the document
@@ -42,6 +44,29 @@ appFunctions = (function() {
 		// Open the settings modal
 		filePreferences() {
 			$("#settings-modal").addClass("active");
-		}
+		},
+
+        editUndo() {
+            const v = settings.undoText()
+            if(v == null) {
+                return
+            }
+            $("#textArea").val(v[0])
+            $("#textArea").get(0).selectionStart = v[1]
+            $("#textArea").get(0).selectionEnd = v[2]
+			unsavedChanges.setHasChanges(true);
+            mindmap.render()
+        },
+        editRedo() {
+            const v = settings.redoText()
+            if(v == null) {
+                return
+            }
+            $("#textArea").val(v[0])
+            $("#textArea").get(0).selectionStart = v[1]
+            $("#textArea").get(0).selectionEnd = v[2]
+			unsavedChanges.setHasChanges(true);
+            mindmap.render()
+        }
 	};
 }());

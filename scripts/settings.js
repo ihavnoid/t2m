@@ -8,7 +8,7 @@ settings = (function() {
 		"documentContent": "-t2m\n"
                 + "  - This is a modified version of text2mindmap\n  - http://github.com/ihavnoid/t2m/\n"
                 + "  - [300 0] Notes\n    - Nodes should start with a dash (-)\n    - Plaintext will be added on the node as comments\n    - Nodes with fixed locations will have its [x y] coordinates right after the dash\n" 
-                + "  - [-300 0] shortcuts:\n    - ctrl-enter\n      redraw\n    - ctrl-]\n        freeze selected nodes in text region\n    - ctrl-[\n      unfreeze selected nodes in text region\n    - tab / shift-tab\n      indent/de-indent selected region",
+                + "  - [-300 0] shortcuts:\n    - ctrl-enter\n      redraw\n    - ctrl-]\n        freeze selected nodes in text region\n    - ctrl-[\n      unfreeze selected nodes in text region\n    - tab / shift-tab\n      indent/de-indent selected region\n    - ctrl-z\n      undo\n    - ctrl-y\n      redo\n",
 		"documentTitle": "Untitled Document"
 	};
 
@@ -19,6 +19,8 @@ settings = (function() {
 		"serif": "serif",
 	};
 
+    var history = []
+    var redo_history = []
 	// Get the setting with the specified key. If the setting is null, use the default value.
 	function getSetting(key) {
 		let setting;
@@ -46,6 +48,45 @@ settings = (function() {
 		}
 	}
 
+    function setText(value, p1, p2) {
+        if(history.length > 0 && value == history[history.length-1][0]) {
+            history[history.length-1][1] = p1
+            history[history.length-1][2] = p2
+            return
+        }
+        history.push([value, p1, p2])
+        if(history.length > 100) {
+            history.shift()
+        }
+        redo_history = []
+        setSetting("documentContent", value)
+    }
+
+    function undoText() {
+        if (history.length <= 1) {
+            return null
+        }
+        var t = history.pop() 
+        redo_history.push(t)
+        t = history[history.length-1]
+        setSetting("documentContent", t[0])
+        return t
+    }
+
+    function redoText() {
+        if (redo_history.length == 0) {
+            return null
+        }
+        var t = redo_history.pop() 
+        history.push(t)
+        setSetting("documentContent", t[0])
+        return t
+    }
+
+    function clearUndoHistory() {
+        redo_history = []
+        history = []
+    }
 	// Get the default value of the setting with the specified key.
 	function getDefaultValue(key) {
 		if (key in defaultValues) {
@@ -63,6 +104,8 @@ settings = (function() {
 	return {
 		getSetting,
 		setSetting,
+        setText, undoText, redoText, clearUndoHistory,
+
 		fontFamilyMap,
 		getDefaultValue,
 		reset
