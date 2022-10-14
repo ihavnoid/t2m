@@ -5,7 +5,10 @@ settings = (function() {
 	
 	// Default values for various user settings.
 	const defaultValues = {
-		"documentContent": "Text2MindMap\n\tTurn tab-indented lists into mind maps\n\t\tPress Tab to indent lines\n\t\tPress Shift + Tab to unindent lines\n\tDrag nodes to re-organize them\n\tRight-click the mindmap to save it as an image\n\tThis project is based on the now dead site Text2MindMap.com",
+		"documentContent": "-t2m\n"
+                + "  - This is a modified version of text2mindmap\n  - http://github.com/ihavnoid/t2m/\n"
+                + "  - [300 0] Notes\n    - Nodes should start with a dash (-)\n    - Plaintext will be added on the node as comments\n    - Nodes with fixed locations will have its [x y] coordinates right after the dash\n" 
+                + "  - [-300 0] shortcuts:\n    - ctrl-enter\n      redraw\n    - ctrl-]\n        freeze selected nodes in text region\n    - ctrl-[\n      unfreeze selected nodes in text region\n    - tab / shift-tab\n      indent/de-indent selected region",
 		"documentTitle": "Untitled Document"
 	};
 
