@@ -54,10 +54,21 @@
         $('#textArea').on("input propertychange", updateMindMap);
         $('#textArea').on("keydown", function(e) {
             let keyCode = e.keyCode || e.which;
-            if (keyCode == 9 || keyCode == 13) { 
+            if (keyCode == 9 || keyCode == 13 || keyCode == 219 || keyCode == 221) { 
                 updateMindMap();
             } 
             unsavedChanges.setHasChanges(true);
+        });
+        
+        $("#mindmap-lock-all").on("touchstart click", function(a) {
+            const value = $("#textArea").val();
+            settings.setSetting("documentContent", value);
+            navbar.closeDropdowns()
+        });
+        $("#mindmap-unlock-all").on("touchstart click", function(a) {
+            const value = $("#textArea").val();
+            settings.setSetting("documentContent", value);
+            navbar.closeDropdowns()
         });
     })
 }());

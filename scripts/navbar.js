@@ -52,6 +52,6 @@ navbar = (function() {
 	});
 
 	return {
-		setVisibilityIcon
+		setVisibilityIcon, closeDropdowns
 	}
 }());

@@ -1,5 +1,5 @@
 #editor-pane {
-	height: 100%;
+	height: calc(100% - 55px);
 	width: 50%;
 	display: inline-block;
 	background-color: #f0f0f0;

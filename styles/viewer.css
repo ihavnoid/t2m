@@ -1,5 +1,5 @@
 #viewer-pane {
-	height: 100%;
+	height: calc(100% - 55px);
 	width: 50%;
 	display: inline;
     position: fixed;
