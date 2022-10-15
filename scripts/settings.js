@@ -6,9 +6,32 @@ settings = (function() {
 	// Default values for various user settings.
 	const defaultValues = {
 		"documentContent": "-t2m\n"
-                + "  - This is a modified version of text2mindmap\n  - http://github.com/ihavnoid/t2m/\n"
-                + "  - [300 0] Notes\n    - Nodes should start with a dash (-)\n    - Plaintext will be added on the node as comments\n    - Nodes with fixed locations will have its [x y] coordinates right after the dash\n" 
-                + "  - [-300 0] shortcuts:\n    - ctrl-enter\n      redraw\n    - ctrl-]\n        freeze selected nodes in text region\n    - ctrl-[\n      unfreeze selected nodes in text region\n    - tab / shift-tab\n      indent/de-indent selected region\n    - ctrl-z\n      undo\n    - ctrl-y\n      redo\n",
+                + "  - This is a modified version of text2mindmap\n"
+                + "  - http://github.com/ihavnoid/t2m/\n"
+                + "  - [100 -300] Notes\n    - Nodes should start with a dash (-)\n"
+                + "    - Plaintext will be added on the node as comments\n"
+                + "    - Nodes with fixed locations will have its [x y] coordinates right after the dash\n" 
+                + "  - [100 0] shortcuts:\n"
+                + "    - ctrl-enter\n"
+                + "      redraw\n"
+                + "    - ctrl-]\n"
+                + "      freeze selected nodes in text region\n"
+                + "    - ctrl-[\n"
+                + "      unfreeze selected nodes in text region\n"
+                + "    - tab / shift-tab\n"
+                + "      indent/de-indent selected region\n"
+                + "    - ctrl-z\n"
+                + "      undo\n"
+                + "    - ctrl-y\n"
+                + "      redo\n"
+                + "  - [100 300] mouse:\n"
+                + "    - Dragging node\n"
+                + "      moves node location and locks the node position\n"
+                + "    - Shift-dragging node\n"
+                + "      moves node and all children's location, and locks only the clicked node\n"
+                + "  - TODO:\n"
+                + "    - Auto-layout keeps overlapping nodes.  Come up with custom layout engine\n",
+ 
 		"documentTitle": "Untitled Document"
 	};
 
