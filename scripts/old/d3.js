@@ -4138,11 +4138,13 @@ d3 = function() {
           o.y -= (o.py - (o.py = o.y)) * friction;
         }
       }
-      for(var a = 0.2; a > alpha; a = a * 0.96) {
+      console.log(alpha)
+      for(var a = 0.03; a > alpha; a = a * 0.96) {
           // collision correction - TBD
           for(var i=0; i<nodes.length; i++) {
               for(var j=i+1; j<nodes.length; j++) {
                   var n1 = nodes[i], n2 = nodes[j]
+
                   var w = (n1.w + n2.w) / 2 * (1-alpha) + 10
                   var h = (n1.h + n2.h) / 2 * (1-alpha) + 10
                   var dx = n1.x - n2.x
@@ -4152,10 +4154,10 @@ d3 = function() {
 
                   if(Math.abs(rx) < (1-alpha) && Math.abs(ry) < (1-alpha)) {
                     if(Math.abs(rx) > Math.abs(ry)) {
-                      if(Math.abs(rx) < 0.2) {
-                        rx = rx > 0 ? 0.2 :-0.2
+                      if(Math.abs(rx) < 0.4) {
+                        rx = rx > 0 ? 0.4 :-0.4
                       }
-                      var sx = w / rx * 0.0005
+                      var sx = w / rx * 0.001
                       if(!n1.fixed) {
                           n1.px += sx
                           n1.x += sx
@@ -4168,7 +4170,7 @@ d3 = function() {
                       if(Math.abs(ry) < 0.4) {
                         ry = ry > 0 ? 0.4 :-0.4
                       }
-                      var sy = h / ry * 0.0005
+                      var sy = h / ry * 0.001
                       if(!n1.fixed) {
                           n1.py += sy
                           n1.y += sy
