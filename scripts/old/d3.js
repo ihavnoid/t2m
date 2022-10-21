@@ -4138,7 +4138,7 @@ d3 = function() {
           o.y -= (o.py - (o.py = o.y)) * friction;
         }
       }
-      console.log(alpha)
+      // console.log(alpha)
       for(var a = 0.03; a > alpha; a = a * 0.96) {
           // collision correction - TBD
           for(var i=0; i<nodes.length; i++) {

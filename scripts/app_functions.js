@@ -7,7 +7,7 @@ appFunctions = (function() {
 			if (!unsavedChanges.confirmContinue()) {
 				return;
 			}
-			$("#textArea").val(settings.getDefaultValue("documentContent"));
+			editorPane.set(settings.getDefaultValue("documentContent"));
 			mindmap.render();
 			documentTitle.setTitle(settings.getDefaultValue("documentTitle"));
 			unsavedChanges.setHasChanges(false);
@@ -26,7 +26,7 @@ appFunctions = (function() {
 
 		// Save the current markdown document to the user's computer
 		fileSave() {
-			const content = $("#textArea").val();
+			const content = editorPane.get();
 			const title = documentTitle.getTitle();
 			const type = ".mindtxt";
 			fileExport.saveFile(content, title, type);
@@ -51,9 +51,8 @@ appFunctions = (function() {
             if(v == null) {
                 return
             }
-            $("#textArea").val(v[0])
-            $("#textArea").get(0).selectionStart = v[1]
-            $("#textArea").get(0).selectionEnd = v[2]
+            editorPane.set(v[0])
+            editorPane.setPos(v[1], v[2])
 			unsavedChanges.setHasChanges(true);
             mindmap.render()
         },
@@ -62,9 +61,8 @@ appFunctions = (function() {
             if(v == null) {
                 return
             }
-            $("#textArea").val(v[0])
-            $("#textArea").get(0).selectionStart = v[1]
-            $("#textArea").get(0).selectionEnd = v[2]
+            editorPane.set(v[0])
+            editorPane.setPos(v[1], v[2])
 			unsavedChanges.setHasChanges(true);
             mindmap.render()
         }

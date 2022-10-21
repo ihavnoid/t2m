@@ -78,7 +78,9 @@ settings = (function() {
 		}
 	}
 
-    function setText(value, p1, p2) {
+    function setText() {
+        let value = editorPane.get();
+        let [p1, p2] = editorPane.getPos();
         if(history.length > 0 && value == history[history.length-1][0]) {
             history[history.length-1][1] = p1
             history[history.length-1][2] = p2

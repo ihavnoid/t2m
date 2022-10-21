@@ -10,7 +10,6 @@ paneResizer = (function() {
 	let $viewerCollapseButton;
 	let $viewer;
 	let $body;
-	let $textArea;
 
 	// Minimum width for the panes
 	const minPaneWidth = 200;
@@ -44,7 +43,6 @@ paneResizer = (function() {
 		$viewerCollapseButton = $("#viewer-collapse-button");
 		$viewer = $viewerPane.find("#viewer");
 		$body = $("body");
-		$textArea = $("#textArea");
 		// Show the collapse buttons and set the panes to their initial size.
 		$editorCollapseButton.css("visibility", "visible");
 		$viewerCollapseButton.css("visibility", "visible");
@@ -170,7 +168,6 @@ paneResizer = (function() {
 		} else {
 			$editorCollapseButton.hide();
 		}
-		const leftPaneHasScrollbar = $textArea.hasScrollBar();
 		let rightOffset = 29;
 		$editorCollapseButton.css("left", `calc(100% - ${rightOffset}px)`);
 		if (editorPanePercentage === 0) {

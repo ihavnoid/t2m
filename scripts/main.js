@@ -33,16 +33,16 @@
             $(".modal").removeClass("active");
         });
 
-        $("#textArea").val(settings.getSetting("documentContent"));
+        editorPane.set(settings.getSetting("documentContent"));
         mindmap.render();
     
         var updateStack = 0;
         var lastUpdateTime = 0;
         function updateMindMap() {
             updateStack++;
-            const value = $("#textArea").val();
+            const value = editorPane.get();
             unsavedChanges.setHasChanges(value !== settings.getDefaultValue("documentContent"));
-            settings.setText(value, $("textArea").get(0).selectionStart, $("textArea").get(0).selectionEnd);
+            settings.setText();
             setTimeout(() => {
                 updateStack--;
                 if(updateStack > 0 || lastUpdateTime > Date.now() - 200) {
@@ -53,13 +53,12 @@
             }, 200);
         }
 
-        $('#textArea').on("input propertychange", updateMindMap);
-        $('#textArea').on("mouseup touchend", function(e) {
+        editorPane.on("input propertychange", updateMindMap);
+        editorPane.on("mouseup touchend", function(e) {
             // Doesn't really update text, just for cursor positions
-            const value = $("#textArea").val();
-            settings.setText(value, $("textArea").get(0).selectionStart, $("textArea").get(0).selectionEnd);
+            settings.setText();
         });
-        $('#textArea').on("keydown", function(e) {
+        editorPane.on("keydown", function(e) {
             let keyCode = e.keyCode || e.which;
             if (keyCode == 9 || keyCode == 13 || keyCode == 219 || keyCode == 221) { 
                 updateMindMap();
@@ -68,13 +67,11 @@
         });
         
         $("#mindmap-lock-all").on("touchstart click", function(a) {
-            const value = $("#textArea").val()
-            settings.setText(value, $("textArea").get(0).selectionStart, $("textArea").get(0).selectionEnd)
+            settings.setText()
             navbar.closeDropdowns()
         });
         $("#mindmap-unlock-all").on("touchstart click", function(a) {
-            const value = $("#textArea").val()
-            settings.setText(value, $("textArea").get(0).selectionStart, $("textArea").get(0).selectionEnd)
+            settings.setText()
             navbar.closeDropdowns()
         });
     })

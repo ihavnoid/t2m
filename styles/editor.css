@@ -29,16 +29,21 @@
 	margin: 20px 15px;
 }
 
-#textArea {
+#textedit {
 	resize: none;
 	width: 100%;
 	height: calc(100% - 25px);
 	box-sizing: border-box;
 	background-color: transparent;
 	border: none;
+    font-family: monospace;
 	font-size: 14px;
 	tab-size : 4;
 	outline: none;
 	overflow: auto;
-	white-space: pre-wrap
+	white-space: pre-wrap;
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 2px;
 }
