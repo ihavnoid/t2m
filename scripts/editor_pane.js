@@ -1,6 +1,11 @@
 // editor pane encapsulation
 
 editorPane = (function() {
+
+    function getProcessed() {
+        return $("#textedit").val();
+    }
+
     function get() {
         return $("#textedit").val();
     }
@@ -195,8 +200,77 @@ editorPane = (function() {
         set(h.substring(0, g) + aa + h.substring(g2, h.length));
         setPos(g + aa.length, g + aa.length);
     }
+    function findSelectedNodes() {
+        let v = get().split("\n")
+        let [p1, p2] = getPos()
+        let firstNode = 0;
+        let lastNode = 0;
+        let nc = 0;
+        let accumPos = 0;
+        let doCapture = false;
+        for(let i=0; i<v.length; i++) {
+            if(v[i].match(/^\s*-/)) {
+                nc++
+            }
+            accumPos += v[i].length + 1
+            if(!doCapture) {
+                if(p1 < accumPos) {
+                    doCapture = true; firstNode = nc;
+                }
+            }
+            if(doCapture) {
+                if(p2 < accumPos) {
+                    lastNode = nc;
+                    break;
+                }
+            }
+        }
+        return [firstNode-1, lastNode-1];
+    }
+    function moveCursorToNode(index) {
+        let e = -1;
+        let c = index;
+        let g = editorPane.get().split(/\n/);
+        for (let f = 0; f <= c; f++) {
+            if(!g[f].match(/^\s*-/)) {
+                // increment line number for each skipped line
+                // see text2mindmap function
+                c++;
+            }
+            e += g[f].length + 1;
+        }
+        if(e >= 0) {
+            setPos(e, e);
+            scrollToLine(c);
+            let el = $("#textedit").get(0);
+            el.focus();
+        }
+    }
+
+    $(document).ready(function() {
+        on("keydown", function(a) {
+            var g = this.selectionStart,
+                c = this.selectionEnd,
+                h = $(this).val(),
+                e = h.lastIndexOf("\n", g - 1)
+
+            if (9 == a.which) {
+                a.preventDefault();
+                shiftIndent(a.shiftKey);
+            } else if (13 == a.which) {
+                if (a.ctrlKey) {}
+                else if(a.shiftKey) {
+                    a.preventDefault();
+                    insertBr();
+                } else {
+                    a.preventDefault();
+                    insertNewLine();
+                }
+            }
+        });
+    });
+    
     return {
-        get, set, getPos, setPos, on, scrollToLine,
-        updateTextForCoordinates, shiftIndent, insertBr, insertNewLine
+        getProcessed, get, set, getPos, setPos, on, moveCursorToNode, updateTextForCoordinates, findSelectedNodes
     };
 }());
