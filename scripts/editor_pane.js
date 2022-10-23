@@ -1,275 +1,429 @@
 // editor pane encapsulation
 
 editorPane = (function() {
-
-    function getProcessed() {
-        return $("#textedit").val();
+    function on(ev, f) {
+        document.getElementById("textedit").addEventListener(ev, f);
     }
-
     function get() {
-        return $("#textedit").val();
+        return el.innerHTML;
     }
     function set(x) {
-        $("#textedit").val(x);
+        el.innerHTML = x;
     }
-
     function getPos() {
-        return [$("#textedit").get(0).selectionStart, $("#textedit").get(0).selectionEnd];
+        return [getCaretBeginIndex(el), getCaretIndex(el)];
     }
-
     function setPos(p1, p2) {
-        $("#textedit").get(0).selectionStart = p1;
-        $("#textedit").get(0).selectionEnd = p2;
+        setCaret(el, p1, p2);
     }
-    function on(evname, f) {
-        return $("#textedit").on(evname, f);
-    }
-
-    function scrollToLine(line) {
-        gg = parseInt($("textedit").css("line-height"))
-        $("#textedit").scrollTop(line * gg)
-    }
-
-    function updateTextForCoordinates(nodenum, fixed, xp, yp) {
-        let g = get().split(/\n/)
-        let x = ""
-        let pos = 0
-        
-        let [sel_begin, sel_end] = editorPane.getPos();
-        let charpos = 0
-        let c = nodenum;
-
-        for (let f = 0; f <= c; f++) {
-            charpos += g[f].length + 1
-            if(!g[f].match(/^\s*-/)) {
-                // increment line number for each skipped line
-                // see text2mindmap function
-                c++
-            }
-        }
-
-        let l = g[c]
-        charpos -= l.length + 1
-
-        let stripped = 0
-        while(l.charAt(pos) == " ") {
-            pos++;
-            x += " "
-        }
-        if(l.charAt(pos) != "-") {
-            return
-        }
-        while(l.charAt(pos) == "-") {
-            pos++;
-            x += "-"
-        }
-        while(l.charAt(pos) == " ") {
-            pos++; stripped++;
-        }
-
-        if ("[" == l.charAt(pos)) {
-            let pos2 = l.indexOf("]", pos) + 1;
-            stripped += pos2 - pos;
-            pos = pos2
-            while(l.charAt(pos) == " ")
-            {
-                pos++; stripped++;
-            }
-        }
-
-        let newarr = " "
-        if(fixed) {
-            newarr = " [" + Math.floor(xp) + " " + Math.floor(yp) + "] "
-        }
-        g[c] = x + newarr + l.substring(pos)
-        let text = g.join("\n")
-        editorPane.set(text)
-    
-        if(sel_end - charpos >= x.length && sel_end - charpos < x.length + stripped) {
-            sel_end = charpos + x.length
-        } else if (sel_end - charpos >= x.length + stripped) {
-            sel_end += newarr.length - stripped
-        }
-
-        if(sel_begin - charpos >= x.length && sel_begin - charpos < x.length + stripped) {
-            sel_begin = charpos + x.length
-        } else if (sel_begin - charpos >= x.length + stripped) {
-            sel_begin += newarr.length - stripped
-        }
-        setPos(sel_begin, sel_end);
-    }
-
-    function shiftIndent(shiftOut) {
-        let [g, c] = getPos();
-
-        if (g <= c) {
-            let h = get();
-            let e = h.lastIndexOf("\n", g - 1);
-            let lastBreak = h.indexOf("\n", c - 1);
-            lastBreak < c && (lastBreak = c);
-            let d = h.substring(e + 1, lastBreak).split("\n");
-            let nbr = 0;
-            let f = 0;
-            if (shiftOut) {
-                for(let i = 0; i < d.length; i++) {
-                    if(d[i].length >= 2 && d[i].substring(0, 2) == "  ") {
-                        d[i] = d[i].substring(2)
-                        nbr += 2
-                    } else if(d[i].length > 0 && d[i].substring(0, 1) == " ") {
-                        d[i] = d[i].substring(1)
-                        nbr += 1
+    function findRangeFromCharPos(el, pos) {
+        // console.log("START", el, pos)
+        function _f(el, pos) {
+            // console.log(el, pos)
+            if(pos == 0 || el.nodeType == Node.TEXT_NODE) {
+                return [el, pos];
+            } else if(el.outerHTML.length == 0) {
+                return [el, 0];
+            } else {
+                let outer = el.outerHTML.indexOf(el.innerHTML)
+                // console.log("strip", outer)
+                pos -= outer
+                for(let i = 0; i < el.childNodes.length; i++) {
+                    var cel = el.childNodes[i]
+                    if(cel.nodeType == Node.TEXT_NODE) {
+                        if(pos > cel.textContent.length) {
+                            // console.log("strip", cel.textContent.length, cel.textContent)
+                            pos -= cel.textContent.length
+                        } else {
+                            return _f(cel, pos)
+                        }
+                    } else {
+                        if(pos >= cel.outerHTML.length) {
+                            // console.log("strip", pos, cel.outerHTML.length, cel.outerHTML)
+                            pos -= cel.outerHTML.length
+                        } else {
+                            // strip header length
+                            //let header = cel.outerHTML.indexOf(cel.innerHTML) 
+                            //pos -= header
+                            //console.log(cel.outerHTML.substring(header))
+                            return _f(cel, pos)
+                        }
                     }
                 }
-                f = d.join("\n")
-            } else {
-                f = "  " + d.join("\n  ");
-                nbr = d.length * 2;
             }
-            set(h.substring(0, e + 1) + f + h.substring(lastBreak, h.length));
-            let s = shiftOut ? Math.max(e+1, g - Math.min(2, nbr)) : g + Math.min(2, nbr);
-            e = shiftOut ? c - nbr : c + nbr
-            setPos(s, e);
+            return [el, el.childNodes.length]
         }
+        return _f(el, pos + el.outerHTML.indexOf(el.innerHTML.substring(0, 100)))
     }
 
-    function insertBr() {
-        let [g, c] = getPos();
-        let h = get();
-        let e = h.lastIndexOf("\n", g - 1)
-        let aa = "\n";
-        for (c = e+1; c <= h.length; c++) {
-            f = h.charAt(c)
-            if (" " == f || "-" == f) {
-                aa += " ";
-            } else  {
-                break;
+
+    function findCharPosFromRange(el, container, pos) {
+        // return el's offset relative to **innerHTML**
+        function _f(el, container, pos) {
+            if(el == container) {
+                if( el.nodeType == Node.TEXT_NODE ) {
+                    return pos;
+                } else {
+                    var cn = 0;
+                    for(var i=0; i<pos; i++) {
+                        var c = el.childNodes[i]
+                        if(c.nodeType == Node.TEXT_NODE) {
+                            cn += c.textContent.length;
+                        } else {
+                            cn += c.outerHTML.length;
+                        }
+                    }
+                    return cn;
+                }
+            } else {
+                if( el.nodeType == Node.TEXT_NODE) {
+                    return -1;
+                } else {
+                    var cn = 0;
+                    for(var i=0; i<el.childNodes.length; i++) {
+                        var c = el.childNodes[i];
+                        var p = findCharPosFromRange(c, container, pos);
+                        if( p >= 0 ) {
+                            if(c.nodeType == Node.TEXT_NODE) {
+                                return cn + p;
+                            } else {
+                                return cn + c.outerHTML.indexOf(c.innerHTML) + p;
+                            }
+                        } else {
+                            if(c.nodeType == Node.TEXT_NODE) {
+                                cn += c.textContent.length;
+                            } else {
+                                cn += c.outerHTML.length;
+                            }
+                        }
+                    }
+                    return -1;
+                }
             }
         }
-        let g2 = g;
-        while(g >= 0) {
-            if(h.charAt(g-1) == " " || h.charAt(g-1) == "-") {
-                g--;
-            } else if(h.charAt(g-1) == "\n") {
-                break;
-            } else {
-                g = g2;
-                break;
-            }
-        }
-        while(g2 < h.length) {
-            if(h.charAt(g2) == " " || h.charAt(g2) == "-") {
-                g2++;
-            } else {
-                break;
-            }               
-        }
-        set(h.substring(0, g) + aa + h.substring(g2, h.length));
-        setPos(g + aa.length, g + aa.length);
+        return _f(el, container, pos)
     }
-    function insertNewLine() {
-        let [g, c] = getPos();
-        let h = get();
-        let e = h.lastIndexOf("\n", g - 1)
-        let aa = "\n";
-        for (c = e+1; c <= h.length; c++) {
-            f = h.charAt(c)
-            if (" " == f || "-" == f) {
-                aa += f;
-            } else  {
-                break;
+
+    function findCharPosFromRangeDumb(el, container, pos) {
+        // dumb code
+        var p = 0;
+        while (true) {
+            let xx = findRangeFromCharPos(el, p);
+            if(xx == null) { return -1;}
+            else if(xx[0] == container && xx[1] == pos) {
+                return p;
             }
+            p++;
         }
-        let g2 = g;
-        while(g >= 0) {
-            if(h.charAt(g-1) == " " || h.charAt(g-1) == "-") {
-                g--;
-            } else if(h.charAt(g-1) == "\n") {
-                break;
-            } else {
-                g = g2;
-                break;
-            }
-        }
-        while(g2 < h.length) {
-            if(h.charAt(g2) == " " || h.charAt(g2) == "-") {
-                g2++;
-            } else {
-                break;
-            }               
-        }
-        set(h.substring(0, g) + aa + h.substring(g2, h.length));
-        setPos(g + aa.length, g + aa.length);
+        return -1
     }
+
+
+    function getCaretIndex(element) {
+        const isSupported = typeof window.getSelection !== "undefined";
+        if (isSupported) {
+            const selection = window.getSelection();
+            if (selection.rangeCount !== 0) {
+                const range = window.getSelection().getRangeAt(0);
+                return findCharPosFromRange(element, range.endContainer, range.endOffset);
+            }
+        }
+        return -1;
+    }
+    function getCaretBeginIndex(element) {
+        let position = -1;
+        const isSupported = typeof window.getSelection !== "undefined";
+        if (isSupported) {
+            const selection = window.getSelection();
+            if (selection.rangeCount !== 0) {
+                const range = window.getSelection().getRangeAt(0);
+                return findCharPosFromRange(element, range.startContainer, range.startOffset);
+            }
+        }
+        return -1;
+    }
+
+    function setCaret(el, beginCharNum, endCharNum) {
+        var range = document.createRange()
+        var sel = window.getSelection()
+        
+        range.selectNode(el)
+        let r1 = findRangeFromCharPos(el, beginCharNum)
+        let r2 = findRangeFromCharPos(el, endCharNum)
+        range.setStart(r1[0], r1[1])
+        range.setEnd(r2[0], r2[1])
+        
+        sel.removeAllRanges()
+        sel.addRange(range)
+    }
+
+    function markCaretPos(t) {
+        let el = document.getElementById("textedit");
+        let idx = getCaretIndex(el);
+        let idxb = getCaretBeginIndex(el);
+        
+        if(idx >= 0) {
+            t = t.substring(0, idx) + "\0 r" + t.substring(idx);
+            if(idx < idxb) {
+                idxb += 3;
+            }
+        }
+        if(idxb >= 0) {
+            t = t.substring(0, idxb) + "\0 n" + t.substring(idxb);
+        }
+        return t;
+    }
+    function unmarkCaretPos(t) {
+        let el = document.getElementById("textedit");
+        let p1 = t.indexOf("\0 n");
+        if(p1 >= 0) {
+            t = t.substring(0, p1) + t.substring(p1+3);
+        }
+        let p2 = t.indexOf("\0 r");
+        if(p2 >= 0) {
+            t = t.substring(0, p2) + t.substring(p2+3);
+        }
+        if(p2 < p1) {
+            p1 -= 3;
+        }
+        el.innerHTML = t;
+        if(p1 >= 0 && p2 >= 0) {
+            setCaret(el, p1, p2);
+        }
+        return t;
+    }
+    function cleanupHTML() {
+        let el = document.getElementById("textedit");
+        let text = el.innerHTML;
+        text = markCaretPos(text);
+        text = text.replaceAll("<ul>", "\0 u")
+        text = text.replaceAll("</ul>", "\0 U")
+        text = text.replaceAll("<li>", "\0 l")
+        text = text.replaceAll("<br>", "\0 b")
+        text = text.replaceAll("<br/>", "\0 b")
+        text = text.replaceAll("</li>", "\0 L")
+        text = text.replaceAll(/<[^>]*>/g, "") // strip tags
+        text = text.replaceAll(/\s+/g, " ") // collapse whitespace;
+
+        while(true) {
+            let t2 = text.replaceAll(/\0 U ?\0 u/g, " ")
+                         .replaceAll(/\0 u ?\0 U/g, " ")
+                         .replaceAll(/\s+/g, " ") // collapse whitespace;
+            if(t2 == text) break;
+            text = t2;
+        }
+        text = text.replaceAll(/\0 l *\[([0-9\-]+) +([0-9\-]+)\]/g, "\0 l <i>[$1 $2]</i>"); 
+        text = text.replaceAll("\0 u", "<ul>")
+                .replaceAll("\0 U", "</ul>")
+                .replaceAll("\0 l", "<li>")
+                .replaceAll("\0 b", "<br>")
+                .replaceAll("\0 L", "</li>\n" );
+
+        // console.log(text)
+        unmarkCaretPos(text);
+    }
+
+    function getProcessed() {
+        let el = document.getElementById("textedit");
+        function _f(el, depth) {
+            let ret = "";
+            if(el.nodeType == Node.TEXT_NODE) {
+                // XXX : we shouldn't need this since all text will be within LI elements
+                // and we will be collecting them from el.innerText
+                // return el.textContent;
+                return null;
+            } else if(el.nodeName == "UL") {
+                for(let n of el.childNodes) {
+                    let x = _f(n, depth+1);
+                    if(x !== null) ret += x + "\n";
+                }
+                return ret;
+            } else if(el.nodeName == "LI") {
+                for(let i=0; i < depth; i++) {
+                    ret += " ";
+                }
+                ret += "-";
+                ret += el.innerText;
+                return ret;
+            } else {
+                if(el.hasChildNodes()) {
+                    for(let n of el.childNodes) {
+                        let x = _f(n, depth);
+                        if(x !== null) ret += x + "\n";
+                    }
+                    return ret;
+                } else {
+                    return el.innerText;
+                }
+            }
+        }
+        return _f(el, 0);
+    }
+    
+    function updateTextForCoordinates(nodenum, fixed, xp, yp) {
+        // find starting position of li element
+        let t = el.innerHTML;
+        t = markCaretPos(t);
+        let lipos = -1;
+        for(let i=0; i<nodenum+1; i++) {
+            lipos = t.indexOf("<li>", lipos+1);
+        }
+        if(lipos < 0) {
+            // out of range
+            return;
+        }
+        let clipos = t.indexOf("</li>", lipos);
+
+        let tp = t.substring(lipos+4, clipos);
+        // console.log(lipos, clipos, tp);
+        tp = tp.replace(/^ *\[[0-9\- ]*\] */, "");
+        if(fixed) {
+            tp = "[" + xp + " " + yp + "]" + tp;
+        }
+        t = t.substring(0, lipos+4) + tp + t.substring(clipos);
+        unmarkCaretPos(t);
+    }
+
     function findSelectedNodes() {
-        let v = get().split("\n")
-        let [p1, p2] = getPos()
-        let firstNode = 0;
-        let lastNode = 0;
-        let nc = 0;
-        let accumPos = 0;
-        let doCapture = false;
-        for(let i=0; i<v.length; i++) {
-            if(v[i].match(/^\s*-/)) {
-                nc++
-            }
-            accumPos += v[i].length + 1
-            if(!doCapture) {
-                if(p1 < accumPos) {
-                    doCapture = true; firstNode = nc;
-                }
-            }
-            if(doCapture) {
-                if(p2 < accumPos) {
-                    lastNode = nc;
-                    break;
-                }
-            }
+        let t = markCaretPos(el.innerHTML);
+        let r1 = t.indexOf("\0 n");
+        let r2 = t.indexOf("\0 r");
+        if(r1 > r2) {
+            [r1, r2] = [r2, r1];
         }
-        return [firstNode-1, lastNode-1];
+        
+        if(r1 < 0 || r2 < 0) {
+            return [0, -1];
+        }
+
+        let l1 = -1, l2 = -1;
+        let lipos = -1;
+        let licnt = 0;
+        while(true) {
+            lipos = t.indexOf("<li>", lipos+1);
+            if(lipos < 0) {
+                break;
+            }
+            if(l1 < 0 && lipos > r1) {
+                l1 = licnt - 1;
+            }
+            if(l2 < 0 && lipos > r2) {
+                l2 = licnt - 1;
+                break;
+            }
+            licnt++;
+        }
+        if(l1 < 0) {
+            l1 = licnt - 1;
+        }
+        if(l2 < 0) {
+            l2 = licnt - 1;
+        }
+
+        return [l1, l2];
     }
-    function moveCursorToNode(index) {
-        let e = -1;
-        let c = index;
-        let g = editorPane.get().split(/\n/);
-        for (let f = 0; f <= c; f++) {
-            if(!g[f].match(/^\s*-/)) {
-                // increment line number for each skipped line
-                // see text2mindmap function
-                c++;
-            }
-            e += g[f].length + 1;
+
+    function moveCursorToNode(nodenum) {
+        // find starting position of li element
+        let t = el.innerHTML;
+        
+        // don't mark caret, we will mark it ourselves here
+        let lipos = -1;
+        for(let i=0; i<nodenum+1; i++) {
+            lipos = t.indexOf("<li>", lipos+1);
         }
-        if(e >= 0) {
-            setPos(e, e);
-            scrollToLine(c);
-            let el = $("#textedit").get(0);
-            el.focus();
+        if(lipos < 0) {
+            // out of range
+            return;
+        }
+        let clipos = t.indexOf("</li>", lipos);
+        t = t.substring(0, clipos) + "\0 n\0 r" + t.substring(clipos)
+        unmarkCaretPos(t)
+
+        // scroll to caret
+        const isSupported = typeof window.getSelection !== "undefined";
+        if (isSupported) {
+            const selection = window.getSelection();
+            let n = selection.getRangeAt(0).startContainer;
+            let l = 0; let t = 0;
+            while(n != el && n != null) {
+                if(n.nodeType != Node.TEXT_NODE) {
+                    l += n.offsetLeft; t += n.offsetTop;
+                }
+                n = n.parentElement;
+            }
+            el.scroll(l, t);
         }
     }
 
     $(document).ready(function() {
-        on("keydown", function(a) {
-            var g = this.selectionStart,
-                c = this.selectionEnd,
-                h = $(this).val(),
-                e = h.lastIndexOf("\n", g - 1)
+        el = document.getElementById("textedit");
+        cleanupHTML();
+    
+        on("keydown", (ev) => {
+            if(ev.which == 9) {
+                cleanupHTML();
+                // tab
+                ev.preventDefault();
 
-            if (9 == a.which) {
-                a.preventDefault();
-                shiftIndent(a.shiftKey);
-            } else if (13 == a.which) {
-                if (a.ctrlKey) {}
-                else if(a.shiftKey) {
-                    a.preventDefault();
-                    insertBr();
-                } else {
-                    a.preventDefault();
-                    insertNewLine();
+                let t = el.innerHTML;
+                t = markCaretPos(t);
+                t = t.split("\n");
+                var p1 = -1, p2 = -1;
+                for(var i=0; i<t.length; i++) {
+                    let l = t[i];
+                    if(l.indexOf("\0 n") >= 0 || l.indexOf("\0 r") >= 0) {
+                        if(p1 == -1) p1 = i;
+                        else if(p2 == -1) p2 = i;
+                    }
                 }
+                if(p1 == -1) { p1 = p2;}
+                if(p2 == -1) { p2 = p1;}
+                if(p1 >= 0 && p2 >= 0) {
+                    for(var i=p1; i<= p2; i++) {
+                        if(ev.shiftKey) {
+                            // XXX : this isn't that correct, since we shouldn't open the last 'ul' if we already hit the bottom level
+                            t[i] = t[i].replaceAll("<li>", "</ul><li>") + "<ul>";
+                        } else {
+                            t[i] = t[i].replaceAll("<li>", "<ul><li>") + "</ul>";
+                        }
+                    }
+                }
+                t = t.join("\n");
+                unmarkCaretPos(t);
+                return;
+            }
+
+            
+            // XXX : if we re pushing a key that don't affect text contents, there is no point cleaning up HTML
+            if( ["Alt", "AltGraph", "CapsLock", "Control", "Fn", "FnLock", "Hyper", "Meta", "NumLock", 
+                            "ScrollLock", "Shift", "Super", "Symbol", "SymbolLock",
+                            "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp",
+                            "End", "Home", "PageDown", "PageUp" ].includes(ev.key) === false ) {
+                // we need the '<li>' element if we typed something but the current cursor is not part of the current text
+                let p = getCaretBeginIndex(el);
+                if(p >= 0) {
+                    let [celement, cpos] = findRangeFromCharPos(el, p);
+                    function foundLi(elem) {
+                        if(elem === el || elem === null) {
+                            return false;
+                        } else if(elem.tagName == "LI" || elem.tagName == "li") {
+                            return true;
+                        } else {
+                            return foundLi(elem.parentElement);
+                        }
+                    }
+                    if(!foundLi(celement)) {
+                        let t = el.innerHTML;
+                        t = markCaretPos(t);
+                        t = t.replace("\0 n", "<LI>\0 n</LI>");
+                        unmarkCaretPos(t);
+                    }
+                }
+                cleanupHTML();
             }
         });
     });
-    
     return {
         getProcessed, get, set, getPos, setPos, on, moveCursorToNode, updateTextForCoordinates, findSelectedNodes
     };
