@@ -59,10 +59,10 @@
             settings.setText();
         });
         editorPane.on("keydown", function(e) {
-            let keyCode = e.keyCode || e.which;
-            if (keyCode == 9 || keyCode == 13 || keyCode == 219 || keyCode == 221) { 
+            // let keyCode = e.keyCode || e.which;
+            // if (keyCode == 9 || keyCode == 13 || keyCode == 219 || keyCode == 221) { 
                 updateMindMap();
-            } 
+            // } 
             unsavedChanges.setHasChanges(true);
         });
         

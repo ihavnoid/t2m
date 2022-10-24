@@ -196,6 +196,10 @@ editorPane = (function() {
         let el = document.getElementById("textedit");
         let text = el.innerHTML;
         text = markCaretPos(text);
+        // if we start with a LI without a UL, wrap the whole text with a UL
+        if(text.indexOf("<ul>") > text.indexOf("<li>")) {
+            text = "<ul>" + text + "</ul>" 
+        }
         text = text.replaceAll("<ul>", "\0 u")
         text = text.replaceAll("</ul>", "\0 U")
         text = text.replaceAll("<li>", "\0 l")
@@ -275,10 +279,49 @@ editorPane = (function() {
         let clipos = t.indexOf("</li>", lipos);
 
         let tp = t.substring(lipos+4, clipos);
-        // console.log(lipos, clipos, tp);
+
+        // preserve BR before stripping tags
+        tp = tp.replaceAll("\n", "");
+        tp = tp.replaceAll("<br>", "\n");
+
+        // strip tags
+        tp = tp.replaceAll(/<[^>]*>/g, "");
+
+        console.log(lipos, clipos, tp);
+        
+        // we need to deal with caret escape codes
+        let p1 = tp.indexOf("\0 n");
+        if(p1 >= 0) {
+            tp = tp.substr(0, p1) + tp.substr(p1+3);
+        }
+        let p2 = tp.indexOf("\0 r");
+        if(p2 >= 0) {
+            tp = tp.substr(0, p2) + tp.substr(p2+3);
+        }
+        let len_prev = tp.length; 
+
         tp = tp.replace(/^ *\[[0-9\- ]*\] */, "");
+        let len_new = tp.length; 
+        if(p1 >= 0){
+            p1 -= len_prev - len_new;
+            if(p1 < 0) p1 = 0;
+        } if(p2 >= 0) {
+            p2 -= len_prev - len_new;
+            if(p2 < 0) p2 = 0;
+        }
+
+        tp = tp.replaceAll("\n", "<br>");
         if(fixed) {
-            tp = "[" + xp + " " + yp + "]" + tp;
+            let header = "[" + Math.round(xp) + " " + Math.round(yp) + "] ";
+            tp = header + tp;
+            if(p1 >= 0) p1 += header.length;
+            if(p2 >= 0) p2 += header.length;
+        }
+        if(p1 >= 0) {
+            tp = tp.substring(0, p1) + "\0 n" + tp.substring(p1);
+        }
+        if(p2 >= 0) {
+            tp = tp.substring(0, p2) + "\0 r" + tp.substring(p2);
         }
         t = t.substring(0, lipos+4) + tp + t.substring(clipos);
         unmarkCaretPos(t);
@@ -359,7 +402,16 @@ editorPane = (function() {
     $(document).ready(function() {
         el = document.getElementById("textedit");
         cleanupHTML();
-    
+        
+        function findCnt(str, pattern) {
+            let idx = -1;
+            for(let i=0; ; i++) {
+                idx = str.indexOf(pattern, idx+1);
+                if(idx < 0) {
+                    return i;
+                }
+            }
+        } 
         on("keydown", (ev) => {
             if(ev.which == 9) {
                 cleanupHTML();
@@ -379,12 +431,25 @@ editorPane = (function() {
                 }
                 if(p1 == -1) { p1 = p2;}
                 if(p2 == -1) { p2 = p1;}
+
                 if(p1 >= 0 && p2 >= 0) {
-                    for(var i=p1; i<= p2; i++) {
-                        if(ev.shiftKey) {
-                            // XXX : this isn't that correct, since we shouldn't open the last 'ul' if we already hit the bottom level
-                            t[i] = t[i].replaceAll("<li>", "</ul><li>") + "<ul>";
-                        } else {
+                    if(ev.shiftKey) {
+                        let indent_level = 0;
+                        for(var i=0; i<p1; i++) {
+                            indent_level += findCnt(t[i], "<ul>") - findCnt(t[i], "</ul>");
+                        }
+                        for(var i=p1; i<= p2; i++) {
+                            let first_li = t[i].indexOf("<li>");
+                            if(first_li >= 0) {
+                                let my_il = indent_level + findCnt(t[i].substring(0, first_li), "<ul>") - findCnt(t[i].substring(0, first_li), "</ul>");
+                                if(my_il > 1) {
+                                    t[i] = t[i].replaceAll("<li>", "</ul><li>") + "<ul>";
+                                }
+                            }
+                            indent_level += findCnt(t[i], "<ul>") - findCnt(t[i], "</ul>");
+                        }
+                    } else {
+                        for(var i=p1; i<= p2; i++) {
                             t[i] = t[i].replaceAll("<li>", "<ul><li>") + "</ul>";
                         }
                     }
@@ -393,7 +458,6 @@ editorPane = (function() {
                 unmarkCaretPos(t);
                 return;
             }
-
             
             // XXX : if we re pushing a key that don't affect text contents, there is no point cleaning up HTML
             if( ["Alt", "AltGraph", "CapsLock", "Control", "Fn", "FnLock", "Hyper", "Meta", "NumLock", 
