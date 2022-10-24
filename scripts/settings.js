@@ -82,10 +82,12 @@ settings = (function() {
         let value = editorPane.get();
         let [p1, p2] = editorPane.getPos();
         if(history.length > 0 && value == history[history.length-1][0]) {
+            console.log("setText(short)", value, p1, p2, history.length)
             history[history.length-1][1] = p1
             history[history.length-1][2] = p2
             return
         }
+        console.log("setText", value, p1, p2, history.length)
         history.push([value, p1, p2])
         if(history.length > 100) {
             history.shift()
@@ -96,6 +98,7 @@ settings = (function() {
 
     function undoText() {
         if (history.length <= 1) {
+            console.log("undoText (empty)")
             return null
         }
         var t = history.pop() 
@@ -110,6 +113,7 @@ settings = (function() {
             return null
         }
         var t = redo_history.pop() 
+        console.log("redoText", t);
         history.push(t)
         setSetting("documentContent", t[0])
         return t

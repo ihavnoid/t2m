@@ -1,11 +1,22 @@
 // editor pane encapsulation
 
 editorPane = (function() {
+    var skipObserve = false;
+    var observer = null;
     function on(ev, f) {
-        document.getElementById("textedit").addEventListener(ev, f);
+        $("#textedit").on(ev, f);
     }
     function observe(func) {
-        new MutationObserver(func).observe(document.getElementById("textedit"), {subtree:true, childList:true, attributes: true, characterDataOldValue: true});
+        let options = {subtree:true, childList:true, attributes: true, characterData: true};
+        observer = new MutationObserver(
+            function(mutationList, observer) {
+                console.log("mutation");
+                if(!skipObserve) {
+                    func();
+                }
+            }
+        )
+        observer.observe($("#textedit").get(0), options);
     }
     function get() {
         return el.innerHTML;
@@ -29,7 +40,7 @@ editorPane = (function() {
             } else if(el.outerHTML.length == 0) {
                 return [el, 0];
             } else {
-                let outer = el.outerHTML.indexOf(el.innerHTML)
+                let outer = el.outerHTML.indexOf(el.innerHTML+"</")
                 // console.log("strip", outer)
                 pos -= outer
                 for(let i = 0; i < el.childNodes.length; i++) {
@@ -57,7 +68,7 @@ editorPane = (function() {
             }
             return [el, el.childNodes.length]
         }
-        return _f(el, pos + el.outerHTML.indexOf(el.innerHTML.substring(0, 100)))
+        return _f(el, pos + el.outerHTML.indexOf(el.innerHTML+"</"))
     }
 
 
@@ -91,7 +102,7 @@ editorPane = (function() {
                             if(c.nodeType == Node.TEXT_NODE) {
                                 return cn + p;
                             } else {
-                                return cn + c.outerHTML.indexOf(c.innerHTML) + p;
+                                return cn + c.outerHTML.indexOf(c.innerHTML+"</") + p;
                             }
                         } else {
                             if(c.nodeType == Node.TEXT_NODE) {
@@ -199,6 +210,7 @@ editorPane = (function() {
     function cleanupHTML() {
         let el = document.getElementById("textedit");
         let text = el.innerHTML;
+        console.log("begin", text)
         text = markCaretPos(text);
         // if we start with a LI without a UL, wrap the whole text with a UL
         if(text.indexOf("<ul>") > text.indexOf("<li>")) {
@@ -213,6 +225,7 @@ editorPane = (function() {
         text = text.replaceAll(/<[^>]*>/g, "") // strip tags
         text = text.replaceAll(/\s+/g, " ") // collapse whitespace;
 
+        console.log("s0", text)
         while(true) {
             let t2 = text.replaceAll(/\0 U ?\0 u/g, " ")
                          .replaceAll(/\0 u ?\0 U/g, " ")
@@ -220,7 +233,9 @@ editorPane = (function() {
             if(t2 == text) break;
             text = t2;
         }
+        console.log("s1", text)
         text = text.replaceAll(/\0 l *\[([0-9\-]+) +([0-9\-]+)\]/g, "\0 l <i>[$1 $2]</i>"); 
+        console.log("s2", text)
         text = text.replaceAll("\0 u", "<ul>")
                 .replaceAll("\0 U", "</ul>")
                 .replaceAll("\0 l", "<li>")
@@ -228,7 +243,10 @@ editorPane = (function() {
                 .replaceAll("\0 L", "</li>\n" );
 
         // console.log(text)
+        skipObserve = true;
+        console.log("end", text)
         unmarkCaretPos(text);
+        skipObserve = false;
     }
 
     function getProcessed() {

@@ -53,7 +53,6 @@
             }, 200);
         }
 
-        editorPane.observe(updateMindMap);
         editorPane.on("mouseup touchend", function(e) {
             // Doesn't really update text, just for cursor positions
             settings.setText();
@@ -76,5 +75,7 @@
             settings.setText()
             navbar.closeDropdowns()
         });
+        editorPane.observe(updateMindMap);
+
     })
 }());
