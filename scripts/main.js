@@ -53,17 +53,19 @@
             }, 200);
         }
 
-        editorPane.on("input propertychange", updateMindMap);
+        editorPane.observe(updateMindMap);
         editorPane.on("mouseup touchend", function(e) {
             // Doesn't really update text, just for cursor positions
             settings.setText();
         });
         editorPane.on("keydown", function(e) {
-            // let keyCode = e.keyCode || e.which;
-            // if (keyCode == 9 || keyCode == 13 || keyCode == 219 || keyCode == 221) { 
+            let keyCode = e.keyCode || e.which;
+            if (keyCode == 9 || keyCode == 13 || keyCode == 219 || keyCode == 221) { 
                 updateMindMap();
-            // } 
+            } 
             unsavedChanges.setHasChanges(true);
+
+            // XXX : undo/redo broken when we are doing copy-and-paste
         });
         
         $("#mindmap-lock-all").on("touchstart click", function(a) {

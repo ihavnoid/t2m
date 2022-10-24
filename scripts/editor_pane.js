@@ -4,11 +4,15 @@ editorPane = (function() {
     function on(ev, f) {
         document.getElementById("textedit").addEventListener(ev, f);
     }
+    function observe(func) {
+        new MutationObserver(func).observe(document.getElementById("textedit"), {subtree:true, childList:true, attributes: true, characterDataOldValue: true});
+    }
     function get() {
         return el.innerHTML;
     }
     function set(x) {
         el.innerHTML = x;
+        cleanupHTML();
     }
     function getPos() {
         return [getCaretBeginIndex(el), getCaretIndex(el)];
@@ -243,7 +247,7 @@ editorPane = (function() {
                 }
                 return ret;
             } else if(el.nodeName == "LI") {
-                for(let i=0; i < depth; i++) {
+                for(let i=0; i < depth-1; i++) {
                     ret += " ";
                 }
                 ret += "-";
@@ -489,6 +493,6 @@ editorPane = (function() {
         });
     });
     return {
-        getProcessed, get, set, getPos, setPos, on, moveCursorToNode, updateTextForCoordinates, findSelectedNodes
+        getProcessed, get, set, getPos, setPos, on, moveCursorToNode, updateTextForCoordinates, findSelectedNodes, observe
     };
 }());
