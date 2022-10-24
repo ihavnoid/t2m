@@ -11,9 +11,10 @@ editorPane = (function() {
         observer = new MutationObserver(
             function(mutationList, observer) {
                 console.log("mutation");
-                if(!skipObserve) {
-                    func();
-                }
+                observer.disconnect();
+                cleanupHTML();
+                func();
+                observer.observe($("#textedit").get(0), options);
             }
         )
         observer.observe($("#textedit").get(0), options);
@@ -23,7 +24,6 @@ editorPane = (function() {
     }
     function set(x) {
         el.innerHTML = x;
-        cleanupHTML();
     }
     function getPos() {
         return [getCaretBeginIndex(el), getCaretIndex(el)];
@@ -31,6 +31,11 @@ editorPane = (function() {
     function setPos(p1, p2) {
         setCaret(el, p1, p2);
     }
+
+    function outerHeaderLength(el) {
+        return el.outerHTML.indexOf(">"+el.innerHTML) + 1
+    }
+
     function findRangeFromCharPos(el, pos) {
         // console.log("START", el, pos)
         function _f(el, pos) {
@@ -40,7 +45,7 @@ editorPane = (function() {
             } else if(el.outerHTML.length == 0) {
                 return [el, 0];
             } else {
-                let outer = el.outerHTML.indexOf(el.innerHTML+"</")
+                let outer = outerHeaderLength(el);
                 // console.log("strip", outer)
                 pos -= outer
                 for(let i = 0; i < el.childNodes.length; i++) {
@@ -58,9 +63,6 @@ editorPane = (function() {
                             pos -= cel.outerHTML.length
                         } else {
                             // strip header length
-                            //let header = cel.outerHTML.indexOf(cel.innerHTML) 
-                            //pos -= header
-                            //console.log(cel.outerHTML.substring(header))
                             return _f(cel, pos)
                         }
                     }
@@ -68,7 +70,7 @@ editorPane = (function() {
             }
             return [el, el.childNodes.length]
         }
-        return _f(el, pos + el.outerHTML.indexOf(el.innerHTML+"</"))
+        return _f(el, pos + outerHeaderLength(el));
     }
 
 
@@ -102,7 +104,7 @@ editorPane = (function() {
                             if(c.nodeType == Node.TEXT_NODE) {
                                 return cn + p;
                             } else {
-                                return cn + c.outerHTML.indexOf(c.innerHTML+"</") + p;
+                                return cn + outerHeaderLength(c) + p;
                             }
                         } else {
                             if(c.nodeType == Node.TEXT_NODE) {
@@ -210,10 +212,42 @@ editorPane = (function() {
     function cleanupHTML() {
         let el = document.getElementById("textedit");
         let text = el.innerHTML;
-        console.log("begin", text)
+        // console.log("begin", text)
         text = markCaretPos(text);
+
+        // we need the '<li>' element if we typed something but the current cursor is not part of the current text
+        let p = getCaretBeginIndex(el);
+        if(p >= 0) {
+            let [celement, cpos] = findRangeFromCharPos(el, p);
+            function foundLi(elem) {
+                if(elem === el || elem === null) {
+                    return false;
+                } else if(elem.tagName == "LI" || elem.tagName == "li") {
+                    return true;
+                } else {
+                    return foundLi(elem.parentElement);
+                }
+            }
+            function foundUl(elem) {
+                if(elem === el || elem === null) {
+                    return false;
+                } else if(elem.tagName == "LI" || elem.tagName == "li") {
+                    return true;
+                } else {
+                    return foundLi(elem.parentElement);
+                }
+            }
+            if(!foundLi(celement)) {
+                if(foundUl(celement)) {
+                    text = text.replace(/([^>]*\0 n[^<]*)/, "<li>$1</li>");
+                } else {
+                    text = text.replace(/([^>]*\0 n[^<]*)/, "<ul><li>$1</li></ul>");
+                }
+            }
+        }
+
         // if we start with a LI without a UL, wrap the whole text with a UL
-        if(text.indexOf("<ul>") > text.indexOf("<li>")) {
+        if(text.indexOf("<ul>") < 0 || text.indexOf("<ul>") > text.indexOf("<li>")) {
             text = "<ul>" + text + "</ul>" 
         }
         text = text.replaceAll("<ul>", "\0 u")
@@ -225,17 +259,22 @@ editorPane = (function() {
         text = text.replaceAll(/<[^>]*>/g, "") // strip tags
         text = text.replaceAll(/\s+/g, " ") // collapse whitespace;
 
-        console.log("s0", text)
+        // console.log("s0", text)
         while(true) {
             let t2 = text.replaceAll(/\0 U ?\0 u/g, " ")
                          .replaceAll(/\0 u ?\0 U/g, " ")
+                         // strip stray BRs between ULs (not useful)
+                         .replaceAll(/\0 u ?\0 b/g, "\0 u")
+                         .replaceAll(/\0 U ?\0 b/g, "\0 U")
+                         .replaceAll(/\0 b ?\0 u/g, "\0 u")
+                         .replaceAll(/\0 b ?\0 U/g, "\0 U")
                          .replaceAll(/\s+/g, " ") // collapse whitespace;
             if(t2 == text) break;
             text = t2;
         }
-        console.log("s1", text)
+        // console.log("s1", text)
         text = text.replaceAll(/\0 l *\[([0-9\-]+) +([0-9\-]+)\]/g, "\0 l <i>[$1 $2]</i>"); 
-        console.log("s2", text)
+        // console.log("s2", text)
         text = text.replaceAll("\0 u", "<ul>")
                 .replaceAll("\0 U", "</ul>")
                 .replaceAll("\0 l", "<li>")
@@ -244,7 +283,7 @@ editorPane = (function() {
 
         // console.log(text)
         skipObserve = true;
-        console.log("end", text)
+        // console.log("end", text)
         unmarkCaretPos(text);
         skipObserve = false;
     }
@@ -436,7 +475,6 @@ editorPane = (function() {
         } 
         on("keydown", (ev) => {
             if(ev.which == 9) {
-                cleanupHTML();
                 // tab
                 ev.preventDefault();
 
@@ -481,6 +519,7 @@ editorPane = (function() {
                 return;
             }
             
+            /*
             // XXX : if we re pushing a key that don't affect text contents, there is no point cleaning up HTML
             if( ["Alt", "AltGraph", "CapsLock", "Control", "Fn", "FnLock", "Hyper", "Meta", "NumLock", 
                             "ScrollLock", "Shift", "Super", "Symbol", "SymbolLock",
@@ -506,8 +545,8 @@ editorPane = (function() {
                         unmarkCaretPos(t);
                     }
                 }
-                cleanupHTML();
             }
+            */
         });
     });
     return {
