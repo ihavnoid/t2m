@@ -1,6 +1,23 @@
 // editor pane encapsulation
 
 editorPane = (function() {
+    var nodeColors = {};
+    function setNodeColor(index, color) {
+        console.log(color);
+        color = color.replace(/^\s*#|\s*$/g, "");
+        if(3 == color.length) {
+            color = color.replace(/(.)/g, "$1$1");
+        }
+        let r = parseInt(color.substr(0, 2), 16);
+        let g = parseInt(color.substr(2, 2), 16);
+        let b = parseInt(color.substr(4, 2), 16);
+        color = "#" + (Math.floor(384 + r/2)).toString(16).substr(1) +
+            (Math.floor(384 + g/2)).toString(16).substr(1) + (Math.floor(384 + b/2)).toString(16).substr(1)
+        
+        console.log(color);
+        nodeColors[index] = color; 
+    }
+
     // performance-wise not so good :( need to fix
     function indexOfRegex(s, pattern, startpos) {
         let start = -1, length = 0;
@@ -25,7 +42,7 @@ editorPane = (function() {
         let options = {subtree:true, childList:true, attributes: true, characterData: true};
         observer = new MutationObserver(
             function(mutationList, observer) {
-                console.log("mutation");
+                // console.log("mutation");
                 observer.disconnect();
                 cleanupHTML();
                 func();
@@ -33,6 +50,16 @@ editorPane = (function() {
             }
         )
         observer.observe($("#textedit").get(0), options);
+    }
+    function refresh() {
+        if(observer != null) {
+            observer.disconnect();
+        }
+        cleanupHTML();
+        if(observer != null) {
+            let options = {subtree:true, childList:true, attributes: true, characterData: true};
+            observer.observe($("#textedit").get(0), options);
+        }
     }
     function get() {
         return el.innerHTML;
@@ -262,7 +289,16 @@ editorPane = (function() {
         let firstLine = true;
         function processCode(l) {
             if(firstLine) {
-                l = l.replace(/^ *(\[(?:[0-9\- ]|\0 n|\0 r)*\]) */, "<span class=\"pos\">$1</span> ");
+                if(nodeno in nodeColors) {
+                    cl = " style=\"background-color:"+nodeColors[nodeno]+";\" ";
+                } else {
+                    cl = " ";
+                }
+                if(l.match(/^ *(\[(?:[0-9\- ]|\0 n|\0 r)*\])(.*)$/)) {
+                    l = l.replace(/^ *(\[(?:[0-9\- ]|\0 n|\0 r)*\])(.*)$/, "<span class=\"pos\">$1</span><span"+cl+"class=\"header\">$2</span>");
+                } else {
+                    l = "<span"+cl+"class=\"header\">"+l+"</span>";
+                }
             } else {
                 l = "<span class=\"comment\">" + l + "</span>";
             }
@@ -400,7 +436,7 @@ editorPane = (function() {
         // strip tags
         tp = tp.replaceAll(/<[^>]*>/g, "");
 
-        console.log(lipos, clipos, tp);
+        // console.log(lipos, clipos, tp);
         
         // we need to deal with caret escape codes
         let p1 = tp.indexOf("\0 n");
@@ -423,7 +459,6 @@ editorPane = (function() {
             if(p2 < 0) p2 = 0;
         }
 
-        tp = tp.replaceAll("\n", "<br>");
         if(fixed) {
             let header = "[" + Math.round(xp) + " " + Math.round(yp) + "] ";
             tp = header + tp;
@@ -434,8 +469,10 @@ editorPane = (function() {
             tp = tp.substring(0, p1) + "\0 n" + tp.substring(p1);
         }
         if(p2 >= 0) {
+            if(p2 >= p1) { p2 += 3; }
             tp = tp.substring(0, p2) + "\0 r" + tp.substring(p2);
         }
+        tp = tp.replaceAll("\n", "<br>");
         t = t.substring(0, lipos+len) + tp + t.substring(clipos);
         unmarkCaretPos(t);
     }
@@ -614,6 +651,6 @@ editorPane = (function() {
         });
     });
     return {
-        getProcessed, get, set, getPos, setPos, on, moveCursorToNode, updateTextForCoordinates, findSelectedNodes, observe
+        getProcessed, get, set, getPos, setPos, on, moveCursorToNode, updateTextForCoordinates, findSelectedNodes, observe, setNodeColor, refresh
     };
 }());
