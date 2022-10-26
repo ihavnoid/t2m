@@ -1,6 +1,22 @@
 // editor pane encapsulation
 
 editorPane = (function() {
+    // performance-wise not so good :( need to fix
+    function indexOfRegex(s, pattern, startpos) {
+        let start = -1, length = 0;
+        s.substring(startpos).replace(pattern, (match, offset, string, groups) => {
+            start = offset;
+            length = match.length; 
+        });
+        if(start < 0) {
+            return [-1, length];
+        } else {
+            return [start + startpos, length];
+        }
+    }
+
+    var highlightSelected = 0;
+
     var observer = null;
     function on(ev, f) {
         $("#textedit").on(ev, f);
@@ -211,6 +227,11 @@ editorPane = (function() {
     function cleanupHTML() {
         let el = document.getElementById("textedit");
 
+        let [n1pos, n2pos] = findSelectedNodes();
+
+        if(!highlightSelected) {
+            n1pos = -1; n2pos = -1;
+        }
         let t = el.innerHTML;
         // console.log("begin", text)
         t = markCaretPos(t);
@@ -225,13 +246,29 @@ editorPane = (function() {
         let tout = "";
         let copyMode = false;
         let ptr = 0;
+        let nodeno = 0;
         let level = 0;
         let tagOpen = false;
         let closeUlOnNextLi = false;
         let lastc = '\0';
         function _li() {
-            tout += "<li class=\"level"+Math.min(level, 8)+"\">"
+            if(nodeno >= n1pos && nodeno <= n2pos) { 
+                tout += "<li class=\"selected_node level"+Math.min(level, 8)+"\">"
+            } else {
+                tout += "<li class=\"level"+Math.min(level, 8)+"\">"
+            }
         }
+        let accumText = "";
+        let firstLine = true;
+        function processCode(l) {
+            if(firstLine) {
+                l = l.replace(/^ *(\[(?:[0-9\- ]|\0 n|\0 r)*\]) */, "<span class=\"pos\">$1</span> ");
+            } else {
+                l = "<span class=\"comment\">" + l + "</span>";
+            }
+            return l;
+        }
+
         while(true) {
             const p = t.indexOf("\0 ", ptr);
             if( p < 0) {
@@ -242,10 +279,7 @@ editorPane = (function() {
             }
             if(copyMode){
                 let l = t.substring(ptr, p);
-                if(lastc == 'l') {
-                    l = l.replace(/^ *(\[[0-9\- ]*\]) */, "<span class=\"pos\">$1</span> ");
-                }
-                tout += l;
+                accumText += l;
             }
             const c = t.charAt(p+2);
             if(c == "u") {
@@ -257,6 +291,7 @@ editorPane = (function() {
             } else if(c == "l") {
                 if(tagOpen) {
                     tout += "</li>\n";
+                    nodeno++;
                     if(closeUlOnNextLi) {
                         closeUlOnNextLi = false;
                         tout += "</ul>";
@@ -270,10 +305,14 @@ editorPane = (function() {
                     closeUlOnNextLi = true;
                 }
                 _li();
+                firstLine = true;
                 copyMode = true;
             } else if(c == "L") {
                 if(tagOpen) {
+                    tout += processCode(accumText);
                     tout += "</li>\n";
+                    nodeno++;
+                    accumText = "";
                     copyMode = false;
                     if(closeUlOnNextLi) {
                         closeUlOnNextLi = false;
@@ -284,12 +323,15 @@ editorPane = (function() {
                 tagOpen = false;
             } else if(c == "b") {
                 if(tagOpen) {
+                    tout += processCode(accumText);
+                    accumText = "";
                     tout += "<br>";
+                    firstLine = false;
                 }
             } else if(c == "n") {
-                tout += "\0 n"; 
+                accumText += "\0 n"; 
             } else if(c == "r") {
-                tout += "\0 r"; 
+                accumText += "\0 r"; 
             }
             lastc = c;
             ptr = p + 3;
@@ -341,7 +383,7 @@ editorPane = (function() {
         t = markCaretPos(t);
         let lipos = -1;
         for(let i=0; i<nodenum+1; i++) {
-            lipos = t.indexOf("<li>", lipos+1);
+            [lipos, len] = indexOfRegex(t, /<li[^>]*>/i, lipos+1);
         }
         if(lipos < 0) {
             // out of range
@@ -349,7 +391,7 @@ editorPane = (function() {
         }
         let clipos = t.indexOf("</li>", lipos);
 
-        let tp = t.substring(lipos+4, clipos);
+        let tp = t.substring(lipos+len, clipos);
 
         // preserve BR before stripping tags
         tp = tp.replaceAll("\n", "");
@@ -394,7 +436,7 @@ editorPane = (function() {
         if(p2 >= 0) {
             tp = tp.substring(0, p2) + "\0 r" + tp.substring(p2);
         }
-        t = t.substring(0, lipos+4) + tp + t.substring(clipos);
+        t = t.substring(0, lipos+len) + tp + t.substring(clipos);
         unmarkCaretPos(t);
     }
 
@@ -415,6 +457,8 @@ editorPane = (function() {
         let licnt = 0;
         while(true) {
             t = t.substring(lipos+1);
+            r1 -= lipos+1;
+            r2 -= lipos+1;
             lipos = t.search(/<li[^>]*>/);
             if(lipos < 0) {
                 break;
@@ -445,7 +489,7 @@ editorPane = (function() {
         // don't mark caret, we will mark it ourselves here
         let lipos = -1;
         for(let i=0; i<nodenum+1; i++) {
-            lipos = t.indexOf("<li>", lipos+1);
+            [lipos, len] = indexOfRegex(t, /<li[^>]*>/i, lipos+1);
         }
         if(lipos < 0) {
             // out of range
@@ -454,7 +498,7 @@ editorPane = (function() {
         let clipos = t.indexOf("</li>", lipos);
         t = t.substring(0, clipos) + "\0 n\0 r" + t.substring(clipos)
         unmarkCaretPos(t)
-
+        
         // scroll to caret
         const isSupported = typeof window.getSelection !== "undefined";
         if (isSupported) {
@@ -469,6 +513,15 @@ editorPane = (function() {
             }
             el.scroll(l, t);
         }
+
+        highlightSelected++;
+        cleanupHTML();
+        setTimeout(() => {
+            highlightSelected--;
+            if(highlightSelected == 0) {
+                cleanupHTML();
+            }
+        }, 200);
     }
 
     $(document).ready(function() {
@@ -510,18 +563,18 @@ editorPane = (function() {
                             indent_level += findCnt(t[i], "<ul>") - findCnt(t[i], "</ul>");
                         }
                         for(var i=p1; i<= p2; i++) {
-                            let first_li = t[i].indexOf("<li>");
+                            let [first_li, len] = indexOfRegex(t[i], /<li[^>]*>/i, 0);
                             if(first_li >= 0) {
                                 let my_il = indent_level + findCnt(t[i].substring(0, first_li), "<ul>") - findCnt(t[i].substring(0, first_li), "</ul>");
                                 if(my_il > 1) {
-                                    t[i] = t[i].replaceAll("<li>", "</ul><li>") + "<ul>";
+                                    t[i] = t[i].replaceAll(/<li[^>]*>/gi, "</ul><li>") + "<ul>";
                                 }
                             }
                             indent_level += findCnt(t[i], "<ul>") - findCnt(t[i], "</ul>");
                         }
                     } else {
                         for(var i=p1; i<= p2; i++) {
-                            t[i] = t[i].replaceAll("<li>", "<ul><li>") + "</ul>";
+                            t[i] = t[i].replaceAll(/<li[^>]*>/gi, "<ul><li>") + "</ul>";
                         }
                     }
                 }
