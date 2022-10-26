@@ -1,7 +1,6 @@
 // editor pane encapsulation
 
 editorPane = (function() {
-    var skipObserve = false;
     var observer = null;
     function on(ev, f) {
         $("#textedit").on(ev, f);
@@ -211,81 +210,92 @@ editorPane = (function() {
     }
     function cleanupHTML() {
         let el = document.getElementById("textedit");
-        let text = el.innerHTML;
+
+        let t = el.innerHTML;
         // console.log("begin", text)
-        text = markCaretPos(text);
+        t = markCaretPos(t);
+        t = t.replace(/<ul[^>]*>/gi, "\0 u");
+        t = t.replace(/<\/ul>/gi, "\0 U");
+        t = t.replace(/<li[^>]*>/gi, "\0 l");
+        t = t.replace(/<\/?br\/?>/gi, "\0 b");
+        t = t.replace(/<\/li>/gi, "\0 L");
+        t = t.replace(/<[^>]*>/g, ""); // strip tags
+        t = t.replace(/\s+/g, " "); // collapse whitespace;
 
-        // we need the '<li>' element if we typed something but the current cursor is not part of the current text
-        let p = getCaretBeginIndex(el);
-        if(p >= 0) {
-            let [celement, cpos] = findRangeFromCharPos(el, p);
-            function foundLi(elem) {
-                if(elem === el || elem === null) {
-                    return false;
-                } else if(elem.tagName == "LI" || elem.tagName == "li") {
-                    return true;
-                } else {
-                    return foundLi(elem.parentElement);
-                }
-            }
-            function foundUl(elem) {
-                if(elem === el || elem === null) {
-                    return false;
-                } else if(elem.tagName == "LI" || elem.tagName == "li") {
-                    return true;
-                } else {
-                    return foundLi(elem.parentElement);
-                }
-            }
-            if(!foundLi(celement)) {
-                if(foundUl(celement)) {
-                    text = text.replace(/([^>]*\0 n[^<]*)/, "<li>$1</li>");
-                } else {
-                    text = text.replace(/([^>]*\0 n[^<]*)/, "<ul><li>$1</li></ul>");
-                }
-            }
+        let tout = "";
+        let copyMode = false;
+        let ptr = 0;
+        let level = 0;
+        let tagOpen = false;
+        let closeUlOnNextLi = false;
+        let lastc = '\0';
+        function _li() {
+            tout += "<li class=\"level"+Math.min(level, 8)+"\">"
         }
-
-        // if we start with a LI without a UL, wrap the whole text with a UL
-        if(text.indexOf("<ul>") < 0 || text.indexOf("<ul>") > text.indexOf("<li>")) {
-            text = "<ul>" + text + "</ul>" 
-        }
-        text = text.replaceAll("<ul>", "\0 u")
-        text = text.replaceAll("</ul>", "\0 U")
-        text = text.replaceAll("<li>", "\0 l")
-        text = text.replaceAll("<br>", "\0 b")
-        text = text.replaceAll("<br/>", "\0 b")
-        text = text.replaceAll("</li>", "\0 L")
-        text = text.replaceAll(/<[^>]*>/g, "") // strip tags
-        text = text.replaceAll(/\s+/g, " ") // collapse whitespace;
-
-        // console.log("s0", text)
         while(true) {
-            let t2 = text.replaceAll(/\0 U ?\0 u/g, " ")
-                         .replaceAll(/\0 u ?\0 U/g, " ")
-                         // strip stray BRs between ULs (not useful)
-                         .replaceAll(/\0 u ?\0 b/g, "\0 u")
-                         .replaceAll(/\0 U ?\0 b/g, "\0 U")
-                         .replaceAll(/\0 b ?\0 u/g, "\0 u")
-                         .replaceAll(/\0 b ?\0 U/g, "\0 U")
-                         .replaceAll(/\s+/g, " ") // collapse whitespace;
-            if(t2 == text) break;
-            text = t2;
+            const p = t.indexOf("\0 ", ptr);
+            if( p < 0) {
+                if(copyMode){
+                    tout += t.substring(ptr);
+                }
+                break;
+            }
+            if(copyMode){
+                let l = t.substring(ptr, p);
+                if(lastc == 'l') {
+                    l = l.replace(/^ *(\[[0-9\- ]*\]) */, "<span class=\"pos\">$1</span> ");
+                }
+                tout += l;
+            }
+            const c = t.charAt(p+2);
+            if(c == "u") {
+                level++;
+                tout += "<ul>";
+            } else if(c == "U") {
+                level--;
+                tout += "</ul>";
+            } else if(c == "l") {
+                if(tagOpen) {
+                    tout += "</li>\n";
+                    if(closeUlOnNextLi) {
+                        closeUlOnNextLi = false;
+                        tout += "</ul>";
+                        level--;
+                    }
+                }
+                tagOpen = true;
+                if(level == 0) {
+                    tout += "<ul>";
+                    level++;
+                    closeUlOnNextLi = true;
+                }
+                _li();
+                copyMode = true;
+            } else if(c == "L") {
+                if(tagOpen) {
+                    tout += "</li>\n";
+                    copyMode = false;
+                    if(closeUlOnNextLi) {
+                        closeUlOnNextLi = false;
+                        tout += "</ul>";
+                        level--;
+                    }
+                }
+                tagOpen = false;
+            } else if(c == "b") {
+                if(tagOpen) {
+                    tout += "<br>";
+                }
+            } else if(c == "n") {
+                tout += "\0 n"; 
+            } else if(c == "r") {
+                tout += "\0 r"; 
+            }
+            lastc = c;
+            ptr = p + 3;
         }
-        // console.log("s1", text)
-        text = text.replaceAll(/\0 l *\[([0-9\-]+) +([0-9\-]+)\]/g, "\0 l <i>[$1 $2]</i>"); 
-        // console.log("s2", text)
-        text = text.replaceAll("\0 u", "<ul>")
-                .replaceAll("\0 U", "</ul>")
-                .replaceAll("\0 l", "<li>")
-                .replaceAll("\0 b", "<br>")
-                .replaceAll("\0 L", "</li>\n" );
 
-        // console.log(text)
-        skipObserve = true;
-        // console.log("end", text)
-        unmarkCaretPos(text);
-        skipObserve = false;
+        unmarkCaretPos(tout);
     }
 
     function getProcessed() {
@@ -404,7 +414,8 @@ editorPane = (function() {
         let lipos = -1;
         let licnt = 0;
         while(true) {
-            lipos = t.indexOf("<li>", lipos+1);
+            t = t.substring(lipos+1);
+            lipos = t.search(/<li[^>]*>/);
             if(lipos < 0) {
                 break;
             }
