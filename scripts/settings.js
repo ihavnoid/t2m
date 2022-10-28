@@ -13,7 +13,7 @@ settings = (function() {
                 +"          https://github.com/tobloef/text2mindmap</li>"
                 +"      <li>http://github.com/ihavnoid/t2m/</li></ul>"
                 +"    <li><i>[100 -300]</i> Notes</li>"
-                +"<ul>  <li>Nodes should start with a dash (-)</li>"
+                +"<ul>  <li>Nodes' indentation level used as hierarchy levels</li>"
                 +"      <li>Plaintext will be added on the node as comments</li>"
                 +"      <li>Nodes with fixed locations will have its [x y] coordinates right after the dash</li></ul>"
                 +"  <li><i>[100 0]</i> Shortcuts:</li>"

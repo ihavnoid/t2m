@@ -2,6 +2,7 @@
 
 editorPane = (function() {
     var nodeColors = {};
+    var processed = "";
     function setNodeColor(index, color) {
         console.log(color);
         color = color.replace(/^\s*#|\s*$/g, "");
@@ -33,6 +34,7 @@ editorPane = (function() {
     }
 
     var highlightSelected = 0;
+    var compositionRunning = false;
 
     var observer = null;
     function on(ev, f) {
@@ -42,30 +44,42 @@ editorPane = (function() {
         let options = {subtree:true, childList:true, attributes: true, characterData: true};
         observer = new MutationObserver(
             function(mutationList, observer) {
-                // console.log("mutation");
-                observer.disconnect();
-                cleanupHTML();
-                func();
-                observer.observe($("#textedit").get(0), options);
+                let refreshNeeded = refresh();
+                if(refreshNeeded) {
+                    func();
+                }
             }
         )
+        // The purpose of this code is so that we don't rebuild our text when composition is running.
+        // if we rebuild our contents while composition is running (e.g., typing syllables in Korean)
+        // the refresh routine will try to move the caret and we will end up getting corrupted letters.
+        // instead, we should only do the rebuilding when we have no composition running.
+        on("compositionstart", () => { compositionRunning = true; });
+        on("compositionend", () => { compositionRunning = false; });
         observer.observe($("#textedit").get(0), options);
     }
+    // return true if there was a change on the processed contents, which means we have to redraw the mindmap
+    // (instead of just cosmetic changes due to any external events)
     function refresh() {
-        if(observer != null) {
-            observer.disconnect();
-        }
-        cleanupHTML();
-        if(observer != null) {
-            let options = {subtree:true, childList:true, attributes: true, characterData: true};
-            observer.observe($("#textedit").get(0), options);
+        if(!compositionRunning) {
+            if(observer != null) {
+                observer.disconnect();
+            }
+            let success = cleanupHTML();
+            if(observer != null) {
+                let options = {subtree:true, childList:true, attributes: true, characterData: true};
+                observer.observe($("#textedit").get(0), options);
+            }
+            return success;
+        } else {
+            return false;
         }
     }
     function get() {
         return el.innerHTML;
     }
     function set(x) {
-        el.innerHTML = x;
+        el.innerHTML = x; // this will invoke cleanupHTML
     }
     function getPos() {
         return [getCaretBeginIndex(el), getCaretIndex(el)];
@@ -374,9 +388,13 @@ editorPane = (function() {
         }
 
         unmarkCaretPos(tout);
+        return updateProcessed();
     }
 
     function getProcessed() {
+        return processed;
+    }
+    function updateProcessed() {
         let el = document.getElementById("textedit");
         function _f(el, depth) {
             let ret = "";
@@ -410,7 +428,13 @@ editorPane = (function() {
                 }
             }
         }
-        return _f(el, 0);
+        let t = _f(el, 0);
+        if(t != processed) {
+            processed = t;
+            return true;
+        } else {
+            return false;
+        }
     }
     
     function updateTextForCoordinates(nodenum, fixed, xp, yp) {
