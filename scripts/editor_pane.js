@@ -4,7 +4,7 @@ editorPane = (function() {
     var nodeColors = {};
     var processed = "";
     function setNodeColor(index, color) {
-        console.log(color);
+        // console.log(color);
         color = color.replace(/^\s*#|\s*$/g, "");
         if(3 == color.length) {
             color = color.replace(/(.)/g, "$1$1");
@@ -15,7 +15,7 @@ editorPane = (function() {
         color = "#" + (Math.floor(384 + r/2)).toString(16).substr(1) +
             (Math.floor(384 + g/2)).toString(16).substr(1) + (Math.floor(384 + b/2)).toString(16).substr(1)
         
-        console.log(color);
+        // console.log(color);
         nodeColors[index] = color; 
     }
 
@@ -80,6 +80,7 @@ editorPane = (function() {
     }
     function set(x) {
         el.innerHTML = x; // this will invoke cleanupHTML
+        refresh();
     }
     function getPos() {
         return [getCaretBeginIndex(el), getCaretIndex(el)];
