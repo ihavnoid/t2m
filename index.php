@@ -1,3 +1,19 @@
+<?php
+    if(array_key_exists("k", $_GET)) {
+        // addslashes shouldn't be useful here, but this is to block code injection type thingies
+        $k = addslashes($_GET["k"]);
+?>
+<html>
+    <header><script>
+        localStorage.setItem("text2mindmap"+"documentTitle", JSON.stringify("<?php echo $k; ?>"));
+        window.location.replace("/");
+    </script></header>
+<body> &nbsp; </body>
+</html>
+<?php
+        exit(0);
+    }
+?>
 <!DOCTYPE HTML>
 <html>
 
@@ -38,6 +54,19 @@
     <script src="scripts/pane_resizer.js"></script>
     <script src="scripts/shortcuts.js"></script>
     <script src="scripts/main.js"></script>
+    <script>
+        key_visible = false;
+        function togglePane() {
+            key_visible = !key_visible;
+            if(key_visible) {
+                document.getElementById("keylink").innerHTML = "Hide keys"; 
+                document.getElementById("keypane").style.visibility = "visible";
+            } else {
+                document.getElementById("keylink").innerHTML = "Show keys"; 
+                document.getElementById("keypane").style.visibility = "hidden";
+            }
+        }
+    </script>
 </head>
 
 <body>
@@ -46,10 +75,17 @@
 			<ul>
 				<li class="navbar-item">
 					<div class="document-title-container">
-						<input class="document-title-input">
+						<input class="document-title-input" placeholder="(type document key to load file)">
 						<div class="document-title-mirror"></div>
 					</div>
 				</li>
+				<li class="navbar-item">
+                    <table><tr><td>
+                        <a id="keylink" href="javascript:togglePane()">Show keys</a>
+                    </td><td>
+                        <span id="keypane"></span>
+                    </td></table>
+                </li>
 				<li class="navbar-item navbar-button navbar-dropdown">
 					<a href="#">File</a>
 					<ul class="dropdown-content">

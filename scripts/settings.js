@@ -38,7 +38,7 @@ settings = (function() {
                 +"          Test some ultra-heavy large mindmaps and make sure performance is okay.<br>"
                 +"          There are some not-so-scalable code which may cause headaches in the future.</li></ul>"
                 +"</ul></ul>",
-		"documentTitle": "untitled"
+		"documentTitle": ""
 	};
 
 	// Used for converting settings values to actual font-familys.
@@ -58,18 +58,58 @@ settings = (function() {
         let xhr = new XMLHttpRequest();
         xhr.open('GET', serverBase + "/p/n.php");
         xhr.onload = (resp) => {
-            if(resp.loaded == 200 && !(rokey)) {
+            if(xhr.status == 200 && !(rokey)) {
                 let t = xhr.response;
                 t = JSON.parse(t);
                 rwkey = t["rwkey"];
                 rokey = t["rokey"];
+                documentTitle.updateKeys(rwkey, rokey);
+                if(rwkey) {
+                    editorPane.setEditable(true);
+                }
+
+                setSetting("documentTitle", rwkey);
             }
         };
         xhr.send();
     };
 
+    function updateFromServer(key) {
+        if(key == "") {
+            return;
+        }
+        syncToServer();
+        editorPane.setEditable(false);
+        let xhr = new XMLHttpRequest();
+        xhr.open('POST', serverBase + "/p/r.php");
+        let data = new FormData();
+        data.append('k', key);
+        data.append('ts', 0);
+        xhr.onload = (resp) => {
+            if(xhr.status == 200) {
+                let t = xhr.response;
+                t = JSON.parse(t);
+                if(t["contents"]) {
+                    rokey = t["rokey"];
+                    rwkey = t["rwkey"];
+                    documentTitle.updateKeys(rwkey, rokey);
+                    setSetting("contents", t["contents"]);
+                    editorPane.set(t["contents"]);
+                    mindmap.render();
+                    if(rwkey) {
+                        editorPane.setEditable(true);
+                    } else {
+                        editorPane.setEditable(false);
+                    }
+                } else {
+                    alert("Cannot find data with matching key");
+                }
+            }
+        };
+        xhr.send(data);
+    }
     function syncToServer() {
-        if(rwkey == null) {
+        if(!rwkey) {
             createRwKey();
         }
         callstack++;
@@ -93,7 +133,7 @@ settings = (function() {
 	function getSetting(key) {
 		let setting;
 		try {
-			setting = JSON.parse(sessionStorage.getItem(prefix+key));
+			setting = JSON.parse(localStorage.getItem(prefix+key));
 		} catch (exception) {
 			// Ignored
 		}
@@ -110,11 +150,23 @@ settings = (function() {
 			value = getDefaultValue(key);
 		}
 		try {
-			sessionStorage.setItem(prefix+key, JSON.stringify(value));
+			localStorage.setItem(prefix+key, JSON.stringify(value));
 		} catch (exception) {
 			console.error(`Error saving setting.\nKey: ${key}\nValue: ${value}\n`);
 		}
-        syncToServer();
+        if(key == "documentTitle") {
+            if(editorPane.isEditable()) {
+                if(rwkey != value) {
+                    updateFromServer(value);
+                } 
+            } else {
+                if(rokey != value) {
+                    updateFromServer(value);
+                }
+            }
+        } else if(key == "documentContent") {
+            syncToServer();
+        }
 	}
 
     function setText() {
@@ -180,7 +232,6 @@ settings = (function() {
 		getSetting,
 		setSetting,
         setText, undoText, redoText, clearUndoHistory,
-
 		fontFamilyMap,
 		getDefaultValue,
 		reset

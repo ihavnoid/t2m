@@ -3,6 +3,8 @@
 editorPane = (function() {
     var nodeColors = {};
     var processed = "";
+    var documentEditable = true;
+
     function setNodeColor(index, color) {
         // console.log(color);
         color = color.replace(/^\s*#|\s*$/g, "");
@@ -439,6 +441,8 @@ editorPane = (function() {
     }
     
     function updateTextForCoordinates(nodenum, fixed, xp, yp) {
+        if(!documentEditable) return;
+
         // find starting position of li element
         let t = el.innerHTML;
         t = markCaretPos(t);
@@ -586,6 +590,18 @@ editorPane = (function() {
         }, 200);
     }
 
+    function setEditable(editable) {
+        documentEditable = editable;
+        document.getElementById("textedit").contentEditable = editable;
+        if(editable) {
+            document.getElementById("textedit").style.backgroundColor = "#ffffff";
+        } else {
+            document.getElementById("textedit").style.backgroundColor = "#d0d0d0";
+        }
+    }
+    function isEditable() {
+        return documentEditable;
+    }
     $(document).ready(function() {
         el = document.getElementById("textedit");
         cleanupHTML();
@@ -676,6 +692,7 @@ editorPane = (function() {
         });
     });
     return {
-        getProcessed, get, set, getPos, setPos, on, moveCursorToNode, updateTextForCoordinates, findSelectedNodes, observe, setNodeColor, refresh
+        getProcessed, get, set, getPos, setPos, on, moveCursorToNode, updateTextForCoordinates, findSelectedNodes, observe, setNodeColor, refresh,
+        setEditable, isEditable
     };
 }());

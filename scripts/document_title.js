@@ -2,7 +2,7 @@
 // a hidden input field is mirroring the visible's field's text.
 documentTitle = (function() {
 	// Max width for the input element.
-	const maxWidth = 300;
+	const maxWidth = 650;
 	// The amount of extra width to add to the input element.
 	const extraWidth = 3;
 
@@ -61,6 +61,7 @@ documentTitle = (function() {
 		mirrorWidth($input, $mirror);
 		unsavedChanges.setHasChanges(true);
 		settings.setSetting("documentTitle", title);
+        $input.val("");
 	}
 
 	// Shift focus to the title input.
@@ -71,18 +72,23 @@ documentTitle = (function() {
 	// Mirror the text of the visble input to the hidden input.
 	// This is used to resize the input width dynamically.
 	function mirrorWidth($input, $mirror) {
-		$mirror.text($input.val());
-		let width = parseInt($mirror.css("width"));
-		if (!isNaN(width)) {
-			width += extraWidth;
-			width = Math.min(maxWidth, width);
-			$input.css("width", width + "px");
-		}
+        $input.css("width", maxWidth + "px");
 	}
 
+    function updateKeys(rwkey, rokey) {
+        let el = document.getElementById("keypane");
+        el.innerHTML = "";
+        if(rwkey) {
+            el.innerHTML += "Read-Write key : "+ rwkey + "<br>";
+        }
+        if(rokey) {
+            el.innerHTML += "Read-only key : "+ rokey + "<br>";
+        }
+    }
 	return {
 		getTitle,
 		setTitle,
-		focus
+		focus,
+        updateKeys
 	};
 }());

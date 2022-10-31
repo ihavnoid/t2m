@@ -39,3 +39,7 @@
 	margin-bottom: -1px;
 	outline: none;
 }
+#keypane {
+    visibility: hidden;
+    color: white;
+}
