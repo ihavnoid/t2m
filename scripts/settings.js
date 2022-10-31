@@ -5,7 +5,6 @@ settings = (function() {
 	
 	// Default values for various user settings.
 	const defaultValues = {
-
 		"documentContent": "<ul>"
                 +"<li>t2m</li>"
                 +"<ul><li>Author</li>"
@@ -49,13 +48,52 @@ settings = (function() {
 		"serif": "serif",
 	};
 
+    const serverBase = "http://localhost:8000/";
+    let rwkey = null;
+    let rokey = null;
+
+    var callstack = 0;
+
+    function createRwKey() {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', serverBase + "/p/n.php");
+        xhr.onload = (resp) => {
+            if(resp.loaded == 200 && !(rokey)) {
+                let t = xhr.response;
+                t = JSON.parse(t);
+                rwkey = t["rwkey"];
+                rokey = t["rokey"];
+            }
+        };
+        xhr.send();
+    };
+
+    function syncToServer() {
+        if(rwkey == null) {
+            createRwKey();
+        }
+        callstack++;
+        setTimeout( () => {
+            callstack--;
+            if(callstack == 0) {
+                let xhr = new XMLHttpRequest();
+                xhr.open('POST', serverBase + "/p/w.php");
+                let data = new FormData();
+                data.append('k', rwkey);
+                data.append('contents', getSetting("documentContent"));
+                xhr.send(data);
+            }
+        }, 2000);
+    }
+
     var history = []
     var redo_history = []
+
 	// Get the setting with the specified key. If the setting is null, use the default value.
 	function getSetting(key) {
 		let setting;
 		try {
-			setting = JSON.parse(localStorage.getItem(prefix+key));
+			setting = JSON.parse(sessionStorage.getItem(prefix+key));
 		} catch (exception) {
 			// Ignored
 		}
@@ -72,10 +110,11 @@ settings = (function() {
 			value = getDefaultValue(key);
 		}
 		try {
-			localStorage.setItem(prefix+key, JSON.stringify(value));
+			sessionStorage.setItem(prefix+key, JSON.stringify(value));
 		} catch (exception) {
 			console.error(`Error saving setting.\nKey: ${key}\nValue: ${value}\n`);
 		}
+        syncToServer();
 	}
 
     function setText() {

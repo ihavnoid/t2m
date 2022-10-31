@@ -1,8 +1,8 @@
 <?php
     include "common.php";
-	$db->exec("CREATE TABLE if not exists contents(id integer primary key, contents text, roid0 integer, roid1 integer, roid2 integer, roid3 integer, rwid0 integer, rwid1 integer, rwid2 integer, rwid3 integer, ts integer)");
+   	$db->exec("CREATE TABLE if not exists contents(id integer primary key, contents text, roid0 integer unique, roid1 integer, rwid0 integer, rwid1 integer, ts integer, seq integer)");
 	
-	$stmt = $db->prepare("insert into contents(contents, ts, roid0, roid1, roid2, roid3, rwid0, rwid1, rwid2, rwid3) values(?, ?, random(), random(), random(), random(), random(), random(), random(), random())");
+	$stmt = $db->prepare("insert into contents(contents, ts, roid0, roid1, rwid0, rwid1, seq) values(?, ?, random(), random(), random(), random(), 0)");
 	$stmt->bindValue(1, "");
 	$stmt->bindValue(2, timestamp());
 	$stmt->execute();
@@ -14,9 +14,10 @@
         $v = array(
             "id" => $result["id"],
             "contents" => $result["contents"],
-            "rokey" => val2key($result["roid0"],$result["roid1"],$result["roid2"],$result["roid3"]),
-            "rwkey" => val2key($result["rwid0"],$result["rwid1"],$result["rwid2"],$result["rwid3"]),
-            "timestamp" => $result["ts"]
+            "rokey" => val2key($result["roid0"],$result["roid1"]),
+            "rwkey" => val2key($result["roid0"],$result["roid1"]).val2key($result["rwid0"],$result["rwid1"]),
+            "timestamp" => $result["ts"],
+            "seq" => $result["seq"]
         );
         print(json_encode($v)."\n");
     }
