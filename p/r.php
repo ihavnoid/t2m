@@ -26,6 +26,7 @@
     	while($result = $row->fetchArray(SQLITE3_ASSOC)) {
             $v = array(
                     "id" => $result["id"],
+                    "title" => $result["title"],
                     "contents" => $result["contents"],
                     "rokey" => val2key($result["roid0"],$result["roid1"]),
                     "rwkey" => val2key($result["roid0"],$result["roid1"]).val2key($result["rwid0"],$result["rwid1"]),
@@ -46,6 +47,7 @@
     	while($result = $row->fetchArray(SQLITE3_ASSOC)) {
             $v = array(
                     "id" => $result["id"],
+                    "title" => $result["title"],
                     "contents" => $result["contents"],
                     "rokey" => val2key($result["roid0"],$result["roid1"]),
                     "timestamp" => $result["ts"],

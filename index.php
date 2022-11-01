@@ -5,7 +5,7 @@
 ?>
 <html>
     <header><script>
-        localStorage.setItem("text2mindmap"+"documentTitle", JSON.stringify("<?php echo $k; ?>"));
+        sessionStorage.setItem("text2mindmap"+"documentTitle", JSON.stringify("<?php echo $k; ?>"));
         window.location.replace("/");
     </script></header>
 <body> &nbsp; </body>

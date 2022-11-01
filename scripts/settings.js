@@ -58,15 +58,16 @@ settings = (function() {
         let el1 = document.getElementById("keypane1");
         let el2 = document.getElementById("keypane2");
         if(rwkey) {
-            el1.innerHTML = "<a href=\"" + serverBase + "/?k=" + rwkey + "\">Read-Write link</a> &nbsp; ";
+            el1.innerHTML = "<a target=\"#\" href=\"" + serverBase + "/?k=" + rwkey + "\">Read-Write link</a> &nbsp; ";
         } else {
             el1.innerHTML = "&nbsp;";
         }
         if(rokey) {
-            el2.innerHTML = "<a href=\"" + serverBase + "/?k=" + rokey + "\">Read-Only link</a> &nbsp; ";
+            el2.innerHTML = "<a target=\"#\" href=\"" + serverBase + "/?k=" + rokey + "\">Read-Only link</a> &nbsp; ";
         } else {
             el2.innerHTML = "&nbsp;";
         }
+        addVisitedPages();
     }
     function createRwKey() {
         let xhr = new XMLHttpRequest();
@@ -109,7 +110,6 @@ settings = (function() {
                     rokey = t["rokey"];
                     rwkey = t["rwkey"];
                     updateKeys(rwkey, rokey);
-                    setSetting("contents", t["contents"]);
                     editorPane.set(t["contents"]);
                     mindmap.render();
                     if(rwkey) {
@@ -125,6 +125,15 @@ settings = (function() {
         };
         xhr.send(data);
     }
+    function findTitle() {
+        let t2 = editorPane.getProcessed();
+        let begin = t2.indexOf('-');
+        let end = t2.indexOf('\n', begin);
+        t2 = t2.substring(begin+1, end).trim();
+        t2 = t2.replace(/^\[[0-9\- ]*\] */g, "");
+
+        return t2;
+    }
     function syncToServer() {
         if(!rwkey) {
             createRwKey();
@@ -137,7 +146,10 @@ settings = (function() {
                 xhr.open('POST', serverBase + "/p/w.php");
                 let data = new FormData();
                 data.append('k', rwkey);
-                data.append('contents', getSetting("documentContent"));
+
+                let t = getSetting("documentContent");
+                data.append('contents', t);
+                data.append('title', findTitle());
                 xhr.send(data);
             }
         }, 2000);
@@ -146,11 +158,36 @@ settings = (function() {
     var history = []
     var redo_history = []
 
+    function addVisitedPages() {
+        let setting;
+        try {
+            setting = JSON.parse(localStorage.getItem(prefix + "visitedPages"));
+        } catch (exception) {
+            console.log(exception);
+        }
+        if (!setting || setting == "" || typeof setting == "Array") {
+            setting = {};
+        }
+        if(rokey) {
+            let d = { "rokey" : rokey};
+            if(setting.hasOwnProperty("rokey")) {
+                d = setting[rokey];
+            }
+            if(rwkey) {
+                d["rwkey"] = rwkey;
+            }
+            d["title"] = findTitle();
+            setting[rokey] = d;
+        }
+        localStorage.setItem(prefix + "visitedPages", JSON.stringify(setting));
+        console.log(setting);
+    }
+
 	// Get the setting with the specified key. If the setting is null, use the default value.
 	function getSetting(key) {
 		let setting;
 		try {
-			setting = JSON.parse(localStorage.getItem(prefix+key));
+			setting = JSON.parse(sessionStorage.getItem(prefix+key));
 		} catch (exception) {
 			// Ignored
 		}
@@ -167,7 +204,7 @@ settings = (function() {
 			value = getDefaultValue(key);
 		}
 		try {
-			localStorage.setItem(prefix+key, JSON.stringify(value));
+			sessionStorage.setItem(prefix+key, JSON.stringify(value));
 		} catch (exception) {
 			console.error(`Error saving setting.\nKey: ${key}\nValue: ${value}\n`);
 		}
