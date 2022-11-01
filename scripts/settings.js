@@ -48,22 +48,29 @@ settings = (function() {
 		"serif": "serif",
 	};
 
-    const serverBase = "http://localhost:8000/";
     let rwkey = null;
     let rokey = null;
 
     var callstack = 0;
+    var last_timestamp = 0;
 
     function updateKeys(rwkey, rokey) {
         let el1 = document.getElementById("keypane1");
         let el2 = document.getElementById("keypane2");
         if(rwkey) {
-            el1.innerHTML = "<a target=\"#\" href=\"" + serverBase + "/?k=" + rwkey + "\">Read-Write link</a> &nbsp; ";
+            el1.innerHTML = "<a target=\"_blank\" href=\"" + __serverBase__ + "/?k=" + rwkey + "\">Read-Write link</a> &nbsp; ";
+            document.getElementById("autoupdate").checked = false;
+            document.getElementById("autoupdate").disabled = true;
         } else {
-            el1.innerHTML = "&nbsp;";
+            if(document.getElementById("autoupdate").disabled) {
+                el1.innerHTML = "<a>(read-only)</a>";
+                document.getElementById("autoupdate").checked = true;
+                document.getElementById("autoupdate").disabled = false;
+                enableAutoUpdate();
+            }
         }
         if(rokey) {
-            el2.innerHTML = "<a target=\"#\" href=\"" + serverBase + "/?k=" + rokey + "\">Read-Only link</a> &nbsp; ";
+            el2.innerHTML = "<a target=\"_blank\" href=\"" + __serverBase__ + "/?k=" + rokey + "\">Read-Only link</a> &nbsp; ";
         } else {
             el2.innerHTML = "&nbsp;";
         }
@@ -71,7 +78,7 @@ settings = (function() {
     }
     function createRwKey() {
         let xhr = new XMLHttpRequest();
-        xhr.open('GET', serverBase + "/p/n.php");
+        xhr.open('GET', __serverBase__ + "/p/n.php");
         xhr.onload = (resp) => {
             if(xhr.status == 200 && !(rokey)) {
                 let t = xhr.response;
@@ -81,9 +88,11 @@ settings = (function() {
                 updateKeys(rwkey, rokey);
                 if(rwkey) {
                     editorPane.setEditable(true);
+                    setSetting("documentTitle", rwkey);
+                } else {
+                    setSetting("documentTitle", rokey);
                 }
-
-                setSetting("documentTitle", rwkey);
+                last_timestamp = 0;
             }
         };
         xhr.send();
@@ -98,10 +107,11 @@ settings = (function() {
         }
         editorPane.setEditable(false);
         let xhr = new XMLHttpRequest();
-        xhr.open('POST', serverBase + "/p/r.php");
+        xhr.open('POST', __serverBase__ + "/p/r.php");
         let data = new FormData();
         data.append('k', key);
-        data.append('ts', 0);
+        let ts = last_timestamp;
+        data.append('ts', ts);
         xhr.onload = (resp) => {
             if(xhr.status == 200) {
                 let t = xhr.response;
@@ -109,15 +119,18 @@ settings = (function() {
                 if(t["contents"]) {
                     rokey = t["rokey"];
                     rwkey = t["rwkey"];
+                    last_timestamp = t["timestamp"];
                     updateKeys(rwkey, rokey);
                     editorPane.set(t["contents"]);
                     mindmap.render();
                     if(rwkey) {
                         editorPane.setEditable(true);
+                        setSetting("documentTitle", rwkey);
                     } else {
                         editorPane.setEditable(false);
+                        setSetting("documentTitle", rokey);
                     }
-                } else {
+                } else if(ts == 0) {
                     console.log(t);
                     alert("Cannot find data with matching key " + key);
                 }
@@ -143,7 +156,7 @@ settings = (function() {
             callstack--;
             if(callstack == 0) {
                 let xhr = new XMLHttpRequest();
-                xhr.open('POST', serverBase + "/p/w.php");
+                xhr.open('POST', __serverBase__ + "/p/w.php");
                 let data = new FormData();
                 data.append('k', rwkey);
 
@@ -222,6 +235,16 @@ settings = (function() {
             syncToServer();
         }
 	}
+    function enableAutoUpdate() {
+        if(!document.getElementById("autoupdate").checked) { return; }
+
+        if(rwkey) {
+            return;
+        }
+        console.log("auto-update");
+        updateFromServer(rokey);
+        setTimeout(enableAutoUpdate, 2000);
+    }
 
     function setText() {
         let value = editorPane.get();
@@ -282,6 +305,9 @@ settings = (function() {
 		}
 	}
 
+    $(document).ready(function() {
+        document.getElementById("autoupdate").addEventListener("change", enableAutoUpdate);
+    });
 	return {
 		getSetting,
 		setSetting,

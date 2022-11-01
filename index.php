@@ -13,6 +13,8 @@
 <?php
         exit(0);
     }
+
+    $config = json_decode(file_get_contents(__DIR__."/config.json"));
 ?>
 <!DOCTYPE HTML>
 <html>
@@ -27,6 +29,9 @@
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/jquery.minicolors/2.0.4/jquery.minicolors.css"/>
 	<script defer src="https://use.fontawesome.com/releases/v5.0.9/js/all.js" integrity="sha384-8iPTk2s/jMVj81dnzb/iFR2sdA7u06vHJyyLlAd4snFpCl/SnyUjRrbdJsw1pGIl" crossorigin="anonymous"></script>
 
+    <script>
+        __serverBase__ = "<?php echo $config->base_url;?>";
+    </script>
     <link rel="stylesheet" href="styles/app.css">
     <link rel="stylesheet" href="styles/navbar.css">
     <link rel="stylesheet" href="styles/modal.css">
@@ -80,6 +85,12 @@
 						<li><a href="#" id="file-preferences"><i class="fa fa-cogs fa-fw"></i>Preferences</a></li>
 					</ul>
 				</li>
+				<li class="navbar-item" style="width: 200px;">
+                    <a href="visited.php" target="_blank">Show pages visited</a>
+                </li>
+				<li id="keypane3" class="navbar-item" style="width: 200px;">
+                    <a><input type="checkbox" value="true" id="autoupdate" name="autoupdate" disabled> &nbsp; <label for="autoupdate">Auto-update</label></a>
+                </li>
 			</ul>
 		</div>
 

@@ -1,7 +1,11 @@
-<?php $base = "/";?>
+<?php
+    $config = json_decode(file_get_contents(__DIR__."/config.json"));
+    $base = $config->base_url;
+?>
 
 <!DOCTYPE HTML>
 <html>
+<title>text2mindmap - pages visited</title>
 <style>
     table {
         border-collapse: collapse;
@@ -26,9 +30,9 @@ function build_table() {
             if(setting.hasOwnProperty(p)) {
                 let o = setting[p];
                 t2 += "<tr><td>"+o["title"]+"</td>";
-                t2 += "<td><a href=\"<?php echo $base?>?k=" + o["rokey"] + "\" target=\"#\">Read-only</a></td>";
+                t2 += "<td><a href=\"<?php echo $base?>?k=" + o["rokey"] + "\" target=\"_blank\">Read-only</a></td>";
                 if(o.hasOwnProperty("rwkey")) {
-                    t2 += "<td><a href=\"<?php echo $base?>?k=" + o["rwkey"] + "\" target=\"#\">Read-write</a></td>";
+                    t2 += "<td><a href=\"<?php echo $base?>?k=" + o["rwkey"] + "\" target=\"_blank\">Read-write</a></td>";
                 } else {
                     t2 += "<td> &nbsp; </td>";
                 }
