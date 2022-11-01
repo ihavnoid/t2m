@@ -23,4 +23,5 @@
 	$stmt->bindValue(7, $v4, SQLITE3_INTEGER);
 	$result = $stmt->execute();
     print($db->changes());
+    $db->close();
 ?>

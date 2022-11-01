@@ -4,52 +4,49 @@ settings = (function() {
 	const prefix = "text2mindmap";
 	
 	// Default values for various user settings.
-	const defaultValues = {
-		"documentContent": "<ul>"
-                +"<li>t2m</li>"
-                +"<ul><li>Author</li>"
-                +"<ul>  <li>This is a modified version of text2mindmap<br>"
-                +"          https://github.com/tobloef/text2mindmap</li>"
-                +"      <li>http://github.com/ihavnoid/t2m/</li></ul>"
-                +"    <li><i>[100 -300]</i> Notes</li>"
-                +"<ul>  <li>Start creating your own mindmap by editing this text!</li>"
-                +"      <li>Nodes' indentation level used as hierarchy levels</li>"
-                +"      <li>Plaintext will be added on the node as comments</li>"
-                +"      <li>Nodes with fixed locations will have its [x y] coordinates right after the dash</li>"
-                +"      <li>To share the mindmap with other people, please share the links (read-only and read-write) with other people.</li>"
-                +"      <ul><li>Read-only pages have an autoupdate option which reloads the contents as it gets edited (with some delay)</li></ul>"
-                +"      <li>Careful - there is no locking mechanism permitting multiple people editing the same page!</li></ul>"
-                +"  <li><i>[100 0]</i> Shortcuts:</li>"
-                +"<ul>  <li>ctrl-enter<br>"
-                +"          redraw</li>"
-                +"      <li>ctrl-]<br>"
-                +"          freeze selected nodes in text region</li>"
-                +"      <li>ctrl-[<br>"
-                +"          unfreeze selected nodes in text region</li>"
-                +"      <li>tab / shift-tab<br>"
-                +"          indent/de-indent selected region</li>"
-                +"      <li>ctrl-z<br>"
-                +"          undo</li>"
-                +"      <li>ctrl-y<br>"
-                +"          redo</li></ul>"
-                +"  <li>[-150 0] mouse:</li>"
-                +"<ul>  <li>Dragging node<br>"
-                +"          moves node location and locks the node position</li>"
-                +"      <li>Shift-dragging node<br>"
-                +"          moves node and all children's location, and locks only the clicked node</li></ul>"
-                +"  <li>Installing</li>"
-                +"<ul>  <li>prerequisites<br>"
-                +"          Server with php7 or later<br>"
-                +"          sqlite3 (and php-sqlite) for storing mindmaps</li>"
-                +"      <li>clone http://github.com/ihavnoid/t2m/ and then create config.json<br>"
-                +"          Please refer to config.json.example for your own config settings.</li></ul>"
-                +"  <li>TODO</li>"
-                +"<ul>  <li>Performance optimization<br>"
-                +"          Test some ultra-heavy large mindmaps and make sure performance is okay.<br>"
-                +"          There are some not-so-scalable code which may cause headaches in the future.</li></ul>"
-                +"</ul></ul>",
-		"documentTitle": ""
-	};
+	const defaultContent = "<ul>"
+        +"<li>t2m</li>"
+        +"<ul><li>Author</li>"
+        +"<ul>  <li>This is a modified version of text2mindmap<br>"
+        +"          https://github.com/tobloef/text2mindmap</li>"
+        +"      <li>http://github.com/ihavnoid/t2m/</li></ul>"
+        +"    <li><i>[100 -300]</i> Notes</li>"
+        +"<ul>  <li>Start creating your own mindmap by editing this text!</li>"
+        +"      <li>Nodes' indentation level used as hierarchy levels</li>"
+        +"      <li>Plaintext will be added on the node as comments</li>"
+        +"      <li>Nodes with fixed locations will have its [x y] coordinates right after the dash</li>"
+        +"      <li>To share the mindmap with other people, please share the links (read-only and read-write) with other people.</li>"
+        +"      <ul><li>Read-only pages have an autoupdate option which reloads the contents as it gets edited (with some delay)</li></ul>"
+        +"      <li>Careful - there is no locking mechanism permitting multiple people editing the same page!</li></ul>"
+        +"  <li><i>[100 0]</i> Shortcuts:</li>"
+        +"<ul>  <li>ctrl-enter<br>"
+        +"          redraw</li>"
+        +"      <li>ctrl-]<br>"
+        +"          freeze selected nodes in text region</li>"
+        +"      <li>ctrl-[<br>"
+        +"          unfreeze selected nodes in text region</li>"
+        +"      <li>tab / shift-tab<br>"
+        +"          indent/de-indent selected region</li>"
+        +"      <li>ctrl-z<br>"
+        +"          undo</li>"
+        +"      <li>ctrl-y<br>"
+        +"          redo</li></ul>"
+        +"  <li>[-150 0] mouse:</li>"
+        +"<ul>  <li>Dragging node<br>"
+        +"          moves node location and locks the node position</li>"
+        +"      <li>Shift-dragging node<br>"
+        +"          moves node and all children's location, and locks only the clicked node</li></ul>"
+        +"  <li>Installing</li>"
+        +"<ul>  <li>prerequisites<br>"
+        +"          Server with php7 or later<br>"
+        +"          sqlite3 (and php-sqlite) for storing mindmaps</li>"
+        +"      <li>clone http://github.com/ihavnoid/t2m/ and then create config.json<br>"
+        +"          Please refer to config.json.example for your own config settings.</li></ul>"
+        +"  <li>TODO</li>"
+        +"<ul>  <li>Performance optimization<br>"
+        +"          Test some ultra-heavy large mindmaps and make sure performance is okay.<br>"
+        +"          There are some not-so-scalable code which may cause headaches in the future.</li></ul>"
+        +"</ul></ul>";
 
 	// Used for converting settings values to actual font-familys.
 	const fontFamilyMap = {
@@ -86,36 +83,52 @@ settings = (function() {
         }
         addVisitedPages();
     }
+
+    function findTitle() {
+        let t2 = editorPane.getProcessed();
+        let begin = t2.indexOf('-');
+        let end = t2.indexOf('\n', begin);
+        t2 = t2.substring(begin+1, end).trim();
+        t2 = t2.replace(/^\[[0-9\- ]*\] */g, "");
+
+        return t2;
+    }
+
     function createRwKey() {
+        console.log("createRwKey");
         let xhr = new XMLHttpRequest();
         xhr.open('GET', __serverBase__ + "/p/n.php");
         xhr.onload = (resp) => {
             if(xhr.status == 200 && !(rokey)) {
                 let t = xhr.response;
                 t = JSON.parse(t);
+                console.log("createRwKey", "resp", t);
+                if(rokey) {
+                    // race condition - we already have key.
+                    // barf as we don't want to throw away key from server
+                    return;
+                } 
                 rwkey = t["rwkey"];
                 rokey = t["rokey"];
-                updateKeys(rwkey, rokey);
                 if(rwkey) {
                     editorPane.setEditable(true);
-                    setSetting("documentTitle", rwkey);
+                    sessionStorage.setItem(prefix + "documentTitle", JSON.stringify(rwkey));
                 } else {
-                    setSetting("documentTitle", rokey);
+                    editorPane.setEditable(false);
+                    sessionStorage.setItem(prefix + "documentTitle", JSON.stringify(rokey));
                 }
+                updateKeys(rwkey, rokey);
                 last_timestamp = 0;
+    
+                syncToServer();
             }
         };
         xhr.send();
     };
 
     function updateFromServer(key) {
-        if(key == "") {
-            rwkey = null;
-            rokey = null;
-            syncToServer();
-            return;
-        }
-        editorPane.setEditable(false);
+        console.log("updateFromServer", key);
+
         let xhr = new XMLHttpRequest();
         xhr.open('POST', __serverBase__ + "/p/r.php");
         let data = new FormData();
@@ -126,51 +139,55 @@ settings = (function() {
             if(xhr.status == 200) {
                 let t = xhr.response;
                 t = JSON.parse(t);
+                console.log("updateFromServer", "resp", t);
                 if(t["contents"]) {
                     rokey = t["rokey"];
                     rwkey = t["rwkey"];
                     last_timestamp = t["timestamp"];
-                    updateKeys(rwkey, rokey);
+
                     editorPane.set(t["contents"]);
+                    editorPane.refresh();
+
+                    updateKeys(rwkey, rokey);
                     mindmap.render();
                     if(rwkey) {
                         editorPane.setEditable(true);
-                        setSetting("documentTitle", rwkey);
+                        sessionStorage.setItem(prefix + "documentTitle", JSON.stringify(rwkey));
                     } else {
                         editorPane.setEditable(false);
-                        setSetting("documentTitle", rokey);
+                        sessionStorage.setItem(prefix + "documentTitle", JSON.stringify(rokey));
                     }
                 } else if(ts == 0) {
                     console.log(t);
                     alert("Cannot find data with matching key " + key);
                 }
+            } else {
+                updateFromServer(key);
             }
         };
         xhr.send(data);
     }
-    function findTitle() {
-        let t2 = editorPane.getProcessed();
-        let begin = t2.indexOf('-');
-        let end = t2.indexOf('\n', begin);
-        t2 = t2.substring(begin+1, end).trim();
-        t2 = t2.replace(/^\[[0-9\- ]*\] */g, "");
 
-        return t2;
-    }
     function syncToServer() {
-        if(!rwkey) {
+        console.log("synctoServer");
+        if(!rokey) {
             createRwKey();
+            return;
         }
+
+        addVisitedPages();
         callstack++;
         setTimeout( () => {
             callstack--;
-            if(callstack == 0) {
+            // if we don't have key, then we give up syncing.  we will have future chance to do so
+            if(callstack == 0 && rwkey) {
+                console.log("synctoServer", "push", rwkey);
                 let xhr = new XMLHttpRequest();
                 xhr.open('POST', __serverBase__ + "/p/w.php");
                 let data = new FormData();
                 data.append('k', rwkey);
 
-                let t = getSetting("documentContent");
+                let t = editorPane.get();
                 data.append('contents', t);
                 data.append('title', findTitle());
                 xhr.send(data);
@@ -193,7 +210,7 @@ settings = (function() {
         }
         if(rokey) {
             let d = { "rokey" : rokey};
-            if(setting.hasOwnProperty("rokey")) {
+            if(setting.hasOwnProperty(rokey)) {
                 d = setting[rokey];
             }
             if(rwkey) {
@@ -206,45 +223,20 @@ settings = (function() {
         console.log(setting);
     }
 
-	// Get the setting with the specified key. If the setting is null, use the default value.
-	function getSetting(key) {
-		let setting;
-		try {
-			setting = JSON.parse(sessionStorage.getItem(prefix+key));
-		} catch (exception) {
-			// Ignored
-		}
-		if (!setting || setting == "") {
-			setting = getDefaultValue(key);
-			setSetting(key, setting);
-		}
-		return setting;
-	}
+    // new document
+    function createNew() {
+        editorPane.setEditable(false);
+        clearUndoHistory();
+        rwkey = null;
+        rokey = null;
 
-	// Set the setting with the specified key to the specified value.
-	function setSetting(key, value) {
-		if (!value) {
-			value = getDefaultValue(key);
-		}
-		try {
-			sessionStorage.setItem(prefix+key, JSON.stringify(value));
-		} catch (exception) {
-			console.error(`Error saving setting.\nKey: ${key}\nValue: ${value}\n`);
-		}
-        if(key == "documentTitle") {
-            if(editorPane.isEditable()) {
-                if(rwkey != value) {
-                    updateFromServer(value);
-                } 
-            } else {
-                if(rokey != value) {
-                    updateFromServer(value);
-                }
-            }
-        } else if(key == "documentContent") {
-            syncToServer();
-        }
-	}
+        editorPane.set(defaultContent);
+        editorPane.refresh();
+
+        syncToServer(); 
+        mindmap.render();
+    }
+
     function enableAutoUpdate() {
         if(!document.getElementById("autoupdate").checked) { return; }
 
@@ -257,24 +249,30 @@ settings = (function() {
     }
 
     function setText() {
+        if(!editorPane.isEditable()) {
+            return;
+        }
         let value = editorPane.get();
         let [p1, p2] = editorPane.getPos();
         if(history.length > 0 && value == history[history.length-1][0]) {
             // console.log("setText(short)", value, p1, p2, history.length)
-            history[history.length-1][1] = p1
-            history[history.length-1][2] = p2
-            return
+            history[history.length-1][1] = p1;
+            history[history.length-1][2] = p2;
+            return;
         }
         // console.log("setText", value, p1, p2, history.length)
-        history.push([value, p1, p2])
+        history.push([value, p1, p2]);
         if(history.length > 100) {
-            history.shift()
+            history.shift();
         }
-        redo_history = []
-        setSetting("documentContent", value)
+        redo_history = [];
+        syncToServer();
     }
 
     function undoText() {
+        if(!editorPane.isEditable()) {
+            return null;
+        }
         if (history.length <= 1) {
             // console.log("undoText (empty)")
             return null
@@ -282,18 +280,21 @@ settings = (function() {
         var t = history.pop() 
         redo_history.push(t)
         t = history[history.length-1]
-        setSetting("documentContent", t[0])
+        syncToServer();
         return t
     }
 
     function redoText() {
+        if(!editorPane.isEditable()) {
+            return null;
+        }
         if (redo_history.length == 0) {
             return null
         }
         var t = redo_history.pop() 
         // console.log("redoText", t);
         history.push(t)
-        setSetting("documentContent", t[0])
+        syncToServer();
         return t
     }
 
@@ -301,29 +302,30 @@ settings = (function() {
         redo_history = []
         history = []
     }
-	// Get the default value of the setting with the specified key.
-	function getDefaultValue(key) {
-		if (key in defaultValues) {
-			return defaultValues[key];
-		}
-	}
 
 	// Reset all the settings to their default values.
 	function reset() {
-		for (let key in defaultValues) {
-			setSetting(key, getDefaultValue(key));
-		}
+        sessionStorage.setItem(prefix + "documentTitle", JSON.stringify(""));
 	}
 
     $(document).ready(function() {
         document.getElementById("autoupdate").addEventListener("change", enableAutoUpdate);
+        let setting;
+		try {
+			setting = JSON.parse(sessionStorage.getItem(prefix+"documentTitle"));
+		} catch (exception) {
+			// Ignored
+		}
+		if (!setting || setting == "") {
+            createNew();
+        } else {
+            updateFromServer(setting);
+        }
     });
 	return {
-		getSetting,
-		setSetting,
+        createNew,
         setText, undoText, redoText, clearUndoHistory,
 		fontFamilyMap,
-		getDefaultValue,
 		reset
 	};
 }());

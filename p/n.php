@@ -26,4 +26,5 @@
         );
         print(json_encode($v)."\n");
     }
+    $db->close();
 ?>

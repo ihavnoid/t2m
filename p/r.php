@@ -34,6 +34,7 @@
                     "seq" => $result["seq"]
             );
             print(json_encode($v)."\n");
+            $db->close();
             exit(0);
     	}
     } else {
@@ -54,8 +55,10 @@
                     "seq" => $result["seq"],
             );
             print(json_encode($v)."\n");
+            $db->close();
             exit(0);
     	}
     }
     print("{}");
+    $db->close();
 ?>

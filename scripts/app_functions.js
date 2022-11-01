@@ -1,5 +1,6 @@
 // A library of various functions that can be called by the app.
 // This is kept in a seperate module, so the navbar and the shortcuts can call the same functions.
+
 appFunctions = (function() {
 	return {
 		// Discard the current document and create an empty one.
@@ -7,12 +8,9 @@ appFunctions = (function() {
 			if (!unsavedChanges.confirmContinue()) {
 				return;
 			}
-			editorPane.set(settings.getDefaultValue("documentContent"));
+            settings.createNew();
 			mindmap.render();
 			unsavedChanges.setHasChanges(false);
-			settings.setSetting("documentContent", settings.getDefaultValue("documentContent"));
-			settings.setSetting("documentTitle", settings.getDefaultValue("documentTitle"));
-            settings.clearUndoHistory();
 		},
 
 		// Open a markdown file from the user's computer
@@ -26,12 +24,10 @@ appFunctions = (function() {
 		// Save the current markdown document to the user's computer
 		fileSave() {
 			const content = editorPane.get();
-			const title = settings.getSetting("documentTitle");
+			const title = settings.getKey();
 			const type = ".mindtxt";
 			fileExport.saveFile(content, title, type);
 			unsavedChanges.setHasChanges(false);
-			settings.setSetting("documentTitle", settings.getDefaultValue("documentTitle"));
-			settings.setSetting("documentContent", settings.getDefaultValue("documentContent"));
             settings.clearUndoHistory();
 		},
 
