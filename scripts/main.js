@@ -4,8 +4,6 @@
     }
 
     $(document).ready(function() {
-        documentTitle.setTitle(settings.getSetting("documentTitle"));
-
         // Before the user closes the window, warn them if they have unsaved changes.
         $(window).on("beforeunload", function(event) {
             if (unsavedChanges.getHasChanges() && false ) { //TODO:
@@ -34,6 +32,12 @@
         });
 
         editorPane.set(settings.getSetting("documentContent"));
+
+        // XXX : this reads the document key and then re-sets it so that we can load it
+        // if we want to get this from the server, which will automatically override the key.
+        settings.setSetting("documentTitle", settings.getSetting("documentTitle"));
+
+
         mindmap.render();
     
         var updateStack = 0;
@@ -76,6 +80,5 @@
             navbar.closeDropdowns()
         });
         editorPane.observe(updateMindMap);
-
     })
 }());

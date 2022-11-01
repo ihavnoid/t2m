@@ -40,6 +40,6 @@
 	outline: none;
 }
 #keypane {
-    visibility: hidden;
     color: white;
+    width: 500px;
 }

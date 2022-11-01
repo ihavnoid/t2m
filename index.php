@@ -45,7 +45,6 @@
     <script src="scripts/unsaved_changes.js"></script>
     <script src="scripts/editor_pane.js"></script>
     <script src="scripts/settings.js"></script>
-    <script src="scripts/document_title.js"></script>
     <script src="scripts/file_import.js"></script>
     <script src="scripts/file_export.js"></script>
     <script src="scripts/app_functions.js"></script>
@@ -54,37 +53,15 @@
     <script src="scripts/pane_resizer.js"></script>
     <script src="scripts/shortcuts.js"></script>
     <script src="scripts/main.js"></script>
-    <script>
-        key_visible = false;
-        function togglePane() {
-            key_visible = !key_visible;
-            if(key_visible) {
-                document.getElementById("keylink").innerHTML = "Hide keys"; 
-                document.getElementById("keypane").style.visibility = "visible";
-            } else {
-                document.getElementById("keylink").innerHTML = "Show keys"; 
-                document.getElementById("keypane").style.visibility = "hidden";
-            }
-        }
-    </script>
 </head>
 
 <body>
 	<div class="wrapper">
 		<div class="navbar">
 			<ul>
-				<li class="navbar-item">
-					<div class="document-title-container">
-						<input class="document-title-input" placeholder="(type document key to load file)">
-						<div class="document-title-mirror"></div>
-					</div>
-				</li>
-				<li class="navbar-item">
-                    <table><tr><td>
-                        <a id="keylink" href="javascript:togglePane()">Show keys</a>
-                    </td><td>
-                        <span id="keypane"></span>
-                    </td></table>
+				<li id="keypane1" class="navbar-item" style="width: 200px;">
+                </li>
+				<li id="keypane2" class="navbar-item" style="width: 200px;">
                 </li>
 				<li class="navbar-item navbar-button navbar-dropdown">
 					<a href="#">File</a>
@@ -92,7 +69,6 @@
 						<li><a href="#" id="file-new"><i class="fa fa-file fa-fw"></i>New<span class="dropdown-shortcut">Ctrl+N</span></a></li>
 						<li><a href="#" id="file-open"><i class="fa fa-upload fa-fw"></i>Open...<span class="dropdown-shortcut">Ctrl+O</span></a></li>
 						<li><a href="#" id="file-save"><i class="fa fa-save fa-fw"></i>Save...<span class="dropdown-shortcut">Ctrl+S</span></a></li>
-						<li><a href="#" id="file-rename"><svg/>Rename...<span class="dropdown-shortcut"></span></a></li>
 					</ul>
 				</li>
 				<li class="navbar-item navbar-button navbar-dropdown">

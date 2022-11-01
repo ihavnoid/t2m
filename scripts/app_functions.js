@@ -9,7 +9,6 @@ appFunctions = (function() {
 			}
 			editorPane.set(settings.getDefaultValue("documentContent"));
 			mindmap.render();
-			documentTitle.setTitle(settings.getDefaultValue("documentTitle"));
 			unsavedChanges.setHasChanges(false);
 			settings.setSetting("documentContent", settings.getDefaultValue("documentContent"));
 			settings.setSetting("documentTitle", settings.getDefaultValue("documentTitle"));
@@ -27,7 +26,7 @@ appFunctions = (function() {
 		// Save the current markdown document to the user's computer
 		fileSave() {
 			const content = editorPane.get();
-			const title = documentTitle.getTitle();
+			const title = settings.getSetting("documentTitle");
 			const type = ".mindtxt";
 			fileExport.saveFile(content, title, type);
 			unsavedChanges.setHasChanges(false);

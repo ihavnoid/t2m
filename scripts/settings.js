@@ -54,6 +54,20 @@ settings = (function() {
 
     var callstack = 0;
 
+    function updateKeys(rwkey, rokey) {
+        let el1 = document.getElementById("keypane1");
+        let el2 = document.getElementById("keypane2");
+        if(rwkey) {
+            el1.innerHTML = "<a href=\"" + serverBase + "/?k=" + rwkey + "\">Read-Write link</a> &nbsp; ";
+        } else {
+            el1.innerHTML = "&nbsp;";
+        }
+        if(rokey) {
+            el2.innerHTML = "<a href=\"" + serverBase + "/?k=" + rokey + "\">Read-Only link</a> &nbsp; ";
+        } else {
+            el2.innerHTML = "&nbsp;";
+        }
+    }
     function createRwKey() {
         let xhr = new XMLHttpRequest();
         xhr.open('GET', serverBase + "/p/n.php");
@@ -63,7 +77,7 @@ settings = (function() {
                 t = JSON.parse(t);
                 rwkey = t["rwkey"];
                 rokey = t["rokey"];
-                documentTitle.updateKeys(rwkey, rokey);
+                updateKeys(rwkey, rokey);
                 if(rwkey) {
                     editorPane.setEditable(true);
                 }
@@ -76,9 +90,11 @@ settings = (function() {
 
     function updateFromServer(key) {
         if(key == "") {
+            rwkey = null;
+            rokey = null;
+            syncToServer();
             return;
         }
-        syncToServer();
         editorPane.setEditable(false);
         let xhr = new XMLHttpRequest();
         xhr.open('POST', serverBase + "/p/r.php");
@@ -92,7 +108,7 @@ settings = (function() {
                 if(t["contents"]) {
                     rokey = t["rokey"];
                     rwkey = t["rwkey"];
-                    documentTitle.updateKeys(rwkey, rokey);
+                    updateKeys(rwkey, rokey);
                     setSetting("contents", t["contents"]);
                     editorPane.set(t["contents"]);
                     mindmap.render();
@@ -102,7 +118,8 @@ settings = (function() {
                         editorPane.setEditable(false);
                     }
                 } else {
-                    alert("Cannot find data with matching key");
+                    console.log(t);
+                    alert("Cannot find data with matching key " + key);
                 }
             }
         };

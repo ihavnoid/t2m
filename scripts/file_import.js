@@ -36,12 +36,12 @@ fileImport = (function() {
 		}
 		const content = event.target.result;
 
-		documentTitle.setTitle(fileName.replace(/\.mindtxt$/, ""));
+		// documentTitle.setTitle(fileName.replace(/\.mindtxt$/, ""));
 		editorPane.set(content);
 		mindmap.render();
 		unsavedChanges.setHasChanges(false);
-		settings.setSetting("documentTitle", settings.getDefaultValue("documentTitle"));
-		settings.setSetting("documentContent", settings.getDefaultValue("documentContent"));
+		// settings.setSetting("documentTitle", settings.getDefaultValue("documentTitle"));
+		// settings.setSetting("documentContent", settings.getDefaultValue("documentContent"));
 	}
 
 	// Try to click the hidden <input type="file"> tag, triggering the file upload process.
