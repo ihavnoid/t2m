@@ -1,5 +1,6 @@
 {
-    "__": "NOTE : keys starting with underscores are comments. t2m ignores them.  We are doing this because json doesn't officially support comments",
+    "_1": "NOTE : keys starting with underscores are comments. t2m ignores them.  We are doing this because json doesn't officially support comments",
+    "_2": "Create a config.json based on this file.",
 
     "_db_path_": "DB path.  This is the sqlite3 database for this server.  Keep in mind that this should not be accessible from the web server.",
     "db_path":"../../t2m.db",
