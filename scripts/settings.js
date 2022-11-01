@@ -99,7 +99,7 @@ settings = (function() {
         let xhr = new XMLHttpRequest();
         xhr.open('GET', __serverBase__ + "/p/n.php");
         xhr.onload = (resp) => {
-            if(xhr.status == 200 && !(rokey)) {
+            if(xhr.status == 200) {
                 let t = xhr.response;
                 t = JSON.parse(t);
                 console.log("createRwKey", "resp", t);
@@ -120,7 +120,13 @@ settings = (function() {
                 updateKeys(rwkey, rokey);
                 last_timestamp = 0;
     
-                syncToServer();
+                // attempt to push data only if we actually have a RW key
+                if(rwkey) {
+                    syncToServer();
+                }
+            } else {
+                // try again after 500ms
+                setTimeout(createRwKey, 500);
             }
         };
         xhr.send();
@@ -162,7 +168,8 @@ settings = (function() {
                     alert("Cannot find data with matching key " + key);
                 }
             } else {
-                updateFromServer(key);
+                // try again after 500ms
+                setTimeout( () => { updateFromServer(key) }, 500);
             }
         };
         xhr.send(data);
