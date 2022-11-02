@@ -590,13 +590,20 @@ editorPane = (function() {
         }, 200);
     }
 
-    function setEditable(editable) {
+    function setEditable(editable, message) {
+        if(!message) {
+            message = "";
+        }
+
         documentEditable = editable;
         document.getElementById("textedit").contentEditable = editable;
         if(editable) {
             document.getElementById("textedit").style.backgroundColor = "#ffffff";
+            document.getElementById("textedit_message").style.visibility = "hidden";
         } else {
             document.getElementById("textedit").style.backgroundColor = "#d0d0d0";
+            document.getElementById("textedit_message").innerHTML = message;
+            document.getElementById("textedit_message").style.visibility = "visible";
         }
     }
     function isEditable() {

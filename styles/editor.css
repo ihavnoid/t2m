@@ -29,6 +29,33 @@
 	margin: 20px 15px;
 }
 
+
+#textedit_message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+	resize: none;
+	width: 100%;
+	height: calc(100% - 25px);
+	box-sizing: border-box;
+	background-color: #ffffff;
+    opacity: 0.5;
+	border: none;
+    font-family: sans-serif;
+	font-size: 20px;
+    color: black;
+	tab-size : 4;
+	outline: none;
+	overflow: auto;
+	/*white-space: pre-wrap;*/
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 2px;
+    z-index: 1;
+}
+
+
 #textedit {
 	resize: none;
 	width: 100%;
@@ -47,6 +74,7 @@
     left: 0;
     top: 0;
     padding: 2px;
+    z-index: 0;
 }
 
 .pos {

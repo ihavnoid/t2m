@@ -1,5 +1,6 @@
 <?php
     include "common.php";
+    $seq = 0;
     if(php_sapi_name() == "cli") {
         $title = $argv[1];
         $contents = $argv[2];
@@ -8,12 +9,20 @@
         $contents = $_POST["contents"];
         $title = $_POST["title"];
         $key = $_POST["k"];
+        if(array_key_exists("seq", $_POST)) {
+            $seq = $_POST["seq"];
+        }
     }
 
     list($v1,$v2) = key2val(substr($key, 0, 32));
     list($v3,$v4) = key2val(substr($key, 32));
 	
-	$stmt = $db->prepare("update contents set contents=?, title=?, ts=?, seq=seq+1 where roid0 = ? and roid1 = ? and rwid0 = ? and rwid1 = ?");
+    if($seq > 0) {
+    	$stmt = $db->prepare("update contents set contents=?, title=?, ts=?, seq=seq+1 where roid0 = ? and roid1 = ? and rwid0 = ? and rwid1 = ? and seq = ?");
+    	$stmt->bindValue(8, $seq, SQLITE3_INTEGER);
+    } else {
+	    $stmt = $db->prepare("update contents set contents=?, title=?, ts=?, seq=seq+1 where roid0 = ? and roid1 = ? and rwid0 = ? and rwid1 = ?");
+    }
 	$stmt->bindValue(1, $contents);
 	$stmt->bindValue(2, $title);
 	$stmt->bindValue(3, timestamp(), SQLITE3_INTEGER);

@@ -102,6 +102,7 @@
                                     <i class="fa fa-fw fa-chevron-left"></i>
                                 </div>
                             </div>
+                            <div id="textedit_message"></div>
                             <div id="textedit" spellcheck="false" contenteditable="true"></div>
                 </div>
 			</div>

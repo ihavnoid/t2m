@@ -57,9 +57,11 @@ settings = (function() {
 
     let rwkey = null;
     let rokey = null;
+    let seq = 0;
 
     var callstack = 0;
     var last_timestamp = 0;
+    var last_push_time = 0;
 
     function updateKeys(rwkey, rokey) {
         let el1 = document.getElementById("keypane1");
@@ -94,9 +96,10 @@ settings = (function() {
         return t2;
     }
 
+    let xhr = new XMLHttpRequest();
     function createRwKey() {
         console.log("createRwKey");
-        let xhr = new XMLHttpRequest();
+        console.assert(xhr.readyState == 0 || xhr.readyState == 4, "Illegal XHR state");
         xhr.open('GET', __serverBase__ + "/p/n.php");
         xhr.onload = (resp) => {
             if(xhr.status == 200) {
@@ -134,8 +137,8 @@ settings = (function() {
 
     function updateFromServer(key) {
         console.log("updateFromServer", key);
+        console.assert(xhr.readyState == 0 || xhr.readyState == 4, "Illegal XHR state");
 
-        let xhr = new XMLHttpRequest();
         xhr.open('POST', __serverBase__ + "/p/r.php");
         let data = new FormData();
         data.append('k', key);
@@ -149,7 +152,8 @@ settings = (function() {
                 if(t["contents"]) {
                     rokey = t["rokey"];
                     rwkey = t["rwkey"];
-                    last_timestamp = t["timestamp"];
+                    seq = t["seq"];
+
 
                     editorPane.set(t["contents"]);
                     editorPane.refresh();
@@ -157,9 +161,18 @@ settings = (function() {
                     updateKeys(rwkey, rokey);
                     mindmap.render();
                     if(rwkey) {
-                        editorPane.setEditable(true);
-                        sessionStorage.setItem(prefix + "documentTitle", JSON.stringify(rwkey));
+                        if(t["lockdelay"] > 0) {
+                            editorPane.setEditable(false, "Somebody else is editing... please wait");
+                            // if server asked us to wait for lock, wait at least 2 seconds and poll again
+                            setTimeout( () => { updateFromServer(key) }, Math.max(2000, t["lockdelay"]));
+                        } else {
+                            last_timestamp = t["timestamp"];
+                            sessionStorage.setItem(prefix + "documentTitle", JSON.stringify(rwkey));
+                            callstack++;
+                            syncToServerImmediately();
+                        }
                     } else {
+                        last_timestamp = t["timestamp"];
                         editorPane.setEditable(false);
                         sessionStorage.setItem(prefix + "documentTitle", JSON.stringify(rokey));
                     }
@@ -174,8 +187,42 @@ settings = (function() {
         };
         xhr.send(data);
     }
+    function syncToServerImmediately() {
+        console.log("synctoServer", "push", rwkey);
+        console.assert(xhr.readyState == 0 || xhr.readyState == 4, "Illegal XHR state");
+        xhr.open('POST', __serverBase__ + "/p/w.php");
+        let data = new FormData();
+        data.append('k', rwkey);
 
-    function syncToServer() {
+        let t = editorPane.get();
+        data.append('contents', t);
+        data.append('title', findTitle());
+        data.append('seq', seq);
+        xhr.onload = (resp) => {
+            let t = xhr.response;
+            if(t != "1") {
+                console.log("Failed syncing");
+                editorPane.setEditable(false);
+                console.assert(rwkey, "No WR key and we are updating from server?");
+                updateFromServer(rwkey);
+            } else {
+                // we successfully written to the server.  We probably have the right to write
+                editorPane.setEditable(true);
+                seq += 1;
+                last_push_time = Date.now();
+            }
+            callstack--;
+        };
+        xhr.send(data);
+    }
+
+    function syncToServer(delay) {
+        if(!delay) {
+            delay = 2000;
+        }
+        if(Date.now() - last_push_time > 10000) {
+            delay = 1;
+        }
         console.log("synctoServer");
         if(!rokey) {
             createRwKey();
@@ -185,22 +232,15 @@ settings = (function() {
         addVisitedPages();
         callstack++;
         setTimeout( () => {
-            callstack--;
             // if we don't have key, then we give up syncing.  we will have future chance to do so
-            if(callstack == 0 && rwkey) {
-                console.log("synctoServer", "push", rwkey);
-                let xhr = new XMLHttpRequest();
-                xhr.open('POST', __serverBase__ + "/p/w.php");
-                let data = new FormData();
-                data.append('k', rwkey);
-
-                let t = editorPane.get();
-                data.append('contents', t);
-                data.append('title', findTitle());
-                xhr.send(data);
+            if(callstack == 1 && rwkey && editorPane.isEditable()) {
+                syncToServerImmediately();
+            } else {
+                callstack--;
             }
-        }, 2000);
+        }, delay);
     }
+
 
     var history = []
     var redo_history = []
