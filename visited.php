@@ -17,6 +17,13 @@
 </style>
 <header><script>
 const prefix = "text2mindmap";
+function delete_entry(entry) {
+    let setting = JSON.parse(localStorage.getItem(prefix + "visitedPages"));
+    delete setting[entry];
+    localStorage.setItem("text2mindmap" + "visitedPages", JSON.stringify(setting));
+    build_table();
+}
+
 function build_table() {
     let el = document.getElementById("tbl");
     try {
@@ -24,7 +31,7 @@ function build_table() {
 
         let setting = JSON.parse(localStorage.getItem(prefix + "visitedPages"));
 
-        t += "<table><tr><th width=\"700\">Title</th><th>Read-only link</th><th>Read-write link</th></tr>";
+        t += "<table><tr><th width=\"700\">Title</th><th>Read-only link</th><th>Read-write link</th><th>&nbsp;</th></tr>";
         t2 = "";
         for(let p in setting) {
             if(setting.hasOwnProperty(p)) {
@@ -36,11 +43,12 @@ function build_table() {
                 } else {
                     t2 += "<td> &nbsp; </td>";
                 }
+                t2 += "<td><a href='javascript:delete_entry(\""+o["rokey"]+"\")'>Delete</a></td>";
                 t2 += "</tr>";
             }
         }
         if(t2 == "") {
-            t2 = "<tr><td colspan=\"3\"> (Visit history is empty) </td></tr>";
+            t2 = "<tr><td colspan=\"4\"> (Visit history is empty) </td></tr>";
         }
         t += t2 + "</table>";
 
@@ -53,8 +61,10 @@ function build_table() {
 }
 
 function clearHistory() {
-    localStorage.setItem("text2mindmap" + "visitedPages", "{}");
-    build_table();
+    if(confirm("Are you sure?  You won't be able to access the pages if you don't have the link for the pages.")) {
+        localStorage.setItem("text2mindmap" + "visitedPages", "{}");
+        build_table();
+    }
 }
 </script>
 </header>
