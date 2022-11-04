@@ -16,9 +16,9 @@ editorPane = (function() {
         let b = parseInt(color.substr(4, 2), 16);
         color = "#" + (Math.floor(384 + r/2)).toString(16).substr(1) +
             (Math.floor(384 + g/2)).toString(16).substr(1) + (Math.floor(384 + b/2)).toString(16).substr(1)
-        
+
         // console.log(color);
-        nodeColors[index] = color; 
+        nodeColors[index] = color;
     }
 
     // performance-wise not so good :( need to fix
@@ -26,7 +26,7 @@ editorPane = (function() {
         let start = -1, length = 0;
         s.substring(startpos).replace(pattern, (match, offset, string, groups) => {
             start = offset;
-            length = match.length; 
+            length = match.length;
         });
         if(start < 0) {
             return [-1, length];
@@ -222,13 +222,13 @@ editorPane = (function() {
     function setCaret(el, beginCharNum, endCharNum) {
         var range = document.createRange()
         var sel = window.getSelection()
-        
+
         range.selectNode(el)
         let r1 = findRangeFromCharPos(el, beginCharNum)
         let r2 = findRangeFromCharPos(el, endCharNum)
         range.setStart(r1[0], r1[1])
         range.setEnd(r2[0], r2[1])
-        
+
         sel.removeAllRanges()
         sel.addRange(range)
     }
@@ -237,7 +237,7 @@ editorPane = (function() {
         let el = document.getElementById("textedit");
         let idx = getCaretIndex(el);
         let idxb = getCaretBeginIndex(el);
-        
+
         if(idx >= 0) {
             t = t.substring(0, idx) + "\0 r" + t.substring(idx);
             if(idx < idxb) {
@@ -288,24 +288,24 @@ editorPane = (function() {
         t = t.replace(/\s+/g, " "); // collapse whitespace;
 
         let tout = "";
-        let copyMode = false;
         let ptr = 0;
         let nodeno = 0;
         let level = 0;
         let tagOpen = false;
         let closeUlOnNextLi = false;
-        let lastc = '\0';
+        let accumText = "";
+        let firstLine = true;
+
         function _li() {
-            if(nodeno >= n1pos && nodeno <= n2pos) { 
+            if(nodeno >= n1pos && nodeno <= n2pos) {
                 tout += "<li class=\"selected_node level"+Math.min(level, 8)+"\">"
             } else {
                 tout += "<li class=\"level"+Math.min(level, 8)+"\">"
             }
         }
-        let accumText = "";
-        let firstLine = true;
         function processCode(l) {
             if(firstLine) {
+                if(l == "") { return " "; }
                 if(nodeno in nodeColors) {
                     cl = " style=\"background-color:"+nodeColors[nodeno]+";\" ";
                 } else {
@@ -317,24 +317,12 @@ editorPane = (function() {
                     l = "<span"+cl+"class=\"header\">"+l+"</span>";
                 }
             } else {
+                if(l == "") { return l; }
                 l = "<span class=\"comment\">" + l + "</span>";
             }
             return l;
         }
-
-        while(true) {
-            const p = t.indexOf("\0 ", ptr);
-            if( p < 0) {
-                if(copyMode){
-                    tout += t.substring(ptr);
-                }
-                break;
-            }
-            if(copyMode){
-                let l = t.substring(ptr, p);
-                accumText += l;
-            }
-            const c = t.charAt(p+2);
+        function processCommand(c) {
             if(c == "u") {
                 level++;
                 tout += "<ul>";
@@ -351,7 +339,6 @@ editorPane = (function() {
                         level--;
                     }
                 }
-                tagOpen = true;
                 if(level == 0) {
                     tout += "<ul>";
                     level++;
@@ -359,21 +346,20 @@ editorPane = (function() {
                 }
                 _li();
                 firstLine = true;
-                copyMode = true;
+                tagOpen = true;
             } else if(c == "L") {
                 if(tagOpen) {
                     tout += processCode(accumText);
                     tout += "</li>\n";
                     nodeno++;
                     accumText = "";
-                    copyMode = false;
+                    tagOpen = false;
                     if(closeUlOnNextLi) {
                         closeUlOnNextLi = false;
                         tout += "</ul>";
                         level--;
                     }
                 }
-                tagOpen = false;
             } else if(c == "b") {
                 if(tagOpen) {
                     tout += processCode(accumText);
@@ -382,13 +368,41 @@ editorPane = (function() {
                     firstLine = false;
                 }
             } else if(c == "n") {
-                accumText += "\0 n"; 
+                if(tagOpen) {
+                    accumText += "\0 n";
+                } else {
+                    processCommand('l');
+                    accumText += "\0 n";
+                    processCommand('L');
+                }
             } else if(c == "r") {
-                accumText += "\0 r"; 
+                if(tagOpen) {
+                    accumText += "\0 r";
+                } else {
+                    processCommand('l');
+                    accumText += "\0 r";
+                    processCommand('L');
+                }
             }
-            lastc = c;
+        }
+
+        while(true) {
+            const p = t.indexOf("\0 ", ptr);
+            if( p < 0) {
+                if(tagOpen){
+                    tout += t.substring(ptr);
+                }
+                break;
+            }
+            if(tagOpen){
+                let l = t.substring(ptr, p);
+                accumText += l;
+            }
+            const c = t.charAt(p+2);
+            processCommand(c);
             ptr = p + 3;
         }
+        tout = tout.replaceAll("</ul><ul>", "");
 
         unmarkCaretPos(tout);
         return updateProcessed();
@@ -439,7 +453,7 @@ editorPane = (function() {
             return false;
         }
     }
-    
+
     function updateTextForCoordinates(nodenum, fixed, xp, yp) {
         if(!documentEditable) return;
 
@@ -466,7 +480,7 @@ editorPane = (function() {
         tp = tp.replaceAll(/<[^>]*>/g, "");
 
         // console.log(lipos, clipos, tp);
-        
+
         // we need to deal with caret escape codes
         let p1 = tp.indexOf("\0 n");
         if(p1 >= 0) {
@@ -476,10 +490,10 @@ editorPane = (function() {
         if(p2 >= 0) {
             tp = tp.substr(0, p2) + tp.substr(p2+3);
         }
-        let len_prev = tp.length; 
+        let len_prev = tp.length;
 
         tp = tp.replace(/^ *\[[0-9\- ]*\] */, "");
-        let len_new = tp.length; 
+        let len_new = tp.length;
         if(p1 >= 0){
             p1 -= len_prev - len_new;
             if(p1 < 0) p1 = 0;
@@ -513,7 +527,7 @@ editorPane = (function() {
         if(r1 > r2) {
             [r1, r2] = [r2, r1];
         }
-        
+
         if(r1 < 0 || r2 < 0) {
             return [0, -1];
         }
@@ -551,7 +565,7 @@ editorPane = (function() {
     function moveCursorToNode(nodenum) {
         // find starting position of li element
         let t = el.innerHTML;
-        
+
         // don't mark caret, we will mark it ourselves here
         let lipos = -1;
         for(let i=0; i<nodenum+1; i++) {
@@ -564,7 +578,7 @@ editorPane = (function() {
         let clipos = t.indexOf("</li>", lipos);
         t = t.substring(0, clipos) + "\0 n\0 r" + t.substring(clipos)
         unmarkCaretPos(t)
-        
+
         // scroll to caret
         const isSupported = typeof window.getSelection !== "undefined";
         if (isSupported) {
@@ -612,7 +626,7 @@ editorPane = (function() {
     $(document).ready(function() {
         el = document.getElementById("textedit");
         cleanupHTML();
-        
+
         function findCnt(str, pattern) {
             let idx = -1;
             for(let i=0; ; i++) {
@@ -621,7 +635,7 @@ editorPane = (function() {
                     return i;
                 }
             }
-        } 
+        }
         on("keydown", (ev) => {
             if(ev.which == 9) {
                 // tab
@@ -667,10 +681,10 @@ editorPane = (function() {
                 unmarkCaretPos(t);
                 return;
             }
-            
+
             /*
             // XXX : if we re pushing a key that don't affect text contents, there is no point cleaning up HTML
-            if( ["Alt", "AltGraph", "CapsLock", "Control", "Fn", "FnLock", "Hyper", "Meta", "NumLock", 
+            if( ["Alt", "AltGraph", "CapsLock", "Control", "Fn", "FnLock", "Hyper", "Meta", "NumLock",
                             "ScrollLock", "Shift", "Super", "Symbol", "SymbolLock",
                             "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp",
                             "End", "Home", "PageDown", "PageUp" ].includes(ev.key) === false ) {
