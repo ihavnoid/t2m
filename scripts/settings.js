@@ -113,6 +113,7 @@ settings = (function() {
                 } 
                 rwkey = t["rwkey"];
                 rokey = t["rokey"];
+                seq = t["seq"];
                 if(rwkey) {
                     editorPane.setEditable(true);
                     sessionStorage.setItem(prefix + "documentTitle", JSON.stringify(rwkey));

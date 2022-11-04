@@ -5,6 +5,6 @@
     "_db_path_": "DB path.  This is the sqlite3 database for this server.  Keep in mind that this should not be accessible from the web server.",
     "db_path":"../../t2m.db",
 
-    "_base_url_": "Base URL facing the external world.",
+    "_base_url_": "Base URL facing the external world.  It is recommended that this is a https address if possible, as web browsers generally disallow t2m to fire http queries to the server if the request address originated from https.",
     "base_url":"http://localhost:8000/"
 }
