@@ -133,6 +133,10 @@ settings = (function() {
                 setTimeout(createRwKey, 500);
             }
         };
+        xhr.onerror = (resp) => {
+            // try again after 500ms
+            setTimeout(createRwKey, 500);
+        };
         xhr.send();
     };
 
@@ -186,6 +190,9 @@ settings = (function() {
                 setTimeout( () => { updateFromServer(key) }, 500);
             }
         };
+        xhr.onerror = () => {
+            setTimeout( () => { updateFromServer(key) }, 500);
+        };
         xhr.send(data);
     }
     function syncToServerImmediately() {
@@ -213,7 +220,18 @@ settings = (function() {
                 seq += 1;
                 last_push_time = Date.now();
             }
-            callstack--;
+            if(callstack > 0) {
+                callstack--;
+            }
+        };
+        xhr.onerror = () => {
+            console.log("Failed syncing - socket error");
+            editorPane.setEditable(false);
+            console.assert(rwkey, "No WR key and we are updating from server?");
+            updateFromServer(rwkey);
+            if(callstack > 0) {
+                callstack--;
+            }
         };
         xhr.send(data);
     }
@@ -286,15 +304,29 @@ settings = (function() {
         mindmap.render();
     }
 
+    let evtSource = null;
     function enableAutoUpdate() {
-        if(!document.getElementById("autoupdate").checked) { return; }
-
-        if(rwkey) {
-            return;
+        if(document.getElementById("autoupdate").checked) { 
+            if(rwkey) {
+                return;
+            }
+            if(evtSource != null) {
+                return;
+            }
+            evtSource = new EventSource(__serverBase__ + "/p/pollpage.php?k=" + rokey);
+            evtSource.onmessage = function(x) {
+                console.log("auto-update");
+                updateFromServer(rokey);
+            };
+            evtSource.onerror = function(x) {
+                evtSource.close();
+                evtSource = null;
+                setTimeout(enableAutoUpdate, 1000);
+            }
+        } else {
+            evtSource.close();
+            evtSource = null;
         }
-        console.log("auto-update");
-        updateFromServer(rokey);
-        setTimeout(enableAutoUpdate, 2000);
     }
 
     function setText() {
