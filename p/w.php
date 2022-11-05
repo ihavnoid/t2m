@@ -5,10 +5,12 @@
         $title = $argv[1];
         $contents = $argv[2];
         $key = $argv[3];
+        $sync = 0;
     }else {
         $contents = $_POST["contents"];
         $title = $_POST["title"];
         $key = $_POST["k"];
+        $sync= $_POST["sync"];
         if(array_key_exists("seq", $_POST)) {
             $seq = $_POST["seq"];
         }
@@ -25,7 +27,11 @@
     }
 	$stmt->bindValue(1, $contents);
 	$stmt->bindValue(2, $title);
-	$stmt->bindValue(3, timestamp(), SQLITE3_INTEGER);
+    if($sync > 0) {
+    	$stmt->bindValue(3, timestamp()-20000, SQLITE3_INTEGER);
+    } else {
+    	$stmt->bindValue(3, timestamp(), SQLITE3_INTEGER);
+    }
 	$stmt->bindValue(4, $v1, SQLITE3_INTEGER);
 	$stmt->bindValue(5, $v2, SQLITE3_INTEGER);
 	$stmt->bindValue(6, $v3, SQLITE3_INTEGER);

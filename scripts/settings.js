@@ -197,6 +197,7 @@ settings = (function() {
 
         let t = editorPane.get();
         data.append('contents', t);
+        data.append('sync', 0);
         data.append('title', findTitle());
         data.append('seq', seq);
         xhr.onload = (resp) => {
@@ -369,6 +370,22 @@ settings = (function() {
         } else {
             updateFromServer(setting);
         }
+        document.addEventListener("visibilitychange", function() {
+            if(document.visibilityState == 'hidden') {
+                let url = __serverBase__ + "/p/w.php";
+                let data = new FormData();
+                data.append('k', rwkey);
+                let t = editorPane.get();
+                data.append('contents', t);
+                data.append('sync', 1);
+                data.append('title', findTitle());
+                data.append('seq', seq);
+                navigator.sendBeacon(url, data);
+
+                // normally this won't be a problem, but we will simply move the seq pointer so that subsequent writes will definitely fail.
+                seq = 0;
+            }
+        });
     });
 	return {
         createNew,

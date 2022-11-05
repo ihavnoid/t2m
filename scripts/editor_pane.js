@@ -4,6 +4,7 @@ editorPane = (function() {
     var nodeColors = {};
     var processed = "";
     var documentEditable = true;
+    var lastPressedKey = "";
 
     function setNodeColor(index, color) {
         // console.log(color);
@@ -277,8 +278,8 @@ editorPane = (function() {
             n1pos = -1; n2pos = -1;
         }
         let t = el.innerHTML;
-        // console.log("begin", text)
         t = markCaretPos(t);
+        // console.log("begin", t)
         t = t.replace(/<ul[^>]*>/gi, "\0 u");
         t = t.replace(/<\/ul>/gi, "\0 U");
         t = t.replace(/<li[^>]*>/gi, "\0 l");
@@ -291,21 +292,36 @@ editorPane = (function() {
         let ptr = 0;
         let nodeno = 0;
         let level = 0;
+        let lastLiLevel = 0;
         let tagOpen = false;
         let closeUlOnNextLi = false;
         let accumText = "";
         let firstLine = true;
 
-        function _li() {
-            if(nodeno >= n1pos && nodeno <= n2pos) {
-                tout += "<li class=\"selected_node level"+Math.min(level, 8)+"\">"
-            } else {
-                tout += "<li class=\"level"+Math.min(level, 8)+"\">"
-            }
+        // HACK : If the caret is outside of the legal region, how it should be handled depends on the
+        // last key event.
+        // - if we typed 'enter' then we should be creating a new line, and thus should create a new bullet on that location.
+        // - if we typed 'backspace' then we should be removing the current bullet.  Move caret BACK to the next legal position.
+        //   if there is no legal position, act as if we hit 'enter'.
+        // - if we typed 'delete' then we should be removing the current bullet.  Move caret FORWARD to the next legal position.
+        //   if there is no legal position, act as if we hit 'enter'.
+        // - for everything else, we won't do anything related to carets
+        let pk = lastPressedKey;
+        if(pk == "Del" || pk == "Clear" || pk == "Cut" || pk == "EraseEof") {
+            pk = "Delete";
+        } 
+        if(pk != "Enter" && pk != "Delete" && pk != "Backspace") {
+            pk = "";
         }
+        
+        // console.log("Before handling cleanup (pk=",pk);
+        // console.log(t);
+        // if true, we should append the caret on the next legal LI
+        let nCaretPending = false;
+        let rCaretPending = false;
         function processCode(l) {
             if(firstLine) {
-                if(l == "") { return " "; }
+                if(l == "" || l == "\0 n" || l == "\0 r" || l == "\0 n\0 r" || l == "\0 r\0 n") { l = l; }
                 if(nodeno in nodeColors) {
                     cl = " style=\"background-color:"+nodeColors[nodeno]+";\" ";
                 } else {
@@ -317,49 +333,62 @@ editorPane = (function() {
                     l = "<span"+cl+"class=\"header\">"+l+"</span>";
                 }
             } else {
-                if(l == "") { return l; }
+                if(l == "" || l == "\0 n" || l == "\0 r" || l == "\0 n\0 r" || l == "\0 r\0 n") { return "" + l; }
                 l = "<span class=\"comment\">" + l + "</span>";
             }
             return l;
         }
         function processCommand(c) {
             if(c == "u") {
+                if(tagOpen) {
+                    processCommand('L');
+                }
                 level++;
                 tout += "<ul>";
             } else if(c == "U") {
+                if(tagOpen) {
+                    processCommand('L');
+                }
                 level--;
                 tout += "</ul>";
             } else if(c == "l") {
                 if(tagOpen) {
-                    tout += "</li>\n";
-                    nodeno++;
-                    if(closeUlOnNextLi) {
-                        closeUlOnNextLi = false;
-                        tout += "</ul>";
-                        level--;
-                    }
+                    processCommand('L');
                 }
                 if(level == 0) {
-                    tout += "<ul>";
-                    level++;
+                    processCommand('u');
                     closeUlOnNextLi = true;
                 }
-                _li();
+                lastLiLevel = level;
+                if(nodeno >= n1pos && nodeno <= n2pos) {
+                    tout += "<li class=\"selected_node level"+Math.min(level, 8)+"\">"
+                } else {
+                    tout += "<li class=\"level"+Math.min(level, 8)+"\">"
+                }
+
                 firstLine = true;
                 tagOpen = true;
+
+                if(nCaretPending) {
+                    tout += "\0 n";
+                    nCaretPending = false;
+                }
+                if(rCaretPending) {
+                    tout += "\0 r";
+                    rCaretPending = false;
+                }
             } else if(c == "L") {
                 if(tagOpen) {
                     tout += processCode(accumText);
                     tout += "</li>\n";
                     nodeno++;
                     accumText = "";
-                    tagOpen = false;
                     if(closeUlOnNextLi) {
                         closeUlOnNextLi = false;
-                        tout += "</ul>";
-                        level--;
+                        processCommand('U');
                     }
                 }
+                tagOpen = false;
             } else if(c == "b") {
                 if(tagOpen) {
                     tout += processCode(accumText);
@@ -371,17 +400,45 @@ editorPane = (function() {
                 if(tagOpen) {
                     accumText += "\0 n";
                 } else {
-                    processCommand('l');
-                    accumText += "\0 n";
-                    processCommand('L');
+                    if(pk == "Delete") {
+                        nCaretPending = true;
+                    } else if(pk == "Backspace") {
+                        let pos = tout.lastIndexOf("</li>");
+                        if(pos < 0) {
+                            nCaretPending = true;
+                        } else {
+                            tout = tout.substring(0, pos) + "\0 n" + tout.substring(pos);
+                        }
+                    } else if(pk == "Enter") {
+                        processCommand('l');
+                        processCommand('L');
+                        processCommand('l');
+                        accumText += "\0 n";
+                    } else {
+                        tout += "\0 n";
+                    }
                 }
             } else if(c == "r") {
                 if(tagOpen) {
                     accumText += "\0 r";
                 } else {
-                    processCommand('l');
-                    accumText += "\0 r";
-                    processCommand('L');
+                    if(pk == "Delete") {
+                        rCaretPending = true;
+                    } else if(pk == "Backspace") {
+                        let pos = tout.lastIndexOf("</li>");
+                        if(pos < 0) {
+                            rCaretPending = true;
+                        } else {
+                            tout = tout.substring(0, pos) + "\0 r" + tout.substring(pos);
+                        }
+                    } else if (pk == "Enter") {
+                        processCommand('l');
+                        processCommand('L');
+                        processCommand('l');
+                        accumText += "\0 r";
+                    } else {
+                        tout += "\0 r";
+                    }
                 }
             }
         }
@@ -402,7 +459,17 @@ editorPane = (function() {
             processCommand(c);
             ptr = p + 3;
         }
+        // Handling cursor placed outside of a node:
+        if(nCaretPending || rCaretPending) {
+            processCommand('l'); 
+            if(nCaretPending) accumText += "\0 n";
+            if(rCaretPending) accumText += "\0 r";
+            processCommand('L'); 
+        }
         tout = tout.replaceAll("</ul><ul>", "");
+
+        // console.log("After handling cleanup");
+        // console.log(tout);
 
         unmarkCaretPos(tout);
         return updateProcessed();
@@ -637,6 +704,7 @@ editorPane = (function() {
             }
         }
         on("keydown", (ev) => {
+            lastPressedKey = ev.key;
             if(ev.which == 9) {
                 // tab
                 ev.preventDefault();
