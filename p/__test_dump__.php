@@ -3,6 +3,7 @@
 
     if(php_sapi_name() == "cli") {
     	$db->exec("CREATE TABLE if not exists contents(id integer primary key, title text, contents text, roid0 integer unique, roid1 integer, rwid0 integer, rwid1 integer, ts integer, seq integer)");
+    	$db->exec("CREATE index if not exists roid_index on contents(roid0)");
     	
     	$row = $db->query("select * from contents");
     	while($result = $row->fetchArray(SQLITE3_ASSOC)) {

@@ -17,7 +17,7 @@ $stmt = $db->prepare("select seq from contents where roid0 = ? and roid1 = ? and
 $seq = 0;
 
 try {
-    for($i=0; $i<3600; $i++) {
+    for($i=0; $i<120; $i++) {
         $stmt->bindValue(3, $seq, SQLITE3_INTEGER);
         $stmt->bindValue(1, $v1, SQLITE3_INTEGER);
         $stmt->bindValue(2, $v2, SQLITE3_INTEGER);
