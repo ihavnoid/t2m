@@ -42,6 +42,9 @@
 	
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
     <script src="https://cdn.jsdelivr.net/jquery.minicolors/2.0.4/jquery.minicolors.js"></script>
+<?php if(file_exists(__DIR__."/t2m.min.js")) { ?>
+    <script src="t2m.min.js"></script>
+<?php } else { ?>
     <script src="scripts/old/d3.js"></script>
     <script src="scripts/old/kineticjs.js"></script>
     <script src="scripts/old/jquery.cookie.min.js"></script>
@@ -58,6 +61,7 @@
     <script src="scripts/pane_resizer.js"></script>
     <script src="scripts/shortcuts.js"></script>
     <script src="scripts/main.js"></script>
+<?php } ?>
 </head>
 
 <body>
