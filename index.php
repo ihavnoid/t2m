@@ -45,7 +45,7 @@
 <?php if(file_exists(__DIR__."/t2m.min.js")) { ?>
     <script src="t2m.min.js"></script>
 <?php } else { ?>
-    <script src="scripts/old/d3.js"></script>
+    <script src="scripts/old/d3_force.js"></script>
     <script src="scripts/old/kineticjs.js"></script>
     <script src="scripts/old/jquery.cookie.min.js"></script>
     <script src="scripts/old/difflib.js"></script>
