@@ -1,7 +1,7 @@
 import sys
 import requests
 all_files = [
-    "scripts/old/d3.js",
+    "scripts/old/d3_force.js",
     "scripts/old/kineticjs.js",
     "scripts/old/jquery.cookie.min.js",
     "scripts/old/difflib.js",
