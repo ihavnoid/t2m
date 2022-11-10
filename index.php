@@ -1,4 +1,5 @@
 <?php
+    $config = json_decode(file_get_contents(__DIR__."/config.json"));
     if(array_key_exists("k", $_GET)) {
         // addslashes shouldn't be useful here, but this is to block code injection type thingies
         $k = addslashes($_GET["k"]);
@@ -6,7 +7,7 @@
 <html>
     <header><script>
         sessionStorage.setItem("text2mindmap"+"documentTitle", JSON.stringify("<?php echo $k; ?>"));
-        window.location.replace("/");
+        window.location.replace("<?php echo $config->base_url;?>");
     </script></header>
 <body> &nbsp; </body>
 </html>
@@ -14,7 +15,6 @@
         exit(0);
     }
 
-    $config = json_decode(file_get_contents(__DIR__."/config.json"));
 ?>
 <!DOCTYPE HTML>
 <html>

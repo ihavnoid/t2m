@@ -159,17 +159,18 @@ settings = (function() {
                     rwkey = t["rwkey"];
                     seq = t["seq"];
 
-
-                    editorPane.set(t["contents"]);
-                    editorPane.refresh();
-
+                    if(editorPane.get() != t["contents"]) {
+                        editorPane.set(t["contents"]);
+                        editorPane.refresh();
+                        mindmap.render();
+                    }
                     updateKeys(rwkey, rokey);
-                    mindmap.render();
+
                     if(rwkey) {
                         if(t["lockdelay"] > 0) {
                             editorPane.setEditable(false, "Somebody else is editing... please wait");
                             // if server asked us to wait for lock, wait at least 2 seconds and poll again
-                            setTimeout( () => { updateFromServer(key) }, Math.max(2000, t["lockdelay"]));
+                            setTimeout( () => { updateFromServer(key) }, Math.min(2000, t["lockdelay"]));
                         } else {
                             last_timestamp = t["timestamp"];
                             sessionStorage.setItem(prefix + "documentTitle", JSON.stringify(rwkey));
@@ -412,10 +413,12 @@ settings = (function() {
                 data.append('sync', 1);
                 data.append('title', findTitle());
                 data.append('seq', seq);
-                navigator.sendBeacon(url, data);
 
+                console.log("sendBeacon", data);
+                navigator.sendBeacon(url, data);
                 // normally this won't be a problem, but we will simply move the seq pointer so that subsequent writes will definitely fail.
-                seq = 0;
+                seq = 1;
+                last_push_time = 0;
             }
         });
     });
