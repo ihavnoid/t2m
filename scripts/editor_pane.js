@@ -706,6 +706,9 @@ editorPane = (function() {
         }
         on("keydown", (ev) => {
             lastPressedKey = ev.key;
+            if(lastPressedKey == "Enter" && ev.ctrlKey) {
+                lastPressedKey = ""; // ctrl-enter is simple "refresh"
+            }
             if(ev.which == 9) {
                 // tab
                 ev.preventDefault();

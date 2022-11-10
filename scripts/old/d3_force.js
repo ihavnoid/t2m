@@ -204,25 +204,6 @@ d3 = function() {
   d3.layout = {};
   d3.layout.force = function() {
     var force = {}, event = d3.dispatch("start", "tick", "end"), size = [ 1, 1 ], drag, alpha, friction = .9, linkDistance = d3_layout_forceLinkDistance, linkStrength = d3_layout_forceLinkStrength, charge = -30, gravity = .1, theta = .8, nodes = [], links = [], distances, strengths, charges;
-    function repulse(node) {
-      return function(quad, x1, _, x2) {
-        if (quad.point !== node) {
-          var dx = quad.cx - node.x, dy = quad.cy - node.y, dn = 1 / Math.sqrt(dx * dx + dy * dy);
-          if ((x2 - x1) * dn < theta) {
-            var k = quad.charge * dn * dn;
-            node.px -= dx * k;
-            node.py -= dy * k;
-            return true;
-          }
-          if (quad.point && isFinite(dn)) {
-            var k = quad.pointCharge * dn * dn;
-            node.px -= dx * k;
-            node.py -= dy * k;
-          }
-        }
-        return !quad.charge;
-      };
-    }
     force.tick = function() {
       if ((alpha *= .99) < .005) {
         event.end({
@@ -231,40 +212,66 @@ d3 = function() {
         });
         return true;
       }
+
+      // Note : in our context, "PARENT" is always the target. "LEAF" is always the source.
+      function links_intersect(link1, link2) {
+         if(link1.source == link2.source || link1.target == link2.target || link1.source == link2.target || link1.target == link2.source) return false;
+         function intersect_eq(x, y, link) {
+            let x1 = link.source.x;
+            let y1 = link.source.y;
+            let x2 = link.target.x;
+            let y2 = link.target.y;
+            return (y2 - y1) * x - (x2 - x1) * y + x2 * y1 - x1 * y2;
+         }
+         let v1 = intersect_eq(link1.source.x, link1.source.y, link2) * intersect_eq(link1.target.x, link1.target.y, link2) < 0;
+         let v2 = intersect_eq(link2.source.x, link2.source.y, link1) * intersect_eq(link2.target.x, link2.target.y, link1) < 0;
+         return v1 && v2;
+      }
       var n = nodes.length, m = links.length, q, i, o, s, t, l, k, x, y;
+      nodes.forEach((x) => {
+        if(!x.skip_collision) x.skip_collision = 0;
+        x.skip_collision -= 0.5;
+        x.skip_collision = Math.max(0, x.skip_collision);
+      });
+
+      for(i=0; i<m; ++i) {
+        for(j=i+1; j<m; ++j) {
+          if(links_intersect(links[i], links[j])) {
+            links[i].source.skip_collision += 1;
+          }
+        }
+      }
       for (i = 0; i < m; ++i) {
         o = links[i];
+        if(o.distance === undefined) {
+            o.distance = distances[i];
+        }
         s = o.source;
         t = o.target;
         x = t.x - s.x;
         y = t.y - s.y;
-        if (l = x * x + y * y) {
-          l = alpha * strengths[i] * ((l = Math.sqrt(l)) - distances[i]) / l;
+        l = x * x + y * y;
+        if (l) {
+          l = Math.sqrt(l);
+          l = alpha * strengths[i] * (l - o.distance) / l;
+          o.distance += l * 0.1;
           x *= l;
           y *= l;
-          t.x -= x * (k = s.weight / (t.weight + s.weight));
+          k = s.weight / (t.weight + s.weight);
+          t.x -= x * k;
           t.y -= y * k;
-          s.x += x * (k = 1 - k);
-          s.y += y * k;
+          s.x += x * (1 - k);
+          s.y += y * (1 - k);
         }
       }
       if (k = alpha * gravity) {
         x = size[0] / 2;
         y = size[1] / 2;
         i = -1;
-        if (k) while (++i < n) {
+        while (++i < n) {
           o = nodes[i];
           o.x += (x - o.x) * k;
           o.y += (y - o.y) * k;
-        }
-      }
-      if (charge) {
-        d3_layout_forceAccumulate(q = d3.geom.quadtree(nodes), alpha, charges);
-        i = -1;
-        while (++i < n) {
-          if (!(o = nodes[i]).fixed) {
-            q.visit(repulse(o));
-          }
         }
       }
       i = -1;
@@ -278,26 +285,56 @@ d3 = function() {
           o.y -= (o.py - (o.py = o.y)) * friction;
         }
       }
+      for(var i=0; i<nodes.length; i++) {
+        for(var j=i+1; j<nodes.length; j++) {
+            var n1 = nodes[i], n2 = nodes[j]
+
+            var w = (n1.w + n2.w) / 2 * (1-alpha) + 10
+            var h = (n1.h + n2.h) / 2 * (1-alpha) + 10
+            var dx = n1.x - n2.x
+            var dy = n1.y - n2.y
+            var rx = dx / w
+            var ry = dy / h
+
+            var l = (dx * dx + dy * dy) + 1; // prevent divide-by-zero
+            var sx = dx / l * 0.2;
+            var sy = dy / l * 0.2;
+            if(!n1.fixed) {
+                n1.py += sy
+                n1.y += sy
+                n1.px += sx
+                n1.x += sx
+            }
+            if(!n2.fixed) {
+                n2.py -= sy
+                n2.y -= sy
+                n2.py -= sx
+                n2.y -= sx
+            }                     
+          }
+      }
+
       // console.log(alpha)
-      for(var a = 0.03; a > alpha; a = a * 0.96) {
+      for(var a = 0.2; a > alpha; a = a * 0.92) {
           // collision correction - TBD
           for(var i=0; i<nodes.length; i++) {
               for(var j=i+1; j<nodes.length; j++) {
                   var n1 = nodes[i], n2 = nodes[j]
 
-                  var w = (n1.w + n2.w) / 2 * (1-alpha) + 10
-                  var h = (n1.h + n2.h) / 2 * (1-alpha) + 10
+                  if(n1.skip_collision || n2.skip_collision) continue;
+                  var w = (n1.w + n2.w) / 2 * (1 - alpha) + 10;
+                  var h = (n1.h + n2.h) / 2 * (1 - alpha) + 10;
                   var dx = n1.x - n2.x
                   var dy = n1.y - n2.y
                   var rx = dx / w
                   var ry = dy / h
 
-                  if(Math.abs(rx) < (1-alpha) && Math.abs(ry) < (1-alpha)) {
+                  if(Math.abs(rx) < 1 && Math.abs(ry) < 1) {
                     if(Math.abs(rx) > Math.abs(ry)) {
                       if(Math.abs(rx) < 0.4) {
                         rx = rx > 0 ? 0.4 :-0.4
                       }
-                      var sx = w / rx * 0.001
+                      var sx = w / rx * 0.003
                       if(!n1.fixed) {
                           n1.px += sx
                           n1.x += sx
@@ -310,7 +347,7 @@ d3 = function() {
                       if(Math.abs(ry) < 0.4) {
                         ry = ry > 0 ? 0.4 :-0.4
                       }
-                      var sy = h / ry * 0.001
+                      var sy = h / ry * 0.003
                       if(!n1.fixed) {
                           n1.py += sy
                           n1.y += sy
@@ -324,6 +361,7 @@ d3 = function() {
               }
            }
       }
+
 
       event.tick({
         type: "tick",
@@ -411,6 +449,7 @@ d3 = function() {
         if (isNaN(o.py)) o.py = o.y;
         if (isNaN(o.w)) o.w = 1;
         if (isNaN(o.h)) o.h = 1;
+        o.skip_collision = 0;
       }
       distances = [];
       if (typeof linkDistance === "function") for (i = 0; i < m; ++i) distances[i] = +linkDistance.call(this, links[i], i); else for (i = 0; i < m; ++i) distances[i] = linkDistance;
@@ -469,110 +508,6 @@ d3 = function() {
   function d3_layout_forceMouseout(d) {
     d.fixed &= ~4;
   }
-  function d3_layout_forceAccumulate(quad, alpha, charges) {
-    var cx = 0, cy = 0;
-    quad.charge = 0;
-    if (!quad.leaf) {
-      var nodes = quad.nodes, n = nodes.length, i = -1, c;
-      while (++i < n) {
-        c = nodes[i];
-        if (c == null) continue;
-        d3_layout_forceAccumulate(c, alpha, charges);
-        quad.charge += c.charge;
-        cx += c.charge * c.cx;
-        cy += c.charge * c.cy;
-      }
-    }
-    if (quad.point) {
-      if (!quad.leaf) {
-        quad.point.x += Math.random() - .5;
-        quad.point.y += Math.random() - .5;
-      }
-      var k = alpha * charges[quad.point.index];
-      quad.charge += quad.pointCharge = k;
-      cx += k * quad.point.x;
-      cy += k * quad.point.y;
-    }
-    quad.cx = cx / quad.charge;
-    quad.cy = cy / quad.charge;
-  }
   var d3_layout_forceLinkDistance = 20, d3_layout_forceLinkStrength = 1;
-
-  d3.geom = {};
-  d3.geom.quadtree = function(points, x1, y1, x2, y2) {
-    var p, i = -1, n = points.length;
-    if (arguments.length < 5) {
-      if (arguments.length === 3) {
-        y2 = y1;
-        x2 = x1;
-        y1 = x1 = 0;
-      } else {
-        x1 = y1 = Infinity;
-        x2 = y2 = -Infinity;
-        while (++i < n) {
-          p = points[i];
-          if (p.x < x1) x1 = p.x;
-          if (p.y < y1) y1 = p.y;
-          if (p.x > x2) x2 = p.x;
-          if (p.y > y2) y2 = p.y;
-        }
-      }
-    }
-    var dx = x2 - x1, dy = y2 - y1;
-    if (dx > dy) y2 = y1 + dx; else x2 = x1 + dy;
-    function insert(n, p, x1, y1, x2, y2) {
-      if (isNaN(p.x) || isNaN(p.y)) return;
-      if (n.leaf) {
-        var v = n.point;
-        if (v) {
-          if (Math.abs(v.x - p.x) + Math.abs(v.y - p.y) < .01) {
-            insertChild(n, p, x1, y1, x2, y2);
-          } else {
-            n.point = null;
-            insertChild(n, v, x1, y1, x2, y2);
-            insertChild(n, p, x1, y1, x2, y2);
-          }
-        } else {
-          n.point = p;
-        }
-      } else {
-        insertChild(n, p, x1, y1, x2, y2);
-      }
-    }
-    function insertChild(n, p, x1, y1, x2, y2) {
-      var sx = (x1 + x2) * .5, sy = (y1 + y2) * .5, right = p.x >= sx, bottom = p.y >= sy, i = (bottom << 1) + right;
-      n.leaf = false;
-      n = n.nodes[i] || (n.nodes[i] = d3_geom_quadtreeNode());
-      if (right) x1 = sx; else x2 = sx;
-      if (bottom) y1 = sy; else y2 = sy;
-      insert(n, p, x1, y1, x2, y2);
-    }
-    var root = d3_geom_quadtreeNode();
-    root.add = function(p) {
-      insert(root, p, x1, y1, x2, y2);
-    };
-    root.visit = function(f) {
-      d3_geom_quadtreeVisit(f, root, x1, y1, x2, y2);
-    };
-    points.forEach(root.add);
-    return root;
-  };
-  function d3_geom_quadtreeNode() {
-    return {
-      leaf: true,
-      nodes: [],
-      point: null
-    };
-  }
-  function d3_geom_quadtreeVisit(f, node, x1, y1, x2, y2) {
-    if (!f(node, x1, y1, x2, y2)) {
-      var sx = (x1 + x2) * .5, sy = (y1 + y2) * .5, children = node.nodes;
-      if (children[0]) d3_geom_quadtreeVisit(f, children[0], x1, y1, sx, sy);
-      if (children[1]) d3_geom_quadtreeVisit(f, children[1], sx, y1, x2, sy);
-      if (children[2]) d3_geom_quadtreeVisit(f, children[2], x1, sy, sx, y2);
-      if (children[3]) d3_geom_quadtreeVisit(f, children[3], sx, sy, x2, y2);
-    }
-  }
-
   return d3;
 }();
