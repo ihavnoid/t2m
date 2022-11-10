@@ -83,6 +83,7 @@ editorPane = (function() {
     }
     function set(x) {
         el.innerHTML = x; // this will invoke cleanupHTML
+        lastPressedKey = ""; // this 'change' wasn't invoked by a key input
         refresh();
     }
     function getPos() {
