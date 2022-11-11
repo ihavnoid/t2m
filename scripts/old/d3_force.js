@@ -228,16 +228,38 @@ d3 = function() {
          return v1 && v2;
       }
       var n = nodes.length, m = links.length, q, i, o, s, t, l, k, x, y;
-      nodes.forEach((x) => {
-        if(!x.skip_collision) x.skip_collision = 0;
-        x.skip_collision -= 0.5;
-        x.skip_collision = Math.max(0, x.skip_collision);
-      });
 
       for(i=0; i<m; ++i) {
         for(j=i+1; j<m; ++j) {
           if(links_intersect(links[i], links[j])) {
-            links[i].source.skip_collision += 1;
+            if(!links[i].source.fixed) {
+                let vx = links[i].target.y - links[i].source.y
+                let vy = links[i].source.x - links[i].target.x
+                let ox = links[j].source.x - links[i].source.x
+                let oy = links[j].source.y - links[i].source.y
+                if(vx*vy + ox*oy < 0) {
+                  vx = -vx; vy = -vy;
+                }
+                let l = Math.sqrt(vx*vx + vy * vy)
+                vx = vx / l * 2;
+                vy = vy / l * 2;
+                links[i].source.x += vx;
+                links[i].source.y += vy;
+            }
+            if(!links[j].source.fixed) {
+                let vx = links[j].target.y - links[j].source.y
+                let vy = links[j].source.x - links[j].target.x
+                let ox = links[i].source.x - links[j].source.x
+                let oy = links[i].source.y - links[j].source.y
+                if(vx*vy + ox*oy < 0) {
+                  vx = -vx; vy = -vy;
+                }
+                let l = Math.sqrt(vx*vx + vy * vy)
+                vx = vx / l * 2;
+                vy = vy / l * 2;
+                links[j].source.x += vx;
+                links[j].source.y += vy;
+            }
           }
         }
       }
@@ -288,7 +310,20 @@ d3 = function() {
       for(var i=0; i<nodes.length; i++) {
         for(var j=i+1; j<nodes.length; j++) {
             var n1 = nodes[i], n2 = nodes[j]
-
+            function distance_between(n1, n2) {
+                let dist = 0;
+                while(n1.data.parent || n2.data.parent) {
+                    if(n1 == n2) { return dist; }
+                    else if(n1.data.level > n2.data.level) {
+                        n1 = n1.data.parent;
+                    } else {
+                        n2 = n2.data.parent;
+                    }
+                    dist++;
+                }
+                return dist;
+            }
+            let distance = distance_between(n1, n2);
             var w = (n1.w + n2.w) / 2 * (1-alpha) + 10
             var h = (n1.h + n2.h) / 2 * (1-alpha) + 10
             var dx = n1.x - n2.x
@@ -297,19 +332,19 @@ d3 = function() {
             var ry = dy / h
 
             var l = (dx * dx + dy * dy) + 1; // prevent divide-by-zero
-            var sx = dx / l * 0.2;
-            var sy = dy / l * 0.2;
+            var sx = dx / l * (distance - 1) * 3;
+            var sy = dy / l * (distance - 1) * 3;
             if(!n1.fixed) {
-                n1.py += sy
-                n1.y += sy
-                n1.px += sx
-                n1.x += sx
+                n1.py += sy / n1.weight
+                n1.y += sy / n1.weight
+                n1.px += sx / n1.weight
+                n1.x += sx / n1.weight
             }
             if(!n2.fixed) {
-                n2.py -= sy
-                n2.y -= sy
-                n2.py -= sx
-                n2.y -= sx
+                n2.py -= sy / n2.weight
+                n2.y -= sy / n2.weight
+                n2.py -= sx / n2.weight
+                n2.y -= sx / n2.weight
             }                     
           }
       }
@@ -320,8 +355,6 @@ d3 = function() {
           for(var i=0; i<nodes.length; i++) {
               for(var j=i+1; j<nodes.length; j++) {
                   var n1 = nodes[i], n2 = nodes[j]
-
-                  if(n1.skip_collision || n2.skip_collision) continue;
                   var w = (n1.w + n2.w) / 2 * (1 - alpha) + 10;
                   var h = (n1.h + n2.h) / 2 * (1 - alpha) + 10;
                   var dx = n1.x - n2.x
@@ -449,7 +482,6 @@ d3 = function() {
         if (isNaN(o.py)) o.py = o.y;
         if (isNaN(o.w)) o.w = 1;
         if (isNaN(o.h)) o.h = 1;
-        o.skip_collision = 0;
       }
       distances = [];
       if (typeof linkDistance === "function") for (i = 0; i < m; ++i) distances[i] = +linkDistance.call(this, links[i], i); else for (i = 0; i < m; ++i) distances[i] = linkDistance;
