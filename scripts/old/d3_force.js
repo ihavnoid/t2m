@@ -243,8 +243,8 @@ d3 = function() {
                 let l = Math.sqrt(vx*vx + vy * vy)
                 vx = vx / l * 2;
                 vy = vy / l * 2;
-                links[i].source.x += vx;
-                links[i].source.y += vy;
+                links[i].source.vx += vx;
+                links[i].source.vy += vy;
             }
             if(!links[j].source.fixed) {
                 let vx = links[j].target.y - links[j].source.y
@@ -257,8 +257,8 @@ d3 = function() {
                 let l = Math.sqrt(vx*vx + vy * vy)
                 vx = vx / l * 2;
                 vy = vy / l * 2;
-                links[j].source.x += vx;
-                links[j].source.y += vy;
+                links[j].source.vx += vx;
+                links[j].source.vy += vy;
             }
           }
         }
@@ -305,14 +305,17 @@ d3 = function() {
         } else {
           o.x -= (o.px - (o.px = o.x)) * friction;
           o.y -= (o.py - (o.py = o.y)) * friction;
+          o.x += (o.vx = o.vx * .5);
+          o.y += (o.vy = o.vy * .5);
         }
       }
       for(var i=0; i<nodes.length; i++) {
         for(var j=i+1; j<nodes.length; j++) {
+            // node repulsion force.  proportional to topographical distance between nodes (max 10)
             var n1 = nodes[i], n2 = nodes[j]
             function distance_between(n1, n2) {
                 let dist = 0;
-                while(n1.data.parent || n2.data.parent) {
+                while(dist < 10 && (n1.data.parent || n2.data.parent)) {
                     if(n1 == n2) { return dist; }
                     else if(n1.data.level > n2.data.level) {
                         n1 = n1.data.parent;
@@ -321,7 +324,7 @@ d3 = function() {
                     }
                     dist++;
                 }
-                return dist;
+                return 10;
             }
             let distance = distance_between(n1, n2);
             var w = (n1.w + n2.w) / 2 * (1-alpha) + 10
@@ -334,17 +337,18 @@ d3 = function() {
             var l = (dx * dx + dy * dy) + 1; // prevent divide-by-zero
             var sx = dx / l * (distance - 1) * 3;
             var sy = dy / l * (distance - 1) * 3;
+            // note : weight can be zero
             if(!n1.fixed) {
-                n1.py += sy / n1.weight
-                n1.y += sy / n1.weight
-                n1.px += sx / n1.weight
-                n1.x += sx / n1.weight
+                n1.py += sy / (n1.weight+1)
+                n1.y += sy / (n1.weight+1)
+                n1.px += sx / (n1.weight+1)
+                n1.x += sx / (n1.weight+1)
             }
             if(!n2.fixed) {
-                n2.py -= sy / n2.weight
-                n2.y -= sy / n2.weight
-                n2.py -= sx / n2.weight
-                n2.y -= sx / n2.weight
+                n2.py -= sy / (n2.weight+1)
+                n2.y -= sy / (n2.weight+1)
+                n2.px -= sx / (n2.weight+1)
+                n2.x -= sx / (n2.weight+1)
             }                     
           }
       }
@@ -482,6 +486,8 @@ d3 = function() {
         if (isNaN(o.py)) o.py = o.y;
         if (isNaN(o.w)) o.w = 1;
         if (isNaN(o.h)) o.h = 1;
+        if (isNaN(o.vx)) o.vx = 0;
+        if (isNaN(o.vy)) o.vy = 0; 
       }
       distances = [];
       if (typeof linkDistance === "function") for (i = 0; i < m; ++i) distances[i] = +linkDistance.call(this, links[i], i); else for (i = 0; i < m; ++i) distances[i] = linkDistance;
