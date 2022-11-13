@@ -52,7 +52,10 @@
 
         editorPane.on("mouseup touchend", function(e) {
             // Doesn't really update text, just for cursor positions
-            settings.setText();
+            setTimeout(()=> {
+                settings.setText()
+                mindmap.redraw()
+            }, 1);
         });
         editorPane.on("keydown", function(e) {
             let keyCode = e.keyCode || e.which;
@@ -60,8 +63,10 @@
                 updateMindMap();
             } 
             unsavedChanges.setHasChanges(true);
-
-            // XXX : undo/redo broken when we are doing copy-and-paste
+            setTimeout(()=> {
+                settings.setText()
+                mindmap.redraw()
+            }, 1);
         });
         
         $("#mindmap-lock-all").on("touchstart click", function(a) {
