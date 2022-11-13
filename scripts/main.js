@@ -54,17 +54,19 @@
             // Doesn't really update text, just for cursor positions
             setTimeout(()=> {
                 settings.setText()
+                mindmap.moveViewToCurrentSelection()
                 mindmap.redraw()
             }, 1);
         });
         editorPane.on("keydown", function(e) {
-            let keyCode = e.keyCode || e.which;
-            if (keyCode == 9 || keyCode == 13 || keyCode == 219 || keyCode == 221) { 
-                updateMindMap();
-            } 
+            // let keyCode = e.keyCode || e.which;
+            // if (keyCode == 9 || keyCode == 13 || keyCode == 219 || keyCode == 221) { 
+            //     updateMindMap();
+            // } 
             unsavedChanges.setHasChanges(true);
             setTimeout(()=> {
                 settings.setText()
+                mindmap.moveViewToCurrentSelection()
                 mindmap.redraw()
             }, 1);
         });

@@ -251,7 +251,7 @@ editorPane = (function() {
         }
         return t;
     }
-    function unmarkCaretPos(t) {
+    function unmarkCaretPos(t, skip_if_no_content_update = false) {
         let el = document.getElementById("textedit");
         let p1 = t.indexOf("\0 n");
         if(p1 >= 0) {
@@ -264,9 +264,11 @@ editorPane = (function() {
         if(p2 < p1) {
             p1 -= 3;
         }
-        el.innerHTML = t;
-        if(p1 >= 0 && p2 >= 0) {
-            setCaret(el, p1, p2);
+        if(!skip_if_no_content_update || el.innerHTML != t) {
+            el.innerHTML = t;
+            if(p1 >= 0 && p2 >= 0) {
+                setCaret(el, p1, p2);
+            }
         }
         return t;
     }
@@ -328,8 +330,8 @@ editorPane = (function() {
                 } else {
                     cl = " ";
                 }
-                if(l.match(/^ *(\[(?:[0-9\- ]|\0 n|\0 r)*\])(.*)$/)) {
-                    l = l.replace(/^ *(\[(?:[0-9\- ]|\0 n|\0 r)*\])(.*)$/, "<span class=\"pos\">$1</span><span"+cl+"class=\"header\">$2</span>");
+                if(l.match(/^( |\0 n|\0 r)*(\[(?:[0-9\- ]|\0 n|\0 r)*\])(.*)$/)) {
+                    l = l.replace(/^( |\0 n|\0 r)*(\[(?:[0-9\- ]|\0 n|\0 r)*\])(.*)$/, "<span class=\"pos\">$1$2</span><span"+cl+"class=\"header\">$3</span>");
                 } else {
                     l = "<span"+cl+"class=\"header\">"+l+"</span>";
                 }
@@ -472,7 +474,7 @@ editorPane = (function() {
         // console.log("After handling cleanup");
         // console.log(tout);
 
-        unmarkCaretPos(tout);
+        unmarkCaretPos(tout, true);
         return updateProcessed();
     }
 
