@@ -229,6 +229,7 @@ d3 = function() {
       }
       var n = nodes.length, m = links.length, q, i, o, s, t, l, k, x, y;
 
+      nodes.forEach((x) => { x.intersects = false; })
       for(i=0; i<m; ++i) {
         for(j=i+1; j<m; ++j) {
           if(links_intersect(links[i], links[j])) {
@@ -237,7 +238,7 @@ d3 = function() {
                 let vy = links[i].source.x - links[i].target.x
                 let ox = links[j].source.x - links[i].source.x
                 let oy = links[j].source.y - links[i].source.y
-                if(vx*vy + ox*oy < 0) {
+                if(vx*vy + ox*oy > 0) {
                   vx = -vx; vy = -vy;
                 }
                 let l = Math.sqrt(vx*vx + vy * vy)
@@ -251,7 +252,7 @@ d3 = function() {
                 let vy = links[j].source.x - links[j].target.x
                 let ox = links[i].source.x - links[j].source.x
                 let oy = links[i].source.y - links[j].source.y
-                if(vx*vy + ox*oy < 0) {
+                if(vx*vy + ox*oy > 0) {
                   vx = -vx; vy = -vy;
                 }
                 let l = Math.sqrt(vx*vx + vy * vy)
@@ -260,6 +261,8 @@ d3 = function() {
                 links[j].source.vx += vx;
                 links[j].source.vy += vy;
             }
+            links[i].source.intersects = true;
+            links[j].source.intersects = true;
           }
         }
       }
@@ -305,8 +308,8 @@ d3 = function() {
         } else {
           o.x -= (o.px - (o.px = o.x)) * friction;
           o.y -= (o.py - (o.py = o.y)) * friction;
-          o.x += (o.vx = o.vx * .5);
-          o.y += (o.vy = o.vy * .5);
+          o.x += (o.vx = o.vx * .75) / 3;
+          o.y += (o.vy = o.vy * .75) / 3;
         }
       }
       for(var i=0; i<nodes.length; i++) {
@@ -358,6 +361,7 @@ d3 = function() {
           // collision correction - TBD
           for(var i=0; i<nodes.length; i++) {
               for(var j=i+1; j<nodes.length; j++) {
+                  if(n1.intersects && n2.intersects) { continue; }
                   var n1 = nodes[i], n2 = nodes[j]
                   var w = (n1.w + n2.w) / 2 * (1 - alpha) + 10;
                   var h = (n1.h + n2.h) / 2 * (1 - alpha) + 10;

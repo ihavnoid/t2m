@@ -654,10 +654,13 @@ editorPane = (function() {
         if (isSupported) {
             const selection = window.getSelection();
             let n = selection.getRangeAt(0).startContainer;
-            let l = 0; let t = 0;
+            let l = 0; let t = -100;
             while(n != el && n != null) {
                 if(n.nodeType != Node.TEXT_NODE) {
                     l += n.offsetLeft; t += n.offsetTop;
+                }
+                if(n.nodeName == "LI") {
+                    break;
                 }
                 n = n.parentElement;
             }
