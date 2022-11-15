@@ -232,6 +232,13 @@ d3 = function() {
       nodes.forEach((x) => { x.intersects = false; })
       for(i=0; i<m; ++i) {
         for(j=i+1; j<m; ++j) {
+          if(links[i].source == links[j].source || 
+                links[i].source == links[j].target || 
+                links[i].target == links[j].source || 
+                links[i].target == links[j].target) {
+              continue;
+          }
+
           if(links_intersect(links[i], links[j])) {
             if(!links[i].source.fixed) {
                 let vx = links[i].target.y - links[i].source.y
@@ -278,6 +285,12 @@ d3 = function() {
         l = x * x + y * y;
         if (l) {
           l = Math.sqrt(l);
+          let bx1 = (s.w + t.w)/2
+          let by1 = bx1 * y / (x + 1e-6)
+          let by2 = (s.h + t.h)/2
+          let bx2 = by2 * x / (y + 1e-6)
+          l -= Math.sqrt(Math.min(bx1 * bx1 + by1 * by1, bx2 * bx2 + by2 * by2))
+          if(l < o.distance/4) l = o.distance/4;
           l = alpha * strengths[i] * (l - o.distance) / l;
           o.distance += l * 0.1;
           x *= l;
@@ -338,8 +351,8 @@ d3 = function() {
             var ry = dy / h
 
             var l = (dx * dx + dy * dy) + 1; // prevent divide-by-zero
-            var sx = dx / l * (distance - 1) * 3;
-            var sy = dy / l * (distance - 1) * 3;
+            var sx = dx / l * (distance - 1);
+            var sy = dy / l * (distance - 1);
             // note : weight can be zero
             if(!n1.fixed) {
                 n1.py += sy / (n1.weight+1)
