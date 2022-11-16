@@ -416,8 +416,8 @@ settings = (function() {
 
                 console.log("sendBeacon", data);
                 navigator.sendBeacon(url, data);
-                // normally this won't be a problem, but we will simply move the seq pointer so that subsequent writes will definitely fail.
-                seq = 1;
+
+                seq = seq + 1;
                 last_push_time = 0;
             }
         });
