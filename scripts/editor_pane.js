@@ -500,8 +500,9 @@ editorPane = (function() {
                 for(let i=0; i < depth-1; i++) {
                     ret += " ";
                 }
-                ret += "-";
+                ret += "\0-";
                 ret += el.innerText;
+                ret = ret.replaceAll("\n", "\n\0+")
                 return ret;
             } else {
                 if(el.hasChildNodes()) {
