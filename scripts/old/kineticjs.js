@@ -1623,6 +1623,16 @@ function(a, b) {
                 height: parseInt(d, 10)
             }
         },
+        _getTextSizeSkipContext: function(a) {
+            var b = this.dummyCanvas,
+                c = b.getContext(f),
+                d = this.getFontSize(),
+                e;
+            return c.font = this.getFontStyle() + r + d + q + this.getFontFamily(), e = c.measureText(a), {
+                width: e.width,
+                height: parseInt(d, 10)
+            }
+        },
         _expandTextData: function(a) {
             var b = a.length;
             n = 0, text = h, newArr = [];
@@ -1633,10 +1643,11 @@ function(a, b) {
             return newArr
         },
         _setTextData: function() {
+            this.dummyCanvas.getContext("2d").save();
             var b = this.getText().split(h),
                 c = [],
                 d = 0;
-            addLine = !0, lineHeightPx = 0, padding = this.getPadding(), this.textWidth = 0, this.textHeight = this._getTextSize(this.getText()).height, lineHeightPx = this.getLineHeight() * this.textHeight;
+            addLine = !0, lineHeightPx = 0, padding = this.getPadding(), this.textWidth = 0, this.textHeight = this._getTextSizeSkipContext(this.getText()).height, lineHeightPx = this.getLineHeight() * this.textHeight;
             while (b.length > 0 && addLine && (this.attrs.height === a || lineHeightPx * (d + 1) < this.attrs.height - padding * 2)) {
                 var e = 0,
                     f = undefined;
@@ -1647,7 +1658,7 @@ function(a, b) {
                         break
                     }
                     var i = b.slice(0, e);
-                    if (this.attrs.width !== a && this._getTextSize(i.join(h)).width > this.attrs.width - padding * 2) {
+                    if (this.attrs.width !== a && this._getTextSizeSkipContext(i.join(h)).width > this.attrs.width - padding * 2) {
                         if (e == 0) break;
                         var k = i.lastIndexOf(r),
                             l = i.lastIndexOf(g),
@@ -1661,9 +1672,10 @@ function(a, b) {
                     }
                     e++, e === b.length && (f = b.splice(0, e).join(h))
                 }
-                this.textWidth = Math.max(this.textWidth, this._getTextSize(f).width), f !== undefined && (c.push(f), addLine = !0), d++
+                this.textWidth = Math.max(this.textWidth, this._getTextSizeSkipContext(f).width), f !== undefined && (c.push(f), addLine = !0), d++
             }
             this.textArr = this._expandTextData(c)
+            this.dummyCanvas.getContext("2d").restore();
         }
     }, Kinetic.Global.extend(Kinetic.Text, Kinetic.Shape), Kinetic.Node.addGettersSetters(Kinetic.Text, ["fontFamily", "fontSize", "fontStyle", "padding", "align", "lineHeight"]), Kinetic.Node.addGetters(Kinetic.Text, [k])
 })();

@@ -130,12 +130,12 @@ settings = (function() {
                 }
             } else {
                 // try again after 500ms
-                setTimeout(createRwKey, 500);
+                setTimeout(createRwKey, globals.query_retry_period);
             }
         };
         xhr.onerror = (resp) => {
             // try again after 500ms
-            setTimeout(createRwKey, 500);
+            setTimeout(createRwKey, globals.query_retry_period);
         };
         xhr.send();
     };
@@ -170,7 +170,7 @@ settings = (function() {
                         if(t["lockdelay"] > 0) {
                             editorPane.setEditable(false, "Somebody else is editing... please wait");
                             // if server asked us to wait for lock, wait at least 2 seconds and poll again
-                            setTimeout( () => { updateFromServer(key) }, Math.min(2000, t["lockdelay"]));
+                            setTimeout( () => { updateFromServer(key) }, Math.min(globals.lock_poll_period, t["lockdelay"]));
                         } else {
                             last_timestamp = t["timestamp"];
                             sessionStorage.setItem(prefix + "documentTitle", JSON.stringify(rwkey));
@@ -188,11 +188,11 @@ settings = (function() {
                 }
             } else {
                 // try again after 500ms
-                setTimeout( () => { updateFromServer(key) }, 500);
+                setTimeout( () => { updateFromServer(key) }, globals.query_retry_period);
             }
         };
         xhr.onerror = () => {
-            setTimeout( () => { updateFromServer(key) }, 500);
+            setTimeout( () => { updateFromServer(key) }, globals.query_retry_period);
         };
         xhr.send(data);
     }
@@ -239,7 +239,7 @@ settings = (function() {
 
     function syncToServer(delay) {
         if(!delay) {
-            delay = 2000;
+            delay = globals.write_poll_period;
         }
         if(Date.now() - last_push_time > 10000) {
             delay = 1;
@@ -322,7 +322,7 @@ settings = (function() {
             evtSource.onerror = function(x) {
                 evtSource.close();
                 evtSource = null;
-                setTimeout(enableAutoUpdate, 1000);
+                setTimeout(enableAutoUpdate, globals.query_retry_period);
             }
         } else {
             evtSource.close();

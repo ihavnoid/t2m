@@ -1,5 +1,5 @@
 <?php
-    $config = json_decode(file_get_contents(__DIR__."/config.json"));
+    $config = json_decode(file_get_contents(__DIR__."/config.json"), true);
     if(array_key_exists("k", $_GET)) {
         // addslashes shouldn't be useful here, but this is to block code injection type thingies
         $k = addslashes($_GET["k"]);
@@ -7,7 +7,7 @@
 <html>
     <header><script>
         sessionStorage.setItem("text2mindmap"+"documentTitle", JSON.stringify("<?php echo $k; ?>"));
-        window.location.replace("<?php echo $config->base_url;?>");
+        window.location.replace("<?php echo $config["base_url"];?>");
     </script></header>
 <body> &nbsp; </body>
 </html>
@@ -30,7 +30,24 @@
 	<script defer src="https://use.fontawesome.com/releases/v5.0.9/js/all.js" integrity="sha384-8iPTk2s/jMVj81dnzb/iFR2sdA7u06vHJyyLlAd4snFpCl/SnyUjRrbdJsw1pGIl" crossorigin="anonymous"></script>
 
     <script>
-        __serverBase__ = "<?php echo $config->base_url;?>";
+        globals = {
+            <?php
+                foreach(array(
+                        "query_retry_period"=>500, 
+                        "lock_poll_period"=>2000,
+                        "write_poll_period"=>2000,
+                        "write_min_sync"=>10000)  as $x=>$defval) {
+                    if(array_key_exists($x, $config)) {
+                        echo "$x : ".$config[$x].",";
+                    } else {
+                        echo "$x : ".$defval.",";
+                    }
+                }
+            ?>
+            _end_ : 0
+        };
+
+        __serverBase__ = "<?php echo $config["base_url"];?>";
     </script>
     <link rel="stylesheet" href="styles/app.css">
     <link rel="stylesheet" href="styles/navbar.css">

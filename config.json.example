@@ -6,5 +6,18 @@
     "db_path":"../../t2m.db",
 
     "_base_url_": "Base URL facing the external world.  It is recommended that this is a https address if possible, as web browsers generally disallow t2m to fire http queries to the server if the request address originated from https.",
-    "base_url":"http://localhost:8000/"
+    "base_url":"http://localhost:8000/",
+    
+    "_query_retry_period_" : "How frequently we will poll the server in case the connection fails (in ms).  Default is 500ms."
+    "query_retry_period" : 500,
+    
+    "_lock_poll_period_" : "How frequently we will poll the server to acquire locks (in ms).  Default is 2000ms.",
+    "lock_poll_period" : 2000,
+
+    "_write_poll_period_" : "How ferquently we will update contents to the server (in ms).  Default is 2000ms.",
+    "write_poll_period" : 2000,
+
+    "_write_min_sync_", "The inactivity timer for writes.  Writes will be synced immediately (ignoring write_poll_period) if there was no sync for at least write_min_sync milliseconds.  Default is 10000ms",
+    "write_min_sync" : 10000
+
 }
