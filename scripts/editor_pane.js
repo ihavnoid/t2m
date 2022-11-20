@@ -94,7 +94,8 @@ editorPane = (function() {
     }
 
     function outerHeaderLength(el) {
-        return el.outerHTML.indexOf(">"+el.innerHTML) + 1
+//        return el.outerHTML.indexOf(">"+el.innerHTML) + 1
+        return el.outerHTML.indexOf(">") + 1
     }
 
     function findRangeFromCharPos(el, pos) {
@@ -264,12 +265,22 @@ editorPane = (function() {
         if(p2 < p1) {
             p1 -= 3;
         }
-        if(!skip_if_no_content_update || el.innerHTML != t) {
-            el.innerHTML = t;
+        if(skip_if_no_content_update) {
+            if(el.innerHTML != t) {
+                el.innerHTML = t;
+                if(p1 >= 0 && p2 >= 0) {
+                    setCaret(el, p1, p2);
+                }
+            }
+        } else {
+            if(el.innerHTML != t) {
+                el.innerHTML = t;
+            }
             if(p1 >= 0 && p2 >= 0) {
                 setCaret(el, p1, p2);
             }
         }
+
         return t;
     }
     function cleanupHTML() {
