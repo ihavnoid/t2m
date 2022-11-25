@@ -249,8 +249,8 @@ d3 = function() {
                   vx = -vx; vy = -vy;
                 }
                 let l = Math.sqrt(vx*vx + vy * vy)
-                vx = vx / l * 2;
-                vy = vy / l * 2;
+                vx = vx / l * 0.5;
+                vy = vy / l * 0.5;
                 links[i].source.vx += vx;
                 links[i].source.vy += vy;
             }
@@ -263,8 +263,8 @@ d3 = function() {
                   vx = -vx; vy = -vy;
                 }
                 let l = Math.sqrt(vx*vx + vy * vy)
-                vx = vx / l * 2;
-                vy = vy / l * 2;
+                vx = vx / l * 0.5;
+                vy = vy / l * 0.5;
                 links[j].source.vx += vx;
                 links[j].source.vy += vy;
             }
