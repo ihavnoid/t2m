@@ -62,7 +62,10 @@
 <?php if(file_exists(__DIR__."/t2m.min.js")) { ?>
     <script src="t2m.min.js"></script>
 <?php } else { ?>
-    <script src="scripts/old/d3_force.js"></script>
+    <script src="scripts/old/d3-dispatch.js"></script>
+    <script src="scripts/old/d3-quadtree.js"></script>
+    <script src="scripts/old/d3-timer.js"></script>
+    <script src="scripts/old/d3-force.js"></script>
     <script src="scripts/old/kineticjs.js"></script>
     <script src="scripts/old/jquery.cookie.min.js"></script>
     <script src="scripts/old/difflib.js"></script>
