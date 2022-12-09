@@ -20,4 +20,6 @@
         return intval(microtime(true) * 1000);
     }
 	$db = new SQLite3($config->db_path);
+    	$db->busyTimeout(5000);
+	$db->exec('PRAGMA journal_mode = wal;');
 ?>
