@@ -1,10 +1,9 @@
-## This is my own variant of the popular text2mindmap.  Changed the syntax to be more of a yaml-like.  Fixed some small bugs everywhere.
+## t2m
+This is my own variant of the popular text2mindmap, cloned from http://github.com/tobloef/text2mindmap, with a lot of changes:
+- Syntax highlighting - instead of editing plain text, you can edit proper lists!
+- A simple sqlite-based php server for keeping mindmaps on the server
+- Read-only mode - you can see somebody else editing the mindmap and get live updates.  Just share the read-only link and get going!
 
----
+## Can I try?
+- Sure! A latest version is deployed on https://mindtu.be/
 
-# Text2MindMap
-An online tool for making mindmaps by writing indented lists.
-
-A few months ago one of my favorite tools [Text2MindMap](http://www.text2mindmap.com) went down and since there doesn't seem to be any plans to bring it back up I created my own version of the site. It's basically just a quick mashup between some of the code from the original site and some code from my [Markdown Editor](https://tobloef.com/markant/), but I hope someone will find it as useful.
-
-![](https://i.imgur.com/1dov0WF.png)
