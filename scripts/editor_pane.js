@@ -480,7 +480,12 @@ editorPane = (function() {
             if(rCaretPending) accumText += "\0 r";
             processCommand('L'); 
         }
-        tout = tout.replaceAll("</ul><ul>", "");
+        while(true){
+            let tout2 = tout.replaceAll("</ul><ul>", "");
+            tout2 = tout2.replaceAll("<ul></ul>", "");
+            if(tout == tout2) { break; }
+            tout = tout2;
+        }
 
         // console.log("After handling cleanup");
         // console.log(tout);

@@ -159,8 +159,10 @@ settings = (function() {
                     rwkey = t["rwkey"];
                     seq = t["seq"];
 
-                    if(editorPane.get() != t["contents"]) {
-                        editorPane.set(t["contents"]);
+                    // HACK : some servers need this workaround
+                    let contents = t["contents"].replaceAll("\r\n", "\n");
+                    if(editorPane.get() != contents) {
+                        editorPane.set(contents);
                         editorPane.refresh();
                         mindmap.render();
                     }
@@ -336,14 +338,15 @@ settings = (function() {
         }
         let value = editorPane.get();
         let [p1, p2] = editorPane.getPos();
-        if(history.length > 0 && value == history[history.length-1][0]) {
+        if(history.length > 0 && editorPane.getProcessed() == history[history.length-1][3]) {
             // console.log("setText(short)", value, p1, p2, history.length)
+            history[history.length-1][0] = value;
             history[history.length-1][1] = p1;
             history[history.length-1][2] = p2;
             return;
         }
         // console.log("setText", value, p1, p2, history.length)
-        history.push([value, p1, p2]);
+        history.push([value, p1, p2, editorPane.getProcessed()]);
         if(history.length > 100) {
             history.shift();
         }

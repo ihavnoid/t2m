@@ -160,19 +160,35 @@
             d = 1;
 
         function g(r) {
-            for (var i = 0, o = n.length; i < d; ++i) {
-                for (var a, c, h, v, y, g, x, s = 0; s < o; ++s){
-                    c = (a = n[s]).source;
-                    v = (h = a.target).x + h.vx - c.x - c.vx || u(l)
-                    y = h.y + h.vy - c.y - c.vy || u(l)
-                    g = Math.sqrt(v * v + y * y)
-                    g = (g - e[s]) / g * r * t[s]
-                    v *= g
-                    y *= g
-                    h.vx -= v * (x = f[s])
-                    h.vy -= y * x
-                    c.vx += v * (x = 1 - x)
-                    c.vy += y * x
+            for (let i = 0; i < d; ++i) {
+                for (let s = 0; s < n.length; ++s){
+                    let a = n[s];
+                    let c = a.source;
+                    let h = a.target;
+                    let x = h.x + h.vx - c.x - c.vx || u(l);
+                    let y = h.y + h.vy - c.y - c.vy || u(l);
+                    let g = Math.sqrt(x * x + y * y);
+                    let bx1 = c.w/2;
+                    let by1 = bx1 * y / (x + 1e-6);
+                    let by2 = c.h/2;
+                    let bx2 = by2 * x / (y + 1e-6);
+                    let bx3 = h.w/2;
+                    let by3 = bx3 * y / (x + 1e-6);
+                    let by4 = h.h/2;
+                    let bx4 = by4 * x / (y + 1e-6);
+                    g -= Math.sqrt(Math.min(bx1 * bx1 + by1 * by1, bx2 * bx2 + by2 * by2));
+                    g -= Math.sqrt(Math.min(bx3 * bx3 + by3 * by3, bx4 * bx4 + by4 * by4));
+                    if(g < 0.7 * e[s]) g = 0.7 * e[s];
+                    if(g > 1.3 * e[s]) g = 1.3 * e[s];
+                    g = (g - e[s]) / g * r * t[s];
+                    x *= g;
+                    y *= g;
+                    let v = f[s];
+                    h.vx -= x * v;
+                    h.vy -= y * v;
+                    v = 1 - v;
+                    c.vx += x * v;
+                    c.vy += y * v;
                 }
             }
         }
