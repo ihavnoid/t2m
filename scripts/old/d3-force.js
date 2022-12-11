@@ -10,7 +10,7 @@
         }
     }
 
-    function u(n) {
+    function jiggle(n) {
         return 1e-6 * (n() - .5)
     }
 
@@ -60,39 +60,70 @@
         }, i.strength = function(n) {
             return arguments.length ? (r = +n, i) : r
         }, i
-    }, n.forceCollide = function(n) {
-        var e, r, a, c = 1,
+    }, n.forceCollide = function(radius_value) {
+        var nodes, radii, a, c = 1,
             l = 1;
 
         function h() {
-            for (var n, i, h, y, d, g, x, xx, s = e.length, p = 0; p < l; ++p){
-                for (i = t.quadtree(e, o, f).visitAfter(v), n = 0; n < s; ++n){
-                    h = e[n];
-                    x = r[h.index].x * r[h.index].x + r[h.index].y * r[h.index].y;
-                    xx = r[h.index];
-                    g = Math.sqrt(x);
-                    y = h.x + h.vx;
-                    d = h.y + h.vy;
-                    i.visit(M);
+            for (var n, qt, node, px, py, g, distance, xx, s = nodes.length, p = 0; p < l; ++p){
+                for (qt = t.quadtree(nodes, o, f).visitAfter(initialize_quadtree), n = 0; n < s; ++n){
+                    node = nodes[n];
+                    distance = radii[node.index].x * radii[node.index].x + radii[node.index].y * radii[node.index].y;
+                    xx = radii[node.index];
+                    g = Math.sqrt(distance);
+                    px = node.x + node.vx;
+                    py = node.y + node.vy;
+                    qt.visit(apply_force);
                 }
             }
 
-            function M(n, t, e, r, i) {
+            function apply_force(n, t, e, r, i) {
                 var o = n.data,
                     f = Math.sqrt(n.r.x * n.r.x + n.r.y * n.r.y),
-                    l = g + f,
-                    xxd = {x: n.r.x + xx.x, y: n.r.y + xx.y};
-                if (!o) return t > y + l || r < y - l || e > d + l || i < d - l;
-                if (o.index > h.index) {
-                    let _x1 = y;
-                    let _y1 = d;
+                    l = g + f;
+                if (!o) return t > px + l || r < px - l || e > py + l || i < py - l;
+                if (o.index > node.index) {
+                    let _x1 = px;
+                    let _y1 = py;
                     let _x2 = o.x + o.vx;
                     let _y2 = o.y + o.vy;
+
                     let _w1 = xx.x * 1.42;
                     let _h1 = xx.y * 1.42;
                     let _w2 = n.r.x * 1.42;
                     let _h2 = n.r.y * 1.42;
-            
+                    if(!o.children_set.has(node)) {
+                        if(o.children_set.size > 1) {
+                            _w2 = _h2 = Math.sqrt(o.area)/2;
+                        }
+                        let p = o.data.parent;
+                        if(p) {
+                            let _px = p.x + p.vx;
+                            let _py = p.y + p.vx;
+                            let _dx = _px - _x2;
+                            let _dy = _py - _y2;
+                            _dx *= 0.3;
+                            _dy *= 0.3;
+                            _x2 -= _dx;
+                            _y2 -= _dy;
+                        }
+                    }
+                    if(!node.children_set.has(o)) {
+                        if(node.children_set.size > 1) {
+                            _w1 = _h1 = Math.sqrt(node.area)/2;
+                        }
+                        let p = node.data.parent;
+                        if(p) {
+                            let _px = p.x + p.vx;
+                            let _py = p.y + p.vx;
+                            let _dx = _px - _x1;
+                            let _dy = _py - _y1;
+                            _dx *= 0.3;
+                            _dy *= 0.3;
+                            _x1 -= _dx;
+                            _y1 -= _dy;
+                        }
+                    }           
                     let _b1 = _h1 * _w1 / Math.sqrt( (_x2 - _x1) * (_x2 - _x1) * _h1 * _h1 + (_y2 - _y1) * (_y2 - _y1) * _w1 * _w1)
                     let _b2 = _h2 * _w2 / Math.sqrt( (_x2 - _x1) * (_x2 - _x1) * _h2 * _h2 + (_y2 - _y1) * (_y2 - _y1) * _w2 * _w2)
 
@@ -102,8 +133,8 @@
                     let _y2_d = _b2 * (_y1 - _y2);
 
                     
-                    var v = y - o.x - o.vx,
-                        s = d - o.y - o.vy;
+                    var v = px - o.x - o.vx,
+                        s = py - o.y - o.vy;
 
                     let _l = Math.sqrt( (_x2-_x1)*(_x2-_x1) + (_y2-_y1)*(_y2-_y1) );
                     let _r1 = Math.sqrt( _x1_d * _x1_d + _y1_d * _y1_d ) 
@@ -118,8 +149,8 @@
                         _l = (_r - _l) / _l * c; 
     
                         let _rr = _r2 * _r2 / (_r1 * _r1 + _r2 * _r2);
-                        h.vx += (v *= _l) * _rr;
-                        h.vy += (s *= _l) * _rr;
+                        node.vx += (v *= _l) * _rr;
+                        node.vy += (s *= _l) * _rr;
                         o.vx -= v * (1-_rr);
                         o.vy -= s * (1-_rr);
                     }
@@ -127,8 +158,8 @@
             }
         }
 
-        function v(n) {
-            if (n.data) return n.r = r[n.data.index];
+        function initialize_quadtree(n) {
+            if (n.data) return n.r = radii[n.data.index];
             n.r = {x:0, y:0};
             for (var t = 0; t < 4; ++t) {
                 n[t] && n[t].r.x > n.r.x && (n.r.x = n[t].r.x)
@@ -137,19 +168,19 @@
         }
 
         function y() {
-            if (e) {
-                var t, i, u = e.length;
-                for (r = new Array(u), t = 0; t < u; ++t) i = e[t], r[i.index] = n(i, t, e)
+            if (nodes) {
+                var t, i, u = nodes.length;
+                for (radii = new Array(u), t = 0; t < u; ++t) i = nodes[t], radii[i.index] = radius_value(i, t, nodes)
             }
         }
-        return "function" != typeof n && (n = i(null == n ? 1 : +n)), h.initialize = function(n, t) {
-            e = n, a = t, y()
+        return "function" != typeof radius_value && (radius_value = i(null == radius_value ? 1 : +radius_value)), h.initialize = function(n, t) {
+            nodes = n, a = t, y()
         }, h.iterations = function(n) {
             return arguments.length ? (l = +n, h) : l
         }, h.strength = function(n) {
             return arguments.length ? (c = +n, h) : c
         }, h.radius = function(t) {
-            return arguments.length ? (n = "function" == typeof t ? t : i(+t), y(), h) : n
+            return arguments.length ? (radius_value = "function" == typeof t ? t : i(+t), y(), h) : radius_value
         }, h
     }, n.forceLink = function(n) {
         var t, e, r, o, f, l, h = a,
@@ -165,8 +196,8 @@
                     let a = n[s];
                     let c = a.source;
                     let h = a.target;
-                    let x = h.x + h.vx - c.x - c.vx || u(l);
-                    let y = h.y + h.vy - c.y - c.vy || u(l);
+                    let x = h.x + h.vx - c.x - c.vx || jiggle(l);
+                    let y = h.y + h.vy - c.y - c.vy || jiggle(l);
                     let g = Math.sqrt(x * x + y * y);
                     let bx1 = c.w/2;
                     let by1 = bx1 * y / (x + 1e-6);
@@ -227,48 +258,47 @@
             return arguments.length ? (y = "function" == typeof n ? n : i(+n), p(), g) : y
         }, g
     }, n.forceManyBody = function() {
-        var n, e, r, o, f, a = i(-30),
-            c = 1,
-            l = 1 / 0,
-            y = .81;
+        var n, e, r, o, f, strengthVal = i(-30),
+            distanceMinVal = 1,
+            distanceMaxVal = 1 / 0,
+            thetaVal = .81;
 
         function d(r) {
             var i, u = n.length,
-                f = t.quadtree(n, h, v).visitAfter(x);
-            for (o = r, i = 0; i < u; ++i) e = n[i], f.visit(s)
+                f = t.quadtree(n, h, v).visitAfter(accumulate);
+            for (o = r, i = 0; i < u; ++i) e = n[i], f.visit(apply)
         }
 
         function g() {
             if (n) {
                 var t, e, r = n.length;
-                for (f = new Array(r), t = 0; t < r; ++t) e = n[t], f[e.index] = +a(e, t, n)
+                for (f = new Array(r), t = 0; t < r; ++t) e = n[t], f[e.index] = +strengthVal(e, t, n)
             }
         }
 
-        function x(n) {
-            var t, e, r, i, u, o = 0,
-                a = 0;
-            if (n.length) {
-                for (r = i = u = 0; u < 4; ++u)(t = n[u]) && (e = Math.abs(t.value)) && (o += t.value, a += e, r += e * t.x, i += e * t.y);
-                n.x = r / a, n.y = i / a
+        function accumulate(quad) {
+            var t, e, r, i, u, o = 0, a = 0;
+            if (quad.length) {
+                for (r = i = u = 0; u < 4; ++u)(t = quad[u]) && (e = Math.abs(t.value)) && (o += t.value, a += e, r += e * t.x, i += e * t.y);
+                quad.x = r / a, quad.y = i / a
             } else {
-                (t = n).x = t.data.x, t.y = t.data.y;
+                (t = quad).x = t.data.x, t.y = t.data.y;
                 do {
                     o += f[t.data.index]
                 } while (t = t.next)
             }
-            n.value = o
+            quad.value = o
         }
 
-        function s(n, t, i, a) {
-            if (!n.value) return !0;
+        function apply(n, t, i, a) {
+            if (!n.value) return true;
             var h = n.x - e.x,
                 v = n.y - e.y,
                 d = a - t,
                 g = h * h + v * v;
-            if (d * d / y < g) return g < l && (0 === h && (g += (h = u(r)) * h), 0 === v && (g += (v = u(r)) * v), g < c && (g = Math.sqrt(c * g)), e.vx += h * n.value * o / g, e.vy += v * n.value * o / g), !0;
-            if (!(n.length || g >= l)) {
-                (n.data !== e || n.next) && (0 === h && (g += (h = u(r)) * h), 0 === v && (g += (v = u(r)) * v), g < c && (g = Math.sqrt(c * g)));
+            if (d * d / thetaVal < g) return g < distanceMaxVal && (0 === h && (g += (h = jiggle(r)) * h), 0 === v && (g += (v = jiggle(r)) * v), g < distanceMinVal && (g = Math.sqrt(distanceMinVal * g)), e.vx += h * n.value * o / g, e.vy += v * n.value * o / g), !0;
+            if (!(n.length || g >= distanceMaxVal)) {
+                (n.data !== e || n.next) && (0 === h && (g += (h = jiggle(r)) * h), 0 === v && (g += (v = jiggle(r)) * v), g < distanceMinVal && (g = Math.sqrt(distanceMinVal * g)));
                 do {
                     n.data !== e && (d = f[n.data.index] * o / g, e.vx += h * d, e.vy += v * d)
                 } while (n = n.next)
@@ -277,16 +307,16 @@
         return d.initialize = function(t, e) {
             n = t, r = e, g()
         }, d.strength = function(n) {
-            return arguments.length ? (a = "function" == typeof n ? n : i(+n), g(), d) : a
+            return arguments.length ? (strengthVal = "function" == typeof n ? n : i(+n), g(), d) : strengthVal
         }, d.distanceMin = function(n) {
-            return arguments.length ? (c = n * n, d) : Math.sqrt(c)
+            return arguments.length ? (distanceMinVal = n * n, d) : Math.sqrt(distanceMinVal)
         }, d.distanceMax = function(n) {
-            return arguments.length ? (l = n * n, d) : Math.sqrt(l)
+            return arguments.length ? (distanceMaxVal = n * n, d) : Math.sqrt(distanceMaxVal)
         }, d.theta = function(n) {
-            return arguments.length ? (y = n * n, d) : Math.sqrt(y)
+            return arguments.length ? (thetaVal = n * n, d) : Math.sqrt(thetaVal)
         }, d
-    }, n.forceRadial = function(n, t, e) {
-        var r, u, o, f = i(.1);
+    }, n.forceRadial = function(radiusVal, t, e) {
+        var r, u, o, strengthVal = i(.1);
 
         function a(n) {
             for (var i = 0, f = r.length; i < f; ++i) {
@@ -302,15 +332,15 @@
         function c() {
             if (r) {
                 var t, e = r.length;
-                for (u = new Array(e), o = new Array(e), t = 0; t < e; ++t) o[t] = +n(r[t], t, r), u[t] = isNaN(o[t]) ? 0 : +f(r[t], t, r)
+                for (u = new Array(e), o = new Array(e), t = 0; t < e; ++t) o[t] = +radiusVal(r[t], t, r), u[t] = isNaN(o[t]) ? 0 : +strengthVal(r[t], t, r)
             }
         }
-        return "function" != typeof n && (n = i(+n)), null == t && (t = 0), null == e && (e = 0), a.initialize = function(n) {
+        return "function" != typeof radiusVal && (radiusVal = i(+radiusVal)), null == t && (t = 0), null == e && (e = 0), a.initialize = function(n) {
             r = n, c()
         }, a.strength = function(n) {
-            return arguments.length ? (f = "function" == typeof n ? n : i(+n), c(), a) : f
+            return arguments.length ? (strengthVal = "function" == typeof n ? n : i(+n), c(), a) : strengthVal
         }, a.radius = function(t) {
-            return arguments.length ? (n = "function" == typeof t ? t : i(+t), c(), a) : n
+            return arguments.length ? (radiusVal = "function" == typeof t ? t : i(+t), c(), a) : radiusVal
         }, a.x = function(n) {
             return arguments.length ? (t = +n, a) : t
         }, a.y = function(n) {
