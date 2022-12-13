@@ -78,6 +78,17 @@
             function apply_force(n1, n2) {
                 let xx = radii[n1.index];
                 let xx2 = radii[n2.index];
+                let dist = 10;
+                if(n1.distance_map.has(n2.id)) {
+                    dist = n1.distance_map.get(n2.id);
+                }
+                dist = Math.min(dist, 5);
+                if(dist == 2 && n1.data.level == n2.data.level) {
+                    dist = 0;
+                } 
+                if(n1.fx && n1.fy && n2.fx && n2.fy) {
+                    return;
+                }
                 if (n1.index > n2.index) {
                     let _x1 = n1.x + n1.vx;
                     let _y1 = n1.y + n1.vy;
@@ -99,8 +110,9 @@
                                 let _py = p.y + p.vx;
                                 let _dx = _px - _x2;
                                 let _dy = _py - _y2;
-                                _dx *= 0.3;
-                                _dy *= 0.3;
+                                let _ll = Math.sqrt(_dx *_dx + _dy * _dy) || jiggle(l);
+                                _dx *= (_w2 - xx2.x * 1.42) / _ll * 0.7;
+                                _dy *= (_h2 - xx2.y * 1.42) / _ll * 0.7;
                                 _x2 -= _dx;
                                 _y2 -= _dy;
                             }
@@ -116,13 +128,20 @@
                                 let _py = p.y + p.vx;
                                 let _dx = _px - _x1;
                                 let _dy = _py - _y1;
-                                _dx *= 0.3;
-                                _dy *= 0.3;
+                                let _ll = Math.sqrt(_dx *_dx + _dy * _dy) || jiggle(l);
+                                _dx *= (_w1 - xx.x * 1.42) / _ll * 0.7;
+                                _dy *= (_h1 - xx.y * 1.42) / _ll * 0.7;
                                 _x1 -= _dx;
                                 _y1 -= _dy;
                             }
                         }
                     }           
+                    if(dist > 1) {
+                        _w1 += 10 * (dist-1);
+                        _w2 += 10 * (dist-1);
+                        _h1 += 10 * (dist-1);
+                        _h2 += 10 * (dist-1);
+                    }
                     let _b1 = _h1 * _w1 / Math.sqrt( (_x2 - _x1) * (_x2 - _x1) * _h1 * _h1 + (_y2 - _y1) * (_y2 - _y1) * _w1 * _w1)
                     let _b2 = _h2 * _w2 / Math.sqrt( (_x2 - _x1) * (_x2 - _x1) * _h2 * _h2 + (_y2 - _y1) * (_y2 - _y1) * _w2 * _w2)
 
