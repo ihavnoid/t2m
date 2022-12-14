@@ -609,7 +609,7 @@ editorPane = (function() {
         let t = el.innerHTML;
         t = markCaretPos(t);
         for(let x of changedesc) {
-            console.log(x);
+            // console.log(x);
             t = _do(t, x.nodenum, x.fixed, x.xp, x.yp);
         }
 

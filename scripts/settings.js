@@ -98,7 +98,7 @@ settings = (function() {
 
     let xhr = new XMLHttpRequest();
     function createRwKey() {
-        console.log("createRwKey");
+        // console.log("createRwKey");
         console.assert(xhr.readyState == 0 || xhr.readyState == 4, "Illegal XHR state");
         xhr.open('GET', __serverBase__ + "/p/n.php");
         xhr.onload = (resp) => {
@@ -246,7 +246,7 @@ settings = (function() {
         if(Date.now() - last_push_time > 10000) {
             delay = 1;
         }
-        console.log("synctoServer");
+        // console.log("synctoServer");
         if(!rokey) {
             createRwKey();
             return;
@@ -273,7 +273,7 @@ settings = (function() {
         try {
             setting = JSON.parse(localStorage.getItem(prefix + "visitedPages"));
         } catch (exception) {
-            console.log(exception);
+            console.log("localStorage parsing failed : ", exception);
         }
         if (!setting || setting == "" || typeof setting == "Array") {
             setting = {};
@@ -290,7 +290,7 @@ settings = (function() {
             setting[rokey] = d;
         }
         localStorage.setItem(prefix + "visitedPages", JSON.stringify(setting));
-        console.log(setting);
+        // console.log(setting);
     }
 
     // new document
