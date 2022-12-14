@@ -541,69 +541,78 @@ editorPane = (function() {
         }
     }
 
-    function updateTextForCoordinates(nodenum, fixed, xp, yp) {
+    function updateTextForCoordinates(changedesc) {
         if(!documentEditable) return;
+        
+        function _do(t, nodenum, fixed, xp, yp) {
+            // find starting position of li element
+            let lipos = -1;
+            for(let i=0; i<nodenum+1; i++) {
+                [lipos, len] = indexOfRegex(t, /<li[^>]*>/i, lipos+1);
+            }
+            if(lipos < 0) {
+                // out of range
+                return;
+            }
+            let clipos = t.indexOf("</li>", lipos);
+    
+            let tp = t.substring(lipos+len, clipos);
+    
+            // preserve BR before stripping tags
+            tp = tp.replaceAll("\n", "");
+            tp = tp.replaceAll("<br>", "\n");
+    
+            // strip tags
+            tp = tp.replaceAll(/<[^>]*>/g, "");
+    
+            // console.log(lipos, clipos, tp);
+    
+            // we need to deal with caret escape codes
+            let p1 = tp.indexOf("\0 n");
+            if(p1 >= 0) {
+                tp = tp.substr(0, p1) + tp.substr(p1+3);
+            }
+            let p2 = tp.indexOf("\0 r");
+            if(p2 >= 0) {
+                tp = tp.substr(0, p2) + tp.substr(p2+3);
+            }
+            let len_prev = tp.length;
+    
+            tp = tp.replace(/^ *\[[0-9\- ]*\] */, "");
+            let len_new = tp.length;
+            if(p1 >= 0){
+                p1 -= len_prev - len_new;
+                if(p1 < 0) p1 = 0;
+            } if(p2 >= 0) {
+                p2 -= len_prev - len_new;
+                if(p2 < 0) p2 = 0;
+            }
+    
+            if(fixed) {
+                let header = "[" + Math.round(xp) + " " + Math.round(yp) + "] ";
+                tp = header + tp;
+                if(p1 >= 0) p1 += header.length;
+                if(p2 >= 0) p2 += header.length;
+            }
+            if(p1 >= 0) {
+                tp = tp.substring(0, p1) + "\0 n" + tp.substring(p1);
+            }
+            if(p2 >= 0) {
+                if(p2 >= p1) { p2 += 3; }
+                tp = tp.substring(0, p2) + "\0 r" + tp.substring(p2);
+            }
+            tp = tp.replaceAll("\n", "<br>");
+            t = t.substring(0, lipos+len) + tp + t.substring(clipos);
 
-        // find starting position of li element
+            return t;
+        }
         let t = el.innerHTML;
         t = markCaretPos(t);
-        let lipos = -1;
-        for(let i=0; i<nodenum+1; i++) {
-            [lipos, len] = indexOfRegex(t, /<li[^>]*>/i, lipos+1);
-        }
-        if(lipos < 0) {
-            // out of range
-            return;
-        }
-        let clipos = t.indexOf("</li>", lipos);
-
-        let tp = t.substring(lipos+len, clipos);
-
-        // preserve BR before stripping tags
-        tp = tp.replaceAll("\n", "");
-        tp = tp.replaceAll("<br>", "\n");
-
-        // strip tags
-        tp = tp.replaceAll(/<[^>]*>/g, "");
-
-        // console.log(lipos, clipos, tp);
-
-        // we need to deal with caret escape codes
-        let p1 = tp.indexOf("\0 n");
-        if(p1 >= 0) {
-            tp = tp.substr(0, p1) + tp.substr(p1+3);
-        }
-        let p2 = tp.indexOf("\0 r");
-        if(p2 >= 0) {
-            tp = tp.substr(0, p2) + tp.substr(p2+3);
-        }
-        let len_prev = tp.length;
-
-        tp = tp.replace(/^ *\[[0-9\- ]*\] */, "");
-        let len_new = tp.length;
-        if(p1 >= 0){
-            p1 -= len_prev - len_new;
-            if(p1 < 0) p1 = 0;
-        } if(p2 >= 0) {
-            p2 -= len_prev - len_new;
-            if(p2 < 0) p2 = 0;
+        for(let x of changedesc) {
+            console.log(x);
+            t = _do(t, x.nodenum, x.fixed, x.xp, x.yp);
         }
 
-        if(fixed) {
-            let header = "[" + Math.round(xp) + " " + Math.round(yp) + "] ";
-            tp = header + tp;
-            if(p1 >= 0) p1 += header.length;
-            if(p2 >= 0) p2 += header.length;
-        }
-        if(p1 >= 0) {
-            tp = tp.substring(0, p1) + "\0 n" + tp.substring(p1);
-        }
-        if(p2 >= 0) {
-            if(p2 >= p1) { p2 += 3; }
-            tp = tp.substring(0, p2) + "\0 r" + tp.substring(p2);
-        }
-        tp = tp.replaceAll("\n", "<br>");
-        t = t.substring(0, lipos+len) + tp + t.substring(clipos);
         unmarkCaretPos(t);
     }
 
