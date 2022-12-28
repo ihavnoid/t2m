@@ -52,3 +52,37 @@
 	opacity: 1;
 	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
 }
+.float-button {
+	position: relative;
+	width: 0;
+	height: 0;
+	top: 45%;
+}
+.float-button > div {
+	position: absolute;
+	z-index: 10;
+	color: black;
+	width: 30px;
+	cursor: pointer;
+	padding: 10px 0;
+	border-radius: 3px;
+	opacity: 0.3;
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=30)";
+}
+
+.float-button > div svg {
+	vertical-align: middle;
+    text-align: center;
+	width: 100%;
+}
+
+.float-button > div:hover {
+	background-color: #bbb;
+	opacity: 0.8;
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
+}
+
+.float-button > div:active {
+	opacity: 1;
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+}

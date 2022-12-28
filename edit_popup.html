@@ -1,0 +1,25 @@
+<html>
+<head>
+    <script>
+        function loadme() {
+            let te = document.getElementById("textedit");
+            let tem = document.getElementById("textedit_message");
+            window.opener.callbackFromPane(te, tem, window);
+            let xf = () => {
+                setTimeout(() => {
+                    if(window.opener) {
+                        xf();
+                    } else {
+                        window.close();
+                    }
+                }, 500);
+            }
+            xf();
+        }
+    </script>
+    <link rel="stylesheet" href="styles/editor.css">
+</head>
+<body onload="loadme()">
+    <div id="textedit_message"></div>
+    <div id="textedit" spellcheck="false" contenteditable="true"></div>
+</body>

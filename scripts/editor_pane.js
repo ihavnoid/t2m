@@ -1,10 +1,73 @@
 // editor pane encapsulation
 
+__cb_pane = (te, tem, w) => {};
+function callbackFromPane(te, tem, w) {
+    __cb_pane(te, tem, w);
+}
+
 editorPane = (function() {
     var nodeColors = {};
     var processed = "";
     var documentEditable = true;
     var lastPressedKey = "";
+    var el = null;
+    var elm = null;
+    var selfWindow = window;
+    var unfloatCb = null;
+    var all_events = [];
+
+    function getWindow() {
+        if(selfWindow != window && selfWindow.closed) {
+            __cb_pane(
+                document.getElementById("textedit"),
+                document.getElementById("textedit_message"),
+                window
+            );
+            unfloatCb();
+        }
+        return selfWindow;
+    }
+    function startFloatMode(unfloat_cb) {
+        __cb_pane = (te, tem, w) => {
+            // this function will be called by the popup itself as the callback,
+            // sending out the textElement and textElement message element
+            let pc = "";
+            let pm = "";
+            if(el != null) {
+                // un-attach all events
+                for(let [ev, f] of all_events) {
+                    el.removeEventListener(ev, f);
+                }
+                pc = el.innerHTML;
+            }
+            if(elm != null) {
+                pm = elm.innerHTML;
+            }
+            el = te;
+            elm = tem;
+            selfWindow = w;
+            el.innerHTML = pc;
+            for(let [ev, f] of all_events) {
+                el.addEventListener(ev, f);
+            }
+            if(observer != null) {
+                observer.disconnect();
+                let options = {subtree:true, childList:true, attributes: true, characterData: true};
+                observer.observe(el, options);
+            }
+            setEditable(documentEditable, pm);
+        };
+        unfloatCb = unfloat_cb;
+        let w = window.open("edit_popup.html", "floatpane", "popup")
+
+        let poll_window_exist = () => {
+            if(getWindow() != window) {
+                setTimeout(poll_window_exist, 500);
+            }
+        }
+        setTimeout(poll_window_exist, 500);
+    }
+
 
     function setNodeColor(index, color) {
         // console.log(color);
@@ -41,7 +104,10 @@ editorPane = (function() {
 
     var observer = null;
     function on(ev, f) {
-        $("#textedit").on(ev, f);
+        all_events.push([ev, f]);
+        if(el != null) {
+            el.addEventListener(ev, f);
+        }
     }
     function observe(func) {
         let options = {subtree:true, childList:true, attributes: true, characterData: true};
@@ -59,7 +125,7 @@ editorPane = (function() {
         // instead, we should only do the rebuilding when we have no composition running.
         on("compositionstart", () => { compositionRunning = true; });
         on("compositionend", () => { compositionRunning = false; });
-        observer.observe($("#textedit").get(0), options);
+        observer.observe(el, options);
     }
     // return true if there was a change on the processed contents, which means we have to redraw the mindmap
     // (instead of just cosmetic changes due to any external events)
@@ -71,7 +137,7 @@ editorPane = (function() {
             let success = cleanupHTML();
             if(observer != null) {
                 let options = {subtree:true, childList:true, attributes: true, characterData: true};
-                observer.observe($("#textedit").get(0), options);
+                observer.observe(el, options);
             }
             return success;
         } else {
@@ -199,11 +265,11 @@ editorPane = (function() {
 
 
     function getCaretIndex(element) {
-        const isSupported = typeof window.getSelection !== "undefined";
+        const isSupported = typeof getWindow().getSelection !== "undefined";
         if (isSupported) {
-            const selection = window.getSelection();
+            const selection = getWindow().getSelection();
             if (selection.rangeCount !== 0) {
-                const range = window.getSelection().getRangeAt(0);
+                const range = getWindow().getSelection().getRangeAt(0);
                 return findCharPosFromRange(element, range.endContainer, range.endOffset);
             }
         }
@@ -211,11 +277,11 @@ editorPane = (function() {
     }
     function getCaretBeginIndex(element) {
         let position = -1;
-        const isSupported = typeof window.getSelection !== "undefined";
+        const isSupported = typeof getWindow().getSelection !== "undefined";
         if (isSupported) {
-            const selection = window.getSelection();
+            const selection = getWindow().getSelection();
             if (selection.rangeCount !== 0) {
-                const range = window.getSelection().getRangeAt(0);
+                const range = getWindow().getSelection().getRangeAt(0);
                 return findCharPosFromRange(element, range.startContainer, range.startOffset);
             }
         }
@@ -224,7 +290,7 @@ editorPane = (function() {
 
     function setCaret(el, beginCharNum, endCharNum) {
         var range = document.createRange()
-        var sel = window.getSelection()
+        var sel = getWindow().getSelection()
 
         range.selectNode(el)
         let r1 = findRangeFromCharPos(el, beginCharNum)
@@ -237,7 +303,6 @@ editorPane = (function() {
     }
 
     function markCaretPos(t) {
-        let el = document.getElementById("textedit");
         let idx = getCaretIndex(el);
         let idxb = getCaretBeginIndex(el);
 
@@ -253,7 +318,6 @@ editorPane = (function() {
         return t;
     }
     function unmarkCaretPos(t, skip_if_no_content_update = false) {
-        let el = document.getElementById("textedit");
         let p1 = t.indexOf("\0 n");
         if(p1 >= 0) {
             t = t.substring(0, p1) + t.substring(p1+3);
@@ -284,8 +348,6 @@ editorPane = (function() {
         return t;
     }
     function cleanupHTML() {
-        let el = document.getElementById("textedit");
-
         let [n1pos, n2pos] = findSelectedNodes();
 
         if(!highlightSelected) {
@@ -498,7 +560,6 @@ editorPane = (function() {
         return processed;
     }
     function updateProcessed() {
-        let el = document.getElementById("textedit");
         function _f(el, depth) {
             let ret = "";
             if(el.nodeType == Node.TEXT_NODE) {
@@ -676,9 +737,9 @@ editorPane = (function() {
         unmarkCaretPos(t)
 
         // scroll to caret
-        const isSupported = typeof window.getSelection !== "undefined";
+        const isSupported = typeof getWindow().getSelection !== "undefined";
         if (isSupported) {
-            const selection = window.getSelection();
+            const selection = getWindow().getSelection();
             let n = selection.getRangeAt(0).startContainer;
             let l = 0; let t = -100;
             while(n != el && n != null) {
@@ -709,14 +770,14 @@ editorPane = (function() {
         }
 
         documentEditable = editable;
-        document.getElementById("textedit").contentEditable = editable;
+        el.contentEditable = editable;
         if(editable) {
-            document.getElementById("textedit").style.backgroundColor = "#ffffff";
-            document.getElementById("textedit_message").style.visibility = "hidden";
+            el.style.backgroundColor = "#ffffff";
+            elm.style.visibility = "hidden";
         } else {
-            document.getElementById("textedit").style.backgroundColor = "#d0d0d0";
-            document.getElementById("textedit_message").innerHTML = message;
-            document.getElementById("textedit_message").style.visibility = "visible";
+            el.style.backgroundColor = "#d0d0d0";
+            elm.innerHTML = message;
+            elm.style.visibility = "visible";
         }
     }
     function isEditable() {
@@ -724,6 +785,10 @@ editorPane = (function() {
     }
     $(document).ready(function() {
         el = document.getElementById("textedit");
+        elm = document.getElementById("textedit_message");
+        for(let [ev, f] of all_events) {
+            el.addEventListener(ev, f);
+        }
         cleanupHTML();
 
         function findCnt(str, pattern) {
@@ -815,8 +880,10 @@ editorPane = (function() {
             */
         });
     });
+
     return {
         getProcessed, get, set, getPos, setPos, on, moveCursorToNode, updateTextForCoordinates, findSelectedNodes, observe, setNodeColor, refresh,
-        setEditable, isEditable
+        setEditable, isEditable,
+        startFloatMode
     };
 }());

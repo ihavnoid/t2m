@@ -29,6 +29,8 @@ paneResizer = (function() {
 	let editorPanePercentage = 35;
 	let viewerPanePercentage = 65;
 
+    let editFloatMode = false;
+
 	$.fn.hasScrollBar = function() {
         return this.get(0).scrollHeight > this.innerHeight();
     }
@@ -41,11 +43,13 @@ paneResizer = (function() {
 		$viewerPane = $("#viewer-pane");
 		$editorCollapseButton = $("#editor-collapse-button");
 		$viewerCollapseButton = $("#viewer-collapse-button");
+        $floatButton = $("#editor-float-button");
 		$viewer = $viewerPane.find("#viewer");
 		$body = $("body");
 		// Show the collapse buttons and set the panes to their initial size.
 		$editorCollapseButton.css("visibility", "visible");
 		$viewerCollapseButton.css("visibility", "visible");
+		$floatButton.css("visibility", "visible");
 
 		oldEditorPanePercentage = editorPanePercentage;
 		oldViewerPanePercentage = viewerPanePercentage;
@@ -60,6 +64,7 @@ paneResizer = (function() {
 		// open the appropriate pane.
 		$editorCollapseButton.on("click touchstart", toggleViewer);
 		$viewerCollapseButton.on("click touchstart", toggleEditor);
+		$floatButton.on("click touchstart", clickFloatButton);
 		
 		$dragbar.on("mousedown", function(mousedownEvent) {
 			dragging = true;
@@ -159,9 +164,15 @@ paneResizer = (function() {
 	// This is done so they won't overlap with the scrollbars.
 	function setCollapseButtonPositions() {
 		if ($editorPane.width() === 0) {
-			$viewerCollapseButton.show();
+            if(editFloatMode) {
+    			$viewerCollapseButton.hide();
+            } else {
+    			$viewerCollapseButton.show();
+            }
+            $floatButton.hide();
 		} else {
 			$viewerCollapseButton.hide();
+            $floatButton.show();
 		}
 		if ($viewerPane.width() === 0) {
 			$editorCollapseButton.show();
@@ -210,6 +221,26 @@ paneResizer = (function() {
 		}
 		resizePanesToPercentage(editorPanePercentage, viewerPanePercentage);
 	}
+
+    function editorUnfloat() {
+        // call me to unfloat
+		editorPanePercentage = oldEditorPanePercentage;
+		viewerPanePercentage = oldViewerPanePercentage;
+        editFloatMode = false;
+		resizePanesToPercentage(editorPanePercentage, viewerPanePercentage);
+    }
+
+    function clickFloatButton() {
+		oldEditorPanePercentage = editorPanePercentage;
+		oldViewerPanePercentage = viewerPanePercentage;
+        editorPanePercentage = 0;
+        viewerPanePercentage = 100;
+        editFloatMode = true;
+		resizePanesToPercentage(editorPanePercentage, viewerPanePercentage);
+
+		// send unfloat callback to editorPane
+		editorPane.startFloatMode(editorUnfloat);
+    }
 
 	return {
 		toggleViewer,

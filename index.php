@@ -121,6 +121,11 @@
 		<div id="pane-container">
 			<div id="editor-pane">
                 <div id="editor">
+                        <div class="float-button" id="editor-float-button" style="visibility: visible;left: calc(100% - 29px); top: 0px;">
+                                <div>
+                                    <i class="fa fa-regular fa-window-restore"></i>
+                                </div>
+                            </div>
                         <div class="collapse-button" id="editor-collapse-button" style="visibility: visible;left: calc(100% - 29px);">
                                 <div>
                                     <i class="fa fa-fw fa-chevron-left"></i>
