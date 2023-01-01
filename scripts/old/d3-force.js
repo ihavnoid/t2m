@@ -264,48 +264,12 @@
                 let v2 = intersect_eq(link2.source.x, link2.source.y, link1) * intersect_eq(link2.target.x, link2.target.y, link1) < 0;
                 return v1 && v2;
             }
-
-            for(let i=0; i<n.length; ++i) {
-                for(let j=i+1; j<n.length; ++j) {
-                    if(n[i].source == n[j].source || 
-                            n[i].source == n[j].target || 
-                            n[i].target == n[j].source || 
-                            n[i].target == n[j].target)
-                    {
-                        continue;
-                    }
-
-                    if(links_intersect(n[i], n[j])) {
-                        if(!n[i].source.fixed) {
-                            let vx = n[i].target.y - n[i].source.y
-                            let vy = n[i].source.x - n[i].target.x
-                            let ox = n[j].source.x - n[i].source.x
-                            let oy = n[j].source.y - n[i].source.y
-                            if(vx*vy + ox*oy < 0) {
-                                vx = -vx; vy = -vy;
-                            }
-                            let l = Math.sqrt(vx*vx + vy * vy)
-                            vx = vx / l * alpha * 100;
-                            vy = vy / l * alpha * 100;
-                            n[i].source.vx += vx;
-                            n[i].source.vy += vy;
-                        }
-                        if(!n[j].source.fixed) {
-                            let vx = n[j].target.y - n[j].source.y
-                            let vy = n[j].source.x - n[j].target.x
-                            let ox = n[i].source.x - n[j].source.x
-                            let oy = n[i].source.y - n[j].source.y
-                            if(vx*vy + ox*oy < 0) {
-                                vx = -vx; vy = -vy;
-                            }
-                            let l = Math.sqrt(vx*vx + vy * vy)
-                            vx = vx / l * alpha * 100;
-                            vy = vy / l * alpha * 100;
-                            n[j].source.vx += vx;
-                            n[j].source.vy += vy;
-                        }
-                    }
-                }
+            function link_distance(link, x, y) {
+                let x1 = link.source.x;
+                let y1 = link.source.y;
+                let x2 = link.target.x;
+                let y2 = link.target.y;
+                return Math.abs( (y2-y1) * x - (x2-x1) * y + x2 * y1 - x1 * y2) / Math.sqrt( (y2-y1)*(y2-y1) +(x2-x1)*(x2-x1));
             }
         }
 
