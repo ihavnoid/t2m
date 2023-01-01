@@ -250,6 +250,63 @@
                     src.vy += vvy * t[s] * alpha * 20;
                 }
             }
+            // Note : in our context, "PARENT" is always the target. "LEAF" is always the source.
+            function links_intersect(link1, link2) {
+                if(link1.source == link2.source || link1.target == link2.target || link1.source == link2.target || link1.target == link2.source) return false;
+                function intersect_eq(x, y, link) {
+                    let x1 = link.source.x;
+                    let y1 = link.source.y;
+                    let x2 = link.target.x;
+                    let y2 = link.target.y;
+                    return (y2 - y1) * x - (x2 - x1) * y + x2 * y1 - x1 * y2;
+                }
+                let v1 = intersect_eq(link1.source.x, link1.source.y, link2) * intersect_eq(link1.target.x, link1.target.y, link2) < 0;
+                let v2 = intersect_eq(link2.source.x, link2.source.y, link1) * intersect_eq(link2.target.x, link2.target.y, link1) < 0;
+                return v1 && v2;
+            }
+
+            for(let i=0; i<n.length; ++i) {
+                for(let j=i+1; j<n.length; ++j) {
+                    if(n[i].source == n[j].source || 
+                            n[i].source == n[j].target || 
+                            n[i].target == n[j].source || 
+                            n[i].target == n[j].target)
+                    {
+                        continue;
+                    }
+
+                    if(links_intersect(n[i], n[j])) {
+                        if(!n[i].source.fixed) {
+                            let vx = n[i].target.y - n[i].source.y
+                            let vy = n[i].source.x - n[i].target.x
+                            let ox = n[j].source.x - n[i].source.x
+                            let oy = n[j].source.y - n[i].source.y
+                            if(vx*vy + ox*oy < 0) {
+                                vx = -vx; vy = -vy;
+                            }
+                            let l = Math.sqrt(vx*vx + vy * vy)
+                            vx = vx / l * alpha * 100;
+                            vy = vy / l * alpha * 100;
+                            n[i].source.vx += vx;
+                            n[i].source.vy += vy;
+                        }
+                        if(!n[j].source.fixed) {
+                            let vx = n[j].target.y - n[j].source.y
+                            let vy = n[j].source.x - n[j].target.x
+                            let ox = n[i].source.x - n[j].source.x
+                            let oy = n[i].source.y - n[j].source.y
+                            if(vx*vy + ox*oy < 0) {
+                                vx = -vx; vy = -vy;
+                            }
+                            let l = Math.sqrt(vx*vx + vy * vy)
+                            vx = vx / l * alpha * 100;
+                            vy = vy / l * alpha * 100;
+                            n[j].source.vx += vx;
+                            n[j].source.vy += vy;
+                        }
+                    }
+                }
+            }
         }
 
         function x() {
