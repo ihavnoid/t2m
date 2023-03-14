@@ -16,6 +16,24 @@ editorPane = (function() {
     var unfloatCb = null;
     var all_events = [];
 
+    function escape_html(x) {
+        var rules = [
+            { expression: /&/g, replacement: '&amp;'  }, // keep this rule at first position
+            { expression: /</g, replacement: '&lt;'   },
+            { expression: />/g, replacement: '&gt;'   },
+            { expression: /"/g, replacement: '&quot;' },
+            { expression: /'/g, replacement: '&#039;' } // or  &#39;  or  &#0039;
+                                                        // &apos;  is not supported by IE8
+                                                        // &apos;  is not defined in HTML 4
+        ];
+        var result = x;
+        for (var i = 0; i < rules.length; ++i) {
+            var rule = rules[i];
+            result = result.replace(rule.expression, rule.replacement);
+        }
+        return result;
+    }
+
     function getWindow() {
         if(selfWindow != window && selfWindow.closed) {
             __cb_pane(
@@ -179,9 +197,9 @@ editorPane = (function() {
                 for(let i = 0; i < el.childNodes.length; i++) {
                     var cel = el.childNodes[i]
                     if(cel.nodeType == Node.TEXT_NODE) {
-                        if(pos > cel.textContent.length) {
+                        if(pos > escape_html(cel.textContent).length) {
                             // console.log("strip", cel.textContent.length, cel.textContent)
-                            pos -= cel.textContent.length
+                            pos -= escape_html(cel.textContent).length
                         } else {
                             return _f(cel, pos)
                         }
@@ -213,7 +231,7 @@ editorPane = (function() {
                     for(var i=0; i<pos; i++) {
                         var c = el.childNodes[i]
                         if(c.nodeType == Node.TEXT_NODE) {
-                            cn += c.textContent.length;
+                            cn += escape_html(c.textContent).length;
                         } else {
                             cn += c.outerHTML.length;
                         }
@@ -236,7 +254,7 @@ editorPane = (function() {
                             }
                         } else {
                             if(c.nodeType == Node.TEXT_NODE) {
-                                cn += c.textContent.length;
+                                cn += escape_html(c.textContent).length;
                             } else {
                                 cn += c.outerHTML.length;
                             }
@@ -560,6 +578,8 @@ editorPane = (function() {
         return processed;
     }
     function updateProcessed() {
+
+
         function _f(el, depth) {
             let ret = "";
             if(el.nodeType == Node.TEXT_NODE) {
