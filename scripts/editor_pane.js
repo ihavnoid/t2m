@@ -21,8 +21,8 @@ editorPane = (function() {
             { expression: /&/g, replacement: '&amp;'  }, // keep this rule at first position
             { expression: /</g, replacement: '&lt;'   },
             { expression: />/g, replacement: '&gt;'   },
-            { expression: /"/g, replacement: '&quot;' },
-            { expression: /'/g, replacement: '&#039;' } // or  &#39;  or  &#0039;
+            // { expression: /"/g, replacement: '&quot;' },
+            // { expression: /'/g, replacement: '&#039;' } // or  &#39;  or  &#0039;
                                                         // &apos;  is not supported by IE8
                                                         // &apos;  is not defined in HTML 4
         ];
