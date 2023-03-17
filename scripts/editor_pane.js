@@ -17,10 +17,12 @@ editorPane = (function() {
     var all_events = [];
 
     function escape_html(x) {
+       /* 
         var rules = [
             { expression: /&/g, replacement: '&amp;'  }, // keep this rule at first position
             { expression: /</g, replacement: '&lt;'   },
             { expression: />/g, replacement: '&gt;'   },
+            { expression: /^ /g, replacement: '&nbsp;'   }, // first space matches with nbsp
             // { expression: /"/g, replacement: '&quot;' },
             // { expression: /'/g, replacement: '&#039;' } // or  &#39;  or  &#0039;
                                                         // &apos;  is not supported by IE8
@@ -32,6 +34,34 @@ editorPane = (function() {
             result = result.replace(rule.expression, rule.replacement);
         }
         return result;
+        */
+        let n = document.createElement("pre")
+        n.innerText = x;
+        let c = n.innerHTML;
+        let c2 = c.replaceAll("<br>", "\n");
+       
+        if (c2.replaceAll(/<[^>]*>/g, "") != c2) {
+            console.log("*** unstripped tags from <pre>", c2);
+        }
+        return c2;
+    }
+
+    function findCharPosOnUnescapedString(s, pos) {
+        let sp = 0;
+        let skip = false;
+        for(let i=0; i<pos; i++) {
+            if(s.charAt(i) == '&') {
+                skip = true;
+            } else if(s.charAt(i) == ';') {
+                skip = false;
+                sp++;
+            } else {
+                if(!skip) {
+                    sp++;
+                }
+            }
+        }
+        return sp;
     }
 
     function getWindow() {
@@ -194,19 +224,28 @@ editorPane = (function() {
                 let outer = outerHeaderLength(el);
                 // console.log("strip", outer)
                 pos -= outer
+            
+                // XXX : don't use textContent.  The contents don't match the html contents.
+                let t = el.innerHTML;
                 for(let i = 0; i < el.childNodes.length; i++) {
                     var cel = el.childNodes[i]
                     if(cel.nodeType == Node.TEXT_NODE) {
-                        if(pos > escape_html(cel.textContent).length) {
+                        let celLength = t.indexOf("<");
+                        if(celLength < 0) {
+                            celLength = t.length;
+                        }
+                        if(pos > celLength) {
                             // console.log("strip", cel.textContent.length, cel.textContent)
-                            pos -= escape_html(cel.textContent).length
+                            pos -= celLength;
+                            t = t.substring(celLength);
                         } else {
-                            return _f(cel, pos)
+                            return [cel, findCharPosOnUnescapedString(t, pos)];
                         }
                     } else {
                         if(pos >= cel.outerHTML.length) {
                             // console.log("strip", pos, cel.outerHTML.length, cel.outerHTML)
                             pos -= cel.outerHTML.length
+                            t = t.substring(cel.outerHTML.length);
                         } else {
                             // strip header length
                             return _f(cel, pos)
@@ -222,49 +261,78 @@ editorPane = (function() {
 
     function findCharPosFromRange(el, container, pos) {
         // return el's offset relative to **innerHTML**
-        function _f(el, container, pos) {
-            if(el == container) {
-                if( el.nodeType == Node.TEXT_NODE ) {
-                    return pos;
-                } else {
-                    var cn = 0;
-                    for(var i=0; i<pos; i++) {
-                        var c = el.childNodes[i]
+        if(el == container) {
+            if( el.nodeType == Node.TEXT_NODE ) {
+                return pos;
+            } else {
+                var cn = 0;
+
+                // XXX : don't use textContent.  The contents don't match the html contents.
+                let t = el.innerHTML;
+                for(var i=0; i<pos; i++) {
+                    var c = el.childNodes[i]
+                    if(c.nodeType == Node.TEXT_NODE) {
+                        let textContentLength = t.indexOf('<');
+                        if(textContentLength < 0) {
+                            textContentLength = t.length;
+                        }
+                        cn += textContentLength;
+                        t = t.substring(textContentLength);
+                    } else {
+                        cn += c.outerHTML.length;
+                        t = t.substring(c.outerHTML.length);
+                    }
+                }
+                return cn;
+            }
+        } else {
+            if( el.nodeType == Node.TEXT_NODE) {
+                return -1;
+            } else {
+                var cn = 0;
+
+                // XXX : don't use textContent.  The contents don't match the html contents.
+                let t = el.innerHTML;
+                for(var i=0; i<el.childNodes.length; i++) {
+                    var c = el.childNodes[i];
+                    var p = findCharPosFromRange(c, container, pos);
+                    if( p >= 0 ) {
                         if(c.nodeType == Node.TEXT_NODE) {
-                            cn += escape_html(c.textContent).length;
+                            // if this is the case, 'p' isn't the right value
+                            // since the offset should be the escaped html
+                            // while the pos is the unescaped html position.
+                            // let's do things a little backwards...
+                            p = -1;
+                            for(let i=pos; i < t.length; ) {
+                                let x = findCharPosOnUnescapedString(t, i);
+                                if(x == pos) {
+                                    p = i; break;
+                                } else {
+                                    i += pos - x;
+                                }
+                            }
+                            if(p<0) p = t.length;
+                            return cn + p;
+                        } else {
+                            return cn + outerHeaderLength(c) + p;
+                        }
+                    } else {
+                        if(c.nodeType == Node.TEXT_NODE) {
+                            let textContentLength = t.indexOf('<');
+                            if(textContentLength < 0) {
+                                textContentLength = t.length;
+                            }
+                            cn += textContentLength;
+                            t = t.substring(textContentLength);
                         } else {
                             cn += c.outerHTML.length;
+                            t = t.substring(c.outerHTML.length);
                         }
                     }
-                    return cn;
                 }
-            } else {
-                if( el.nodeType == Node.TEXT_NODE) {
-                    return -1;
-                } else {
-                    var cn = 0;
-                    for(var i=0; i<el.childNodes.length; i++) {
-                        var c = el.childNodes[i];
-                        var p = findCharPosFromRange(c, container, pos);
-                        if( p >= 0 ) {
-                            if(c.nodeType == Node.TEXT_NODE) {
-                                return cn + p;
-                            } else {
-                                return cn + outerHeaderLength(c) + p;
-                            }
-                        } else {
-                            if(c.nodeType == Node.TEXT_NODE) {
-                                cn += escape_html(c.textContent).length;
-                            } else {
-                                cn += c.outerHTML.length;
-                            }
-                        }
-                    }
-                    return -1;
-                }
+                return -1;
             }
         }
-        return _f(el, container, pos)
     }
 
     function findCharPosFromRangeDumb(el, container, pos) {
@@ -421,8 +489,8 @@ editorPane = (function() {
                 } else {
                     cl = " ";
                 }
-                if(l.match(/^( |\0 n|\0 r)*(\[(?:[0-9\- ]|\0 n|\0 r)*\])(.*)$/)) {
-                    l = l.replace(/^( |\0 n|\0 r)*(\[(?:[0-9\- ]|\0 n|\0 r)*\])(.*)$/, "<span class=\"pos\">$1$2</span><span"+cl+"class=\"header\">$3</span>");
+                if(l.match(/^(?:&nbsp;|\s|\0 n|\0 r)*(\[(?:[0-9\- ]|\0 n|\0 r)*\])(.*)$/)) {
+                    l = l.replace(/^((?:&nbsp;|\0 n|\0 r|\s)*)(\[(?:[0-9\- ]|\0 n|\0 r)*\])(.*)$/, "<span class=\"pos\">$1$2</span><span"+cl+"class=\"header\">$3</span>");
                 } else {
                     l = "<span"+cl+"class=\"header\">"+l+"</span>";
                 }
