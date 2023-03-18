@@ -46,7 +46,37 @@ editorPane = (function() {
         return c2;
     }
 
-    function findCharPosOnUnescapedString(s, pos) {
+    function findEscapedPosOnString(s, upos) {
+        // s : string with all the html escape characters (e.g., "&nbsp;")
+        // upos : character position if we un-escaped the characters
+        // returns character position if we escaped the characters
+
+        // e.g., findEscapedPosOnString("&nbsp;&amp;", 1) = 5
+        let sp = 0;
+        let skip = false;
+
+        for(let i=0; i < s.length ; i++) {
+            if(upos == sp) return i;
+            if(s.charAt(i) == '&') {
+                skip = true;
+            } else if(s.charAt(i) == ';') {
+                skip = false;
+                sp++;
+            } else {
+                if(!skip) {
+                    sp++;
+                }
+            }
+        }
+        return s.length;
+    }
+
+    function findUnescapedPosOnString(s, pos) {
+        // s : string with all the html escape characters (e.g., "&nbsp;")
+        // pos : character position if we escaped the characters
+        // returns character position if we un-escaped the characters
+        // e.g., findUnescapedPosOnString("&nbsp;&amp;", 5) = 1
+
         let sp = 0;
         let skip = false;
         for(let i=0; i<pos; i++) {
@@ -239,7 +269,7 @@ editorPane = (function() {
                             pos -= celLength;
                             t = t.substring(celLength);
                         } else {
-                            return [cel, findCharPosOnUnescapedString(t, pos)];
+                            return [cel, findUnescapedPosOnString(t, pos)];
                         }
                     } else {
                         if(pos >= cel.outerHTML.length) {
@@ -302,16 +332,7 @@ editorPane = (function() {
                             // since the offset should be the escaped html
                             // while the pos is the unescaped html position.
                             // let's do things a little backwards...
-                            p = -1;
-                            for(let i=pos; i < t.length; ) {
-                                let x = findCharPosOnUnescapedString(t, i);
-                                if(x == pos) {
-                                    p = i; break;
-                                } else {
-                                    i += pos - x;
-                                }
-                            }
-                            if(p<0) p = t.length;
+                            p = findEscapedPosOnString(t, pos);
                             return cn + p;
                         } else {
                             return cn + outerHeaderLength(c) + p;
