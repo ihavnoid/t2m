@@ -402,7 +402,7 @@ settings = (function() {
 			// Ignored
 		}
 		if (!setting || setting == "") {
-            createNew();
+            setTimeout(createNew, 1);
         } else {
             updateFromServer(setting);
         }

@@ -6,6 +6,7 @@ function callbackFromPane(te, tem, w) {
 }
 
 editorPane = (function() {
+    var debugMode = false;
     var nodeColors = {};
     var processed = "";
     var documentEditable = true;
@@ -462,7 +463,9 @@ editorPane = (function() {
         }
         let t = el.innerHTML;
         t = markCaretPos(t);
-        // console.log("begin", t)
+        if(debugMode) {
+            console.log("begin", t)
+        }
         t = t.replace(/<ul[^>]*>/gi, "\0 u");
         t = t.replace(/<\/ul>/gi, "\0 U");
         t = t.replace(/<li[^>]*>/gi, "\0 l");
@@ -656,10 +659,16 @@ editorPane = (function() {
             tout = tout2;
         }
 
-        // console.log("After handling cleanup");
-        // console.log(tout);
+        if(debugMode) {
+            console.log("After handling cleanup");
+            console.log(tout);
+        }
 
         unmarkCaretPos(tout, true);
+
+        if(debugMode) {
+            console.log("re-read", markCaretPos(el.innerHTML));
+        }
         return updateProcessed();
     }
 
