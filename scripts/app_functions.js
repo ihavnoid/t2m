@@ -24,7 +24,7 @@ appFunctions = (function() {
 		// Save the current markdown document to the user's computer
 		fileSave() {
 			const content = editorPane.get();
-			const title = settings.getKey();
+			const title = settings.findTitle();
 			const type = ".mindtxt";
 			fileExport.saveFile(content, title, type);
 			unsavedChanges.setHasChanges(false);

@@ -90,7 +90,7 @@ settings = (function() {
         let t2 = editorPane.getProcessed();
         let begin = t2.indexOf('\0-');
         let end = t2.indexOf('\n', begin);
-        t2 = t2.substring(begin+0, end).trim();
+        t2 = t2.substring(begin+2, end).trim();
         t2 = t2.replace(/^\[[0-9\- ]*\] */g, "");
 
         return t2;
@@ -428,6 +428,7 @@ settings = (function() {
 	return {
         createNew,
         setText, undoText, redoText, clearUndoHistory,
+        findTitle,
 		fontFamilyMap,
 		reset
 	};
