@@ -67,6 +67,9 @@
         function force() {
             for(let iter = 0; iter < l; iter++) {
                 for (let i=0; i<nodes.length; i++) {
+                    precompute_node(nodes[i]);
+                }
+                for (let i=0; i<nodes.length; i++) {
                     for(let j = 0; j < nodes.length; j++) {
                         let n1 = nodes[i];
                         let n2 = nodes[j];
@@ -75,10 +78,49 @@
                 }
             }
 
+            function precompute_node(n) {
+                let xx = radii[n.index];
+                let _x = n.x + n.vx;
+                let _y = n.y + n.vy;
+                let _w = xx.x * 1.42;
+                let _h = xx.y * 1.42;
+
+                let _w1 = _w;
+                let _h1 = _h;
+                let _x1 = _x;
+                let _y1 = _y;
+                if(n.children_set.size > 1) {
+                    _w1 = Math.max(Math.sqrt(n.area)/1,4, _w);
+                    _h1 = Math.max(Math.sqrt(n.area)/1.4, _h);
+                    let p = n.data.parent;
+                    if(p) {
+                        let _px = p.x + p.vx;
+                        let _py = p.y + p.vx;
+                        let _dx = _px - _x;
+                        let _dy = _py - _y;
+                        let _ll = Math.sqrt(_dx *_dx + _dy * _dy);
+                        _dx *= (_w1 - xx.x * 1.42) / _ll * 0.7;
+                        _dy *= (_h1 - xx.y * 1.42) / _ll * 0.7;
+                        _x1 -= _dx;
+                        _y1 -= _dy;
+                    }
+                }
+
+                n._w1 = _w1;
+                n._h1 = _h1;
+                n._x1 = _x1;
+                n._y1 = _y1;
+            }
             function apply_force(n1, n2) {
                 let xx = radii[n1.index];
                 let xx2 = radii[n2.index];
                 let dist = 10;
+                if (n1.index <= n2.index) {
+                    return;
+                }
+                if(n1.fx && n1.fy && n2.fx && n2.fy) {
+                    return;
+                }
                 if(n1.distance_map.has(n2.id)) {
                     dist = n1.distance_map.get(n2.id);
                 }
@@ -86,92 +128,60 @@
                 if(dist == 2 && n1.data.level == n2.data.level) {
                     dist = 0;
                 } 
-                if(n1.fx && n1.fy && n2.fx && n2.fy) {
-                    return;
+                let _x1 = n1.x + n1.vx;
+                let _y1 = n1.y + n1.vy;
+                let _x2 = n2.x + n2.vx;
+                let _y2 = n2.y + n2.vy;
+
+                let _w1 = xx.x * 1.42;
+                let _h1 = xx.y * 1.42;
+                let _w2 = xx2.x * 1.42;
+                let _h2 = xx2.y * 1.42;
+                if(!n2.children_set.has(n1)) {
+                    _w2 = n2._w1;
+                    _h2 = n2._h1;
+                    _x2 = n2._x1;
+                    _y2 = n2._y1;
                 }
-                if (n1.index > n2.index) {
-                    let _x1 = n1.x + n1.vx;
-                    let _y1 = n1.y + n1.vy;
-                    let _x2 = n2.x + n2.vx;
-                    let _y2 = n2.y + n2.vy;
+                if(!n1.children_set.has(n2)) {
+                    _w1 = n1._w1;
+                    _h1 = n1._h1;
+                    _x1 = n1._x1;
+                    _y1 = n1._y1;
+                }
+                if(dist > 1) {
+                    _w1 += 10 * (dist-1);
+                    _w2 += 10 * (dist-1);
+                    _h1 += 10 * (dist-1);
+                    _h2 += 10 * (dist-1);
+                }
+                let _b1 = _h1 * _w1 / Math.sqrt( (_x2 - _x1) * (_x2 - _x1) * _h1 * _h1 + (_y2 - _y1) * (_y2 - _y1) * _w1 * _w1)
+                let _b2 = _h2 * _w2 / Math.sqrt( (_x2 - _x1) * (_x2 - _x1) * _h2 * _h2 + (_y2 - _y1) * (_y2 - _y1) * _w2 * _w2)
 
-                    let _w1 = xx.x * 1.42;
-                    let _h1 = xx.y * 1.42;
-                    let _w2 = xx2.x * 1.42;
-                    let _h2 = xx2.y * 1.42;
-                    if(!n2.children_set.has(n1)) {
-                        if(n2.children_set.size > 1) {
-                            _w2 = Math.max(Math.sqrt(n2.area)/1.4, _w2);
-                            _h2 = Math.max(Math.sqrt(n2.area)/1.4, _h2);
+                let _x1_d = _b1 * (_x2 - _x1);
+                let _x2_d = _b2 * (_x1 - _x2);
+                let _y1_d = _b1 * (_y2 - _y1);
+                let _y2_d = _b2 * (_y1 - _y2);
 
-                            let p = n2.data.parent;
-                            if(p) {
-                                let _px = p.x + p.vx;
-                                let _py = p.y + p.vx;
-                                let _dx = _px - _x2;
-                                let _dy = _py - _y2;
-                                let _ll = Math.sqrt(_dx *_dx + _dy * _dy) || jiggle(l);
-                                _dx *= (_w2 - xx2.x * 1.42) / _ll * 0.7;
-                                _dy *= (_h2 - xx2.y * 1.42) / _ll * 0.7;
-                                _x2 -= _dx;
-                                _y2 -= _dy;
-                            }
-                        }
-                    }
-                    if(!n1.children_set.has(n2)) {
-                        if(n1.children_set.size > 1) {
-                            _w1 = Math.max(Math.sqrt(n1.area)/1,4, _w1);
-                            _h1 = Math.max(Math.sqrt(n1.area)/1.4, _h1);
-                            let p = n1.data.parent;
-                            if(p) {
-                                let _px = p.x + p.vx;
-                                let _py = p.y + p.vx;
-                                let _dx = _px - _x1;
-                                let _dy = _py - _y1;
-                                let _ll = Math.sqrt(_dx *_dx + _dy * _dy) || jiggle(l);
-                                _dx *= (_w1 - xx.x * 1.42) / _ll * 0.7;
-                                _dy *= (_h1 - xx.y * 1.42) / _ll * 0.7;
-                                _x1 -= _dx;
-                                _y1 -= _dy;
-                            }
-                        }
-                    }           
-                    if(dist > 1) {
-                        _w1 += 10 * (dist-1);
-                        _w2 += 10 * (dist-1);
-                        _h1 += 10 * (dist-1);
-                        _h2 += 10 * (dist-1);
-                    }
-                    let _b1 = _h1 * _w1 / Math.sqrt( (_x2 - _x1) * (_x2 - _x1) * _h1 * _h1 + (_y2 - _y1) * (_y2 - _y1) * _w1 * _w1)
-                    let _b2 = _h2 * _w2 / Math.sqrt( (_x2 - _x1) * (_x2 - _x1) * _h2 * _h2 + (_y2 - _y1) * (_y2 - _y1) * _w2 * _w2)
-
-                    let _x1_d = _b1 * (_x2 - _x1);
-                    let _x2_d = _b2 * (_x1 - _x2);
-                    let _y1_d = _b1 * (_y2 - _y1);
-                    let _y2_d = _b2 * (_y1 - _y2);
-
-                    
-                    var v = _x1 - _x2,
+                let _l = Math.sqrt( (_x2-_x1)*(_x2-_x1) + (_y2-_y1)*(_y2-_y1) );
+                let _r1 = Math.sqrt( _x1_d * _x1_d + _y1_d * _y1_d ) 
+                let _r2 = Math.sqrt( _x2_d * _x2_d + _y2_d * _y2_d )
+                let _r = _r1 + _r2;
+                if(_l < _r)
+                {
+                    let v = _x1 - _x2,
                         s = _y1 - _y2;
-
-                    let _l = Math.sqrt( (_x2-_x1)*(_x2-_x1) + (_y2-_y1)*(_y2-_y1) );
-                    let _r1 = Math.sqrt( _x1_d * _x1_d + _y1_d * _y1_d ) 
-                    let _r2 = Math.sqrt( _x2_d * _x2_d + _y2_d * _y2_d )
-                    let _r = _r1 + _r2;
-                    if(_l < _r)
-                    {
-                        _l = _l * _l;
-                        if(v === 0) { v = 1e-6 * (a() - 0.5); _l += v * v; }
-                        if(s === 0) { s = 1e-6 * (a() - 0.5); _l += s * s; }
-                        _l = Math.sqrt(_l)
-                        _l = (_r - _l) / _l * c; 
+                    _l = _l * _l;
+                    if(v === 0) { v = 1e-6 * (a() - 0.5); _l += v * v; }
+                    if(s === 0) { s = 1e-6 * (a() - 0.5); _l += s * s; }
+                    _l = Math.sqrt(_l)
+                    _l = (_r - _l) / _l * c; 
     
-                        let _rr = n2.area / (n1.area + n2.area);
-                        n1.vx += (v *= _l) * _rr;
-                        n1.vy += (s *= _l) * _rr;
-                        n2.vx -= v * (1-_rr);
-                        n2.vy -= s * (1-_rr);
-                    }
+                    let _rr = n2.area / (n1.area + n2.area);
+                    n1.vx += (v *= _l) * _rr;
+                    n1.vy += (s *= _l) * _rr;
+                    n2.vx -= v * (1-_rr);
+                    n2.vy -= s * (1-_rr);
                 }
             }
         }
