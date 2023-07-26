@@ -89,6 +89,7 @@
                 let _h1 = _h;
                 let _x1 = _x;
                 let _y1 = _y;
+
                 if(n.children_set.size > 1) {
                     _w1 = Math.max(Math.sqrt(n.area)/1,4, _w);
                     _h1 = Math.max(Math.sqrt(n.area)/1.4, _h);
@@ -110,24 +111,20 @@
                 n._h1 = _h1;
                 n._x1 = _x1;
                 n._y1 = _y1;
+                n._r_bound = Math.sqrt(_w * _w + _h * _h) * 2 + 25;
+                n._r2_bound = Math.sqrt(_w1 * _w1 + _h1 * _h1) * 2 + 25;
             }
+
             function apply_force(n1, n2) {
                 let xx = radii[n1.index];
                 let xx2 = radii[n2.index];
-                let dist = 10;
                 if (n1.index <= n2.index) {
                     return;
                 }
                 if(n1.fx && n1.fy && n2.fx && n2.fy) {
                     return;
                 }
-                if(n1.distance_map.has(n2.id)) {
-                    dist = n1.distance_map.get(n2.id);
-                }
-                dist = Math.min(dist, 5);
-                if(dist == 2 && n1.data.level == n2.data.level) {
-                    dist = 0;
-                } 
+
                 let _x1 = n1.x + n1.vx;
                 let _y1 = n1.y + n1.vy;
                 let _x2 = n2.x + n2.vx;
@@ -137,18 +134,38 @@
                 let _h1 = xx.y * 1.42;
                 let _w2 = xx2.x * 1.42;
                 let _h2 = xx2.y * 1.42;
+
+                let _r1_bound = n1._r_bound;
+                let _r2_bound = n2._r_bound;
                 if(!n2.children_set.has(n1)) {
                     _w2 = n2._w1;
                     _h2 = n2._h1;
                     _x2 = n2._x1;
                     _y2 = n2._y1;
+                    _r2_bound = n2._r2_bound;
+                    if(!n1.children_set.has(n2)) {
+                        _w1 = n1._w1;
+                        _h1 = n1._h1;
+                        _x1 = n1._x1;
+                        _y1 = n1._y1;
+                        _r1_bound = n1._r2_bound;
+                    }
                 }
-                if(!n1.children_set.has(n2)) {
-                    _w1 = n1._w1;
-                    _h1 = n1._h1;
-                    _x1 = n1._x1;
-                    _y1 = n1._y1;
+
+                let _l = Math.sqrt( (_x2-_x1)*(_x2-_x1) + (_y2-_y1)*(_y2-_y1) );
+                if( _l > _r1_bound + _r2_bound) {
+                    return;
                 }
+
+                let dist = 10;
+                if(n1.distance_map.has(n2.id)) {
+                    dist = n1.distance_map.get(n2.id);
+                }
+                dist = Math.min(dist, 5);
+                if(dist == 2 && n1.data.level == n2.data.level) {
+                    dist = 0;
+                }
+
                 if(dist > 1) {
                     _w1 += 10 * (dist-1);
                     _w2 += 10 * (dist-1);
@@ -157,13 +174,10 @@
                 }
                 let _b1 = _h1 * _w1 / Math.sqrt( (_x2 - _x1) * (_x2 - _x1) * _h1 * _h1 + (_y2 - _y1) * (_y2 - _y1) * _w1 * _w1)
                 let _b2 = _h2 * _w2 / Math.sqrt( (_x2 - _x1) * (_x2 - _x1) * _h2 * _h2 + (_y2 - _y1) * (_y2 - _y1) * _w2 * _w2)
-
                 let _x1_d = _b1 * (_x2 - _x1);
                 let _x2_d = _b2 * (_x1 - _x2);
                 let _y1_d = _b1 * (_y2 - _y1);
                 let _y2_d = _b2 * (_y1 - _y2);
-
-                let _l = Math.sqrt( (_x2-_x1)*(_x2-_x1) + (_y2-_y1)*(_y2-_y1) );
                 let _r1 = Math.sqrt( _x1_d * _x1_d + _y1_d * _y1_d ) 
                 let _r2 = Math.sqrt( _x2_d * _x2_d + _y2_d * _y2_d )
                 let _r = _r1 + _r2;
@@ -174,7 +188,7 @@
                     _l = _l * _l;
                     if(v === 0) { v = 1e-6 * (a() - 0.5); _l += v * v; }
                     if(s === 0) { s = 1e-6 * (a() - 0.5); _l += s * s; }
-                    _l = Math.sqrt(_l)
+                    _l = Math.sqrt(_l);
                     _l = (_r - _l) / _l * c; 
     
                     let _rr = n2.area / (n1.area + n2.area);
