@@ -111,8 +111,8 @@
                 n._h1 = _h1;
                 n._x1 = _x1;
                 n._y1 = _y1;
-                n._r_bound = Math.sqrt(_w * _w + _h * _h) * 2 + 25;
-                n._r2_bound = Math.sqrt(_w1 * _w1 + _h1 * _h1) * 2 + 25;
+                n._r_bound = Math.sqrt(_w * _w + _h * _h) + 25;
+                n._r2_bound = Math.sqrt(_w1 * _w1 + _h1 * _h1) * 1.42 + 25;
             }
 
             function apply_force(n1, n2) {

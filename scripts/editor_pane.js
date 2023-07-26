@@ -220,7 +220,7 @@ editorPane = (function() {
             }
             return success;
         } else {
-            return false;
+            return updateProcessed();
         }
     }
     function get() {
@@ -676,8 +676,6 @@ editorPane = (function() {
         return processed;
     }
     function updateProcessed() {
-
-
         function _f(el, depth) {
             let ret = "";
             if(el.nodeType == Node.TEXT_NODE) {
