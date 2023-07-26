@@ -137,29 +137,36 @@
 
                 let _r1_bound = n1._r_bound;
                 let _r2_bound = n2._r_bound;
-                if(!n2.children_set.has(n1)) {
+                if(!n2.children_set.has(n1))
+                {
                     _w2 = n2._w1;
                     _h2 = n2._h1;
                     _x2 = n2._x1;
                     _y2 = n2._y1;
                     _r2_bound = n2._r2_bound;
-                    if(!n1.children_set.has(n2)) {
-                        _w1 = n1._w1;
-                        _h1 = n1._h1;
-                        _x1 = n1._x1;
-                        _y1 = n1._y1;
-                        _r1_bound = n1._r2_bound;
-                    }
                 }
 
-                let _l = Math.sqrt( (_x2-_x1)*(_x2-_x1) + (_y2-_y1)*(_y2-_y1) );
+                // always true
+                // if(!n1.children_set.has(n2))
+                {
+                    _w1 = n1._w1;
+                    _h1 = n1._h1;
+                    _x1 = n1._x1;
+                    _y1 = n1._y1;
+                    _r1_bound = n1._r2_bound;
+                }
+
+                let dxp = (_x2 - _x1) * (_x2 - _x1);
+                let dyp = (_y2 - _y1) * (_y2 - _y1);
+                let _l = Math.sqrt( dxp + dyp );
                 if( _l > _r1_bound + _r2_bound) {
                     return;
                 }
 
                 let dist = 10;
-                if(n1.distance_map.has(n2.id)) {
-                    dist = n1.distance_map.get(n2.id);
+                let dd = n1.distance_map.get(n2.id);
+                if(dd) {
+                    dist = dd;
                 }
                 dist = Math.min(dist, 5);
                 if(dist == 2 && n1.data.level == n2.data.level) {
@@ -172,14 +179,18 @@
                     _h1 += 10 * (dist-1);
                     _h2 += 10 * (dist-1);
                 }
-                let _b1 = _h1 * _w1 / Math.sqrt( (_x2 - _x1) * (_x2 - _x1) * _h1 * _h1 + (_y2 - _y1) * (_y2 - _y1) * _w1 * _w1)
-                let _b2 = _h2 * _w2 / Math.sqrt( (_x2 - _x1) * (_x2 - _x1) * _h2 * _h2 + (_y2 - _y1) * (_y2 - _y1) * _w2 * _w2)
-                let _x1_d = _b1 * (_x2 - _x1);
-                let _x2_d = _b2 * (_x1 - _x2);
-                let _y1_d = _b1 * (_y2 - _y1);
-                let _y2_d = _b2 * (_y1 - _y2);
-                let _r1 = Math.sqrt( _x1_d * _x1_d + _y1_d * _y1_d ) 
-                let _r2 = Math.sqrt( _x2_d * _x2_d + _y2_d * _y2_d )
+                let h1p = _h1 * _h1;
+                let h2p = _h2 * _h2;
+                let w1p = _w1 * _w1;
+                let w2p = _w2 * _w2;
+                let _b1p = (dxp / w1p + dyp / h1p)
+                let _b2p = (dxp / w2p + dyp / h2p)
+                let _x1_d = dxp / _b1p;
+                let _x2_d = dxp / _b2p;
+                let _y1_d = dyp / _b1p;
+                let _y2_d = dyp / _b2p;
+                let _r1 = Math.sqrt( _x1_d + _y1_d ) 
+                let _r2 = Math.sqrt( _x2_d + _y2_d )
                 let _r = _r1 + _r2;
                 if(_l < _r)
                 {
