@@ -48,30 +48,42 @@
             let f = 0;
             let a = 0;
             let sz = 0;
+            let cnt = 0;
             for (let i = 0; i < e.length; ++i) {
                 let u = e[i];
-                f += u.x;
-                a += u.y;
+                if( u.fixed ) {
+                    let arr = u.w * u.h;
+                    cnt += arr;
+                    f += u.x * arr;
+                    a += u.y * arr;
+                } else {
+                    let arr = u.w * u.h * 0.2;
+                    cnt += arr;
+                    f += u.x * arr;
+                    a += u.y * arr;
+                }
                 sz += u.w * u.h;
             }
-            let szx = Math.sqrt(sz * 2);
-            let szy = Math.sqrt(sz);
+            let szx = Math.sqrt(sz * 4);
+            let szy = Math.sqrt(sz * 2);
 
-            f = f / e.length;
-            a = a / e.length;
+            if(cnt > 0) {
+                f = f / cnt;
+                a = a / cnt;
+            }
             for (let i = 0; i < e.length; ++i) {
                 let u = e[i];
                 if(u.x + u.w/2 > f + szx/2) {
-                    u.x -= (u.x + u.w/2 - f - szx/2) * r * alpha;
+                    u.x -= (u.x + u.w/2 - f - szx/2) * r;
                 }
                 if(u.x - u.w/2 < f - szx/2) {
-                    u.x -= (u.x - u.w/2 - f + szx/2) * r * alpha;
+                    u.x -= (u.x - u.w/2 - f + szx/2) * r;
                 }
                 if(u.y + u.h/2 > a + szy/2) {
-                    u.y -= (u.y + u.h/2 - a - szy/2) * r * alpha;
+                    u.y -= (u.y + u.h/2 - a - szy/2) * r;
                 }
                 if(u.y - u.h/2 < a - szy/2) {
-                    u.y -= (u.y - u.h/2 - a + szy/2) * r * alpha;
+                    u.y -= (u.y - u.h/2 - a + szy/2) * r;
                 }
             }
         }
@@ -116,8 +128,8 @@
                 let _y1 = _y;
 
                 if(n.children_set.size > 1) {
-                    _w1 = Math.max(Math.sqrt(n.area)/1,4, _w);
-                    _h1 = Math.max(Math.sqrt(n.area)/1.4, _h);
+                    _w1 = Math.max(Math.sqrt(n.area * _w / _h) / 2, _w);
+                    _h1 = Math.max(Math.sqrt(n.area * _h / _w) / 2, _h);
                     let p = n.data.parent;
                     if(p) {
                         let _px = p.x + p.vx;
@@ -125,8 +137,8 @@
                         let _dx = _px - _x;
                         let _dy = _py - _y;
                         let _ll = Math.sqrt(_dx *_dx + _dy * _dy);
-                        _dx *= (_w1 - xx.x * 1.42) / _ll * 0.7;
-                        _dy *= (_h1 - xx.y * 1.42) / _ll * 0.7;
+                        _dx *= (_w1 - xx.x * 1.42) / _ll;
+                        _dy *= (_h1 - xx.y * 1.42) / _ll;
                         _x1 -= _dx;
                         _y1 -= _dy;
                     }
