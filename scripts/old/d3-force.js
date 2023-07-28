@@ -4,7 +4,7 @@
 }(this, (function(n, t, e, r) {
     "use strict";
 
-    function i(n) {
+    function fff(n) {
         return function() {
             return n
         }
@@ -44,12 +44,36 @@
     n.forceCenter = function(n, t) {
         var e, r = 1;
 
-        function force() {
-            var i, u, o = e.length,
-                f = 0,
-                a = 0;
-            for (i = 0; i < o; ++i) f += (u = e[i]).x, a += u.y;
-            for (f = (f / o - n) * r, a = (a / o - t) * r, i = 0; i < o; ++i)(u = e[i]).x -= f, u.y -= a
+        function force(alpha) {
+            let f = 0;
+            let a = 0;
+            let sz = 0;
+            for (let i = 0; i < e.length; ++i) {
+                let u = e[i];
+                f += u.x;
+                a += u.y;
+                sz += u.w * u.h;
+            }
+            let szx = Math.sqrt(sz * 2);
+            let szy = Math.sqrt(sz);
+
+            f = f / e.length;
+            a = a / e.length;
+            for (let i = 0; i < e.length; ++i) {
+                let u = e[i];
+                if(u.x + u.w/2 > f + szx/2) {
+                    u.x -= (u.x + u.w/2 - f - szx/2) * r * alpha;
+                }
+                if(u.x - u.w/2 < f - szx/2) {
+                    u.x -= (u.x - u.w/2 - f + szx/2) * r * alpha;
+                }
+                if(u.y + u.h/2 > a + szy/2) {
+                    u.y -= (u.y + u.h/2 - a - szy/2) * r * alpha;
+                }
+                if(u.y - u.h/2 < a - szy/2) {
+                    u.y -= (u.y - u.h/2 - a + szy/2) * r * alpha;
+                }
+            }
         }
         return null == n && (n = 0), null == t && (t = 0), force.initialize = function(n) {
             e = n
@@ -64,7 +88,7 @@
         var nodes, radii, a, c = 1,
             l = 1;
 
-        function force() {
+        function force(alpha) {
             for(let iter = 0; iter < l; iter++) {
                 for (let i=0; i<nodes.length; i++) {
                     precompute_node(nodes[i]);
@@ -231,7 +255,7 @@
             v = function(n) {
                 return 1 / Math.min(count[n.source.index], count[n.target.index])
             },
-            y = i(30),
+            y = fff(30),
             d = 1;
 
         function force(alpha) {
@@ -281,8 +305,8 @@
                     src.vx += x * v;
                     src.vy += y * v;
 
-                    src.vx += vvx * t[s] * alpha * 20;
-                    src.vy += vvy * t[s] * alpha * 20;
+                    src.vx += vvx * t[s] * alpha * 5;
+                    src.vy += vvy * t[s] * alpha * 5;
                 }
             }
             // Note : in our context, "PARENT" is always the target. "LEAF" is always the source.
@@ -337,12 +361,12 @@
         }, force.iterations = function(n) {
             return arguments.length ? (d = +n, force) : d
         }, force.strength = function(n) {
-            return arguments.length ? (v = "function" == typeof n ? n : i(+n), s(), force) : v
+            return arguments.length ? (v = "function" == typeof n ? n : fff(+n), s(), force) : v
         }, force.distance = function(n) {
-            return arguments.length ? (y = "function" == typeof n ? n : i(+n), p(), force) : y
+            return arguments.length ? (y = "function" == typeof n ? n : fff(+n), p(), force) : y
         }, force
     }, n.forceManyBody = function() {
-        var n, e, r, o, f, strengthVal = i(-30),
+        var n, e, r, o, f, strengthVal = fff(-30),
             distanceMinVal = 1,
             distanceMaxVal = 1 / 0,
             thetaVal = .81;
@@ -391,7 +415,7 @@
         return d.initialize = function(t, e) {
             n = t, r = e, g()
         }, d.strength = function(n) {
-            return arguments.length ? (strengthVal = "function" == typeof n ? n : i(+n), g(), d) : strengthVal
+            return arguments.length ? (strengthVal = "function" == typeof n ? n : fff(+n), g(), d) : strengthVal
         }, d.distanceMin = function(n) {
             return arguments.length ? (distanceMinVal = n * n, d) : Math.sqrt(distanceMinVal)
         }, d.distanceMax = function(n) {
@@ -400,7 +424,7 @@
             return arguments.length ? (thetaVal = n * n, d) : Math.sqrt(thetaVal)
         }, d
     }, n.forceRadial = function(radiusVal, t, e) {
-        var r, u, o, strengthVal = i(.1);
+        var r, u, o, strengthVal = fff(.1);
 
         function a(n) {
             for (var i = 0, f = r.length; i < f; ++i) {
