@@ -89,6 +89,7 @@
             l = 1;
 
         function force(alpha) {
+            y();
             for(let iter = 0; iter < l; iter++) {
                 for (let i=0; i<nodes.length; i++) {
                     precompute_node(nodes[i]);
@@ -224,6 +225,9 @@
                     if(v === 0) { v = 1e-6 * (a() - 0.5); _l += v * v; }
                     if(s === 0) { s = 1e-6 * (a() - 0.5); _l += s * s; }
                     _l = Math.sqrt(_l);
+                    if(_l == 0) {
+                        console.log("!!!");
+                    }
                     _l = (_r - _l) / _l * c; 
     
                     let _rr = n2.area / (n1.area + n2.area);
