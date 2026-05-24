@@ -69,18 +69,7 @@
     <script src="scripts/old/kineticjs.js"></script>
     <script src="scripts/old/jquery.cookie.min.js"></script>
     <script src="scripts/old/difflib.js"></script>
-    <script src="scripts/old/mindmap.min.js"></script>
-    <script src="scripts/unsaved_changes.js"></script>
-    <script src="scripts/editor_pane.js"></script>
-    <script src="scripts/settings.js"></script>
-    <script src="scripts/file_import.js"></script>
-    <script src="scripts/file_export.js"></script>
-    <script src="scripts/app_functions.js"></script>
-    <script src="scripts/navbar.js"></script>
-    <script src="scripts/modal.js"></script>
-    <script src="scripts/pane_resizer.js"></script>
-    <script src="scripts/shortcuts.js"></script>
-    <script src="scripts/main.js"></script>
+    <script type="module" src="scripts/app.js"></script>
 <?php } ?>
 </head>
 
