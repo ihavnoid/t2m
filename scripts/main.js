@@ -38,6 +38,9 @@
             "file-preferences": appFunctions.filePreferences,
         });
 
+        // Initialize Modal
+        modal.init();
+
         $("#modal-settings-save").on("click", function() {
             $(".modal").removeClass("active");
         });
