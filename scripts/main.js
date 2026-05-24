@@ -29,6 +29,15 @@
         };
         shortcuts.addBindings(bindings);
 
+        // Initialize Navbar
+        navbar.init({
+            "file-new": appFunctions.fileNew,
+            "file-open": appFunctions.fileOpen,
+            "file-save": appFunctions.fileSave,
+            "file-rename": appFunctions.fileRename,
+            "file-preferences": appFunctions.filePreferences,
+        });
+
         $("#modal-settings-save").on("click", function() {
             $(".modal").removeClass("active");
         });
