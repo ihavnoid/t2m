@@ -71,7 +71,6 @@
     <script src="scripts/old/difflib.js"></script>
     <script src="scripts/old/mindmap.min.js"></script>
     <script type="module" src="scripts/app.js"></script>
-    <script src="scripts/main.js"></script>
 <?php } ?>
 </head>
 
