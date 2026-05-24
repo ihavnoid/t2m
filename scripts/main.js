@@ -41,6 +41,9 @@
         // Initialize Modal
         modal.init();
 
+        // Initialize Pane Resizer
+        paneResizer.init();
+
         $("#modal-settings-save").on("click", function() {
             $(".modal").removeClass("active");
         });
