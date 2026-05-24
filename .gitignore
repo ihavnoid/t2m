@@ -1,3 +1,12 @@
+# Project Specific
+config.json
+*.db
+*.log
+
+# Node.js
+node_modules/
+package-lock.json
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
