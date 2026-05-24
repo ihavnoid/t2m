@@ -761,10 +761,10 @@ class Mindmap {
                     if (self.D < depths[i]) self.D = depths[i];
                 }
 
+                let addedNodes = 0, removedNodes = 0, modifiedNodes = 0;
                 try {
                     const old_lines = difflib.stringAsLines(self.y);
                     const opcodes = (new difflib.SequenceMatcher(old_lines, new_lines)).get_opcodes();
-                    let addedNodes = 0, removedNodes = 0, modifiedNodes = 0;
                     for (let l_idx = 0; l_idx < opcodes.length; l_idx++) {
                         const entry = opcodes[l_idx];
                         const tag = entry[0], i1 = entry[1], i2 = entry[2], j1 = entry[3], j2 = entry[4];

@@ -302,7 +302,7 @@ class Settings {
         }
         if (this.rokey) {
             let d = { "rokey": this.rokey };
-            if (setting.hasOwnProperty(this.rokey)) {
+            if (Object.prototype.hasOwnProperty.call(setting, this.rokey)) {
                 d = setting[this.rokey];
             }
             if (this.rwkey) {
