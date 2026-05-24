@@ -4,6 +4,7 @@
     }
 
     $(document).ready(function() {
+        editorPane.init();
         editorPane.setEditable(false);
 
         // Before the user closes the window, warn them if they have unsaved changes.
