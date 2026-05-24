@@ -78,7 +78,6 @@
     <script src="scripts/app_functions.js"></script>
     <script src="scripts/modal.js"></script>
     <script src="scripts/pane_resizer.js"></script>
-    <script src="scripts/shortcuts.js"></script>
     <script src="scripts/main.js"></script>
 <?php } ?>
 </head>
