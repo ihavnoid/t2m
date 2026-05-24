@@ -7,6 +7,7 @@ import { editorPane } from './modules/editor_pane.js';
 import { settings } from './modules/settings.js';
 import { fileImport } from './modules/file_import.js';
 import { fileExport } from './modules/file_export.js';
+import { appFunctions } from './modules/app_functions.js';
 
 // Attach to window for backward compatibility while we refactor other files
 window.unsavedChanges = unsavedChanges;
@@ -18,5 +19,6 @@ window.editorPane = editorPane;
 window.settings = settings;
 window.fileImport = fileImport;
 window.fileExport = fileExport;
+window.appFunctions = appFunctions;
 
 console.log('App initialization started...');
