@@ -70,7 +70,7 @@
     <script src="scripts/old/jquery.cookie.min.js"></script>
     <script src="scripts/old/difflib.js"></script>
     <script src="scripts/old/mindmap.min.js"></script>
-    <script src="scripts/unsaved_changes.js"></script>
+    <script type="module" src="scripts/app.js"></script>
     <script src="scripts/editor_pane.js"></script>
     <script src="scripts/settings.js"></script>
     <script src="scripts/file_import.js"></script>
