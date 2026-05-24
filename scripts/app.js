@@ -5,6 +5,7 @@ import { modal } from './modules/modal.js';
 import { paneResizer } from './modules/pane_resizer.js';
 import { editorPane } from './modules/editor_pane.js';
 import { settings } from './modules/settings.js';
+import { fileImport } from './modules/file_import.js';
 
 // Attach to window for backward compatibility while we refactor other files
 window.unsavedChanges = unsavedChanges;
@@ -14,5 +15,6 @@ window.modal = modal;
 window.paneResizer = paneResizer;
 window.editorPane = editorPane;
 window.settings = settings;
+window.fileImport = fileImport;
 
 console.log('App initialization started...');

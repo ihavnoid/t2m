@@ -48,6 +48,9 @@
         // Initialize Settings
         settings.init();
 
+        // Initialize File Import
+        fileImport.init();
+
         $("#modal-settings-save").on("click", function() {
             $(".modal").removeClass("active");
         });
