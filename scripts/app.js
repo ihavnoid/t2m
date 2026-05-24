@@ -11,6 +11,7 @@ import { settings } from './modules/settings.js';
 import { fileImport } from './modules/file_import.js';
 import { fileExport } from './modules/file_export.js';
 import { appFunctions } from './modules/app_functions.js';
+import { mindmap } from './modules/mindmap.js';
 
 class App {
     constructor() {
@@ -67,6 +68,9 @@ class App {
 
             // Initialize Settings
             settings.init();
+
+            // Initialize Mindmap
+            mindmap.init();
 
             // Initialize File Import
             fileImport.init();
@@ -143,3 +147,4 @@ window.settings = settings;
 window.fileImport = fileImport;
 window.fileExport = fileExport;
 window.appFunctions = appFunctions;
+window.mindmap = mindmap;

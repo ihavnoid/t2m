@@ -69,7 +69,6 @@
     <script src="scripts/old/kineticjs.js"></script>
     <script src="scripts/old/jquery.cookie.min.js"></script>
     <script src="scripts/old/difflib.js"></script>
-    <script src="scripts/old/mindmap.min.js"></script>
     <script type="module" src="scripts/app.js"></script>
 <?php } ?>
 </head>
