@@ -195,6 +195,17 @@
 							<button id="draw-tool-pen" class="active" title="Pen (Black)"><i class="fa-solid fa-pencil"></i></button>
 							<button id="draw-tool-eraser" title="Eraser"><i class="fa-solid fa-eraser"></i></button>
 							<span class="divider"></span>
+							<div class="color-picker">
+								<button class="color-swatch active" data-color="#000000" style="background-color: #000000;" title="Black"></button>
+								<button class="color-swatch" data-color="#444444" style="background-color: #444444;" title="Dark Gray"></button>
+								<button class="color-swatch" data-color="#800000" style="background-color: #800000;" title="Maroon"></button>
+								<button class="color-swatch" data-color="#006400" style="background-color: #006400;" title="Dark Green"></button>
+								<button class="color-swatch" data-color="#00008b" style="background-color: #00008b;" title="Dark Blue"></button>
+								<button class="color-swatch" data-color="#4b0082" style="background-color: #4b0082;" title="Indigo"></button>
+								<button class="color-swatch" data-color="#8b4513" style="background-color: #8b4513;" title="Saddle Brown"></button>
+								<button class="color-swatch" data-color="#2f4f4f" style="background-color: #2f4f4f;" title="Dark Slate Gray"></button>
+							</div>
+							<span class="divider"></span>
 							<button id="draw-tool-undo" title="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
 							<button id="draw-tool-clear" title="Clear Canvas"><i class="fa-solid fa-trash"></i></button>
 							<span class="divider"></span>

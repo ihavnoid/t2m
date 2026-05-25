@@ -34,7 +34,7 @@ describe('ImageDrawer Module', () => {
 
         imageDrawer.setTool('pen');
         expect(imageDrawer.currentTool).toBe('pen');
-        expect(imageDrawer.context.strokeStyle).toBe('black');
+        expect(imageDrawer.context.strokeStyle).toBe('#000000');
     });
 
     it('should start drawing on mousedown', () => {

@@ -16,6 +16,7 @@ class ImageDrawer {
         this.activeHandle = null;
         this.startResizeState = null; // { width, height, clientX, clientY }
         
+        this.currentColor = '#000000';
         this.maxWidth = 1000;
         this.maxHeight = 1000;
         this.minSize = 50;
@@ -32,6 +33,19 @@ class ImageDrawer {
         document.getElementById('draw-tool-undo').addEventListener('click', () => this.undo());
         document.getElementById('draw-tool-clear').addEventListener('click', () => this.clear());
         document.getElementById('draw-save').addEventListener('click', () => this.save());
+
+        // Color Picker Events
+        const swatches = document.querySelectorAll('.color-swatch');
+        swatches.forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                this.currentColor = swatch.dataset.color;
+                swatches.forEach(s => s.classList.remove('active'));
+                swatch.classList.add('active');
+                if (this.currentTool === 'pen') {
+                    this.context.strokeStyle = this.currentColor;
+                }
+            });
+        });
 
         // Handle Events
         const handles = document.querySelectorAll('.resize-handle');
@@ -142,7 +156,7 @@ class ImageDrawer {
         this.context.globalCompositeOperation = 'source-over';
 
         if (tool === 'pen') {
-            this.context.strokeStyle = 'black';
+            this.context.strokeStyle = this.currentColor;
             this.context.lineWidth = 3;
         } else {
             this.context.strokeStyle = 'white';

@@ -198,6 +198,35 @@
     background: #ccc;
 }
 
+.color-picker {
+    display: flex;
+    gap: 4px;
+    background: #fff;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 2px;
+    border: 1px solid rgba(0,0,0,0.1);
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.1s;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.color-swatch.active {
+    outline: 2px solid #2365ba;
+    outline-offset: 1px;
+    z-index: 1;
+}
+
 #drawing-canvas-container {
     border: 1px solid #999;
     background: #ccc; /* Darker background to see canvas edges */
