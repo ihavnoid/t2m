@@ -622,11 +622,20 @@ class EditorPane {
             }
             if (lipos < 0) return t;
             const clipos = t.indexOf("</li>", lipos);
-            let tp = t.substring(lipos + len, clipos).replaceAll("\n", "").replaceAll("<br>", "\n").replaceAll(/<[^>]*>/g, "");
+            let tp = t.substring(lipos + len, clipos);
+
+            const imgs = [];
+            tp = tp.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (match, src) => {
+                const idx = imgs.length;
+                imgs.push(src);
+                return `\0 i${idx} `;
+            });
+
+            tp = tp.replaceAll("\n", "").replaceAll("<br>", "\n").replaceAll(/<[^>]*>/g, "");
             let p1 = tp.indexOf("\0 n");
-            if (p1 >= 0) tp = tp.substr(0, p1) + tp.substr(p1 + 3);
+            if (p1 >= 0) tp = tp.substring(0, p1) + tp.substring(p1 + 3);
             let p2 = tp.indexOf("\0 r");
-            if (p2 >= 0) tp = tp.substr(0, p2) + tp.substr(p2 + 3);
+            if (p2 >= 0) tp = tp.substring(0, p2) + tp.substring(p2 + 3);
             let len_prev = tp.length;
             tp = tp.replace(/^ *\[[0-9\- ]*\] */, "");
             let len_new = tp.length;
@@ -640,6 +649,15 @@ class EditorPane {
             }
             if (p1 >= 0) tp = tp.substring(0, p1) + "\0 n" + tp.substring(p1);
             if (p2 >= 0) { if (p2 >= p1) p2 += 3; tp = tp.substring(0, p2) + "\0 r" + tp.substring(p2); }
+
+            tp = tp.replace(/\0 i(\d+) /g, (match, idx) => {
+                const i = parseInt(idx);
+                if (imgs[i]) {
+                    return `<img src="${imgs[i]}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`;
+                }
+                return "";
+            });
+
             tp = tp.replaceAll("\n", "<br>");
             return t.substring(0, lipos + len) + tp + t.substring(clipos);
         };
