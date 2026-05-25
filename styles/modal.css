@@ -167,6 +167,13 @@
     border-color: #1c4d8e;
 }
 
+.drawing-toolbar button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f8f8f8;
+    color: #999;
+}
+
 .drawing-toolbar .button-save {
     background-color: #28a745;
     color: white;

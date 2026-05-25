@@ -118,12 +118,7 @@ class ImageDrawer {
         this.history = [];
         
         const container = document.getElementById('drawing-canvas-container');
-        // Initial reasonable default size
-        this.canvas.width = Math.min(container.clientWidth - 100, 500);
-        this.canvas.height = 400;
-
-        this.setTool('pen');
-
+        // Initialize Image
         if (base64Image) {
             const img = new Image();
             img.onload = () => {
@@ -148,6 +143,7 @@ class ImageDrawer {
 
         document.getElementById('drawing-modal').classList.add('active');
         this.isActive = true;
+        this.updateUndoRedoButtons();
     }
 
     setTool(tool) {
@@ -300,6 +296,7 @@ class ImageDrawer {
         });
         if (this.history.length > 50) this.history.shift();
         this.redoHistory = []; // Clear redo history on new action
+        this.updateUndoRedoButtons();
     }
 
     undo() {
@@ -310,6 +307,7 @@ class ImageDrawer {
         
         const prevState = this.history[this.history.length - 1];
         this.restoreState(prevState);
+        this.updateUndoRedoButtons();
     }
 
     redo() {
@@ -319,6 +317,14 @@ class ImageDrawer {
         this.history.push(nextState);
         
         this.restoreState(nextState);
+        this.updateUndoRedoButtons();
+    }
+
+    updateUndoRedoButtons() {
+        const undoBtn = document.getElementById('draw-tool-undo');
+        const redoBtn = document.getElementById('draw-tool-redo');
+        if (undoBtn) undoBtn.disabled = this.history.length <= 1;
+        if (redoBtn) redoBtn.disabled = this.redoHistory.length === 0;
     }
 
     restoreState(state) {

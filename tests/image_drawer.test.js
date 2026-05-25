@@ -20,7 +20,9 @@ describe('ImageDrawer Module', () => {
             </div>
         `;
         imageDrawer.history = [];
+        imageDrawer.redoHistory = [];
         imageDrawer.isDrawing = false;
+        imageDrawer.isActive = false;
         imageDrawer.init();
     });
 
@@ -117,6 +119,31 @@ describe('ImageDrawer Module', () => {
         expect(imageDrawer.history.length).toBe(2);
         expect(imageDrawer.redoHistory.length).toBe(0);
         expect(imageDrawer.history[1].dataUrl).toBe('state2');
+    });
+
+    it('should disable undo/redo buttons when appropriate', () => {
+        const undoBtn = document.getElementById('draw-tool-undo');
+        const redoBtn = document.getElementById('draw-tool-redo');
+        
+        imageDrawer.open();
+        // Initial state: 1 snapshot in history, 0 in redo
+        expect(undoBtn.disabled).toBe(true);
+        expect(redoBtn.disabled).toBe(true);
+        
+        // Add snapshot
+        imageDrawer.saveSnapshot();
+        expect(undoBtn.disabled).toBe(false);
+        expect(redoBtn.disabled).toBe(true);
+        
+        // Undo
+        imageDrawer.undo();
+        expect(undoBtn.disabled).toBe(true);
+        expect(redoBtn.disabled).toBe(false);
+        
+        // Redo
+        imageDrawer.redo();
+        expect(undoBtn.disabled).toBe(false);
+        expect(redoBtn.disabled).toBe(true);
     });
 
     it('should respect max resolution constraints (1000x1000)', () => {
