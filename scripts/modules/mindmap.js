@@ -19,21 +19,21 @@ class Mindmap {
 
     getImage(src, onload) {
         if (this.imageCache[src]) {
-            if (this.imageCache[src].complete) {
-                if (onload) onload();
-                return this.imageCache[src];
+            const img = this.imageCache[src];
+            if (img.complete) {
+                // Do NOT call onload() synchronously here.
+                // The caller (newGroup) will use the image immediately if complete.
+                return img;
             }
             if (onload) {
-                const oldOnload = this.imageCache[src].onload;
-                this.imageCache[src].onload = () => {
-                    if (oldOnload) oldOnload();
-                    onload();
-                };
+                img.addEventListener('load', onload, { once: true });
             }
-            return this.imageCache[src];
+            return img;
         }
         const img = new Image();
-        if (onload) img.onload = onload;
+        if (onload) {
+            img.addEventListener('load', onload, { once: true });
+        }
         img.src = src;
         this.imageCache[src] = img;
         return img;
