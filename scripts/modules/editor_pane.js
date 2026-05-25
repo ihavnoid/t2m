@@ -213,46 +213,42 @@ class EditorPane {
 
     updateProcessed() {
         const _f = (el, depth) => {
-            let ret = "";
             if (el.nodeType === Node.TEXT_NODE) {
-                return null;
+                return el.textContent;
             } else if (el.nodeName === "UL") {
+                let ret = "";
                 for (const n of el.childNodes) {
                     const x = _f(n, depth + 1);
                     if (x !== null) ret += x + "\n";
                 }
                 return ret;
             } else if (el.nodeName === "LI") {
+                let ret = "";
                 for (let i = 0; i < depth - 1; i++) {
                     ret += " ";
                 }
                 ret += "\0-";
                 for (const n of el.childNodes) {
-                    if (n.nodeType === Node.TEXT_NODE) {
-                        ret += n.textContent;
-                    } else if (n.nodeName === "IMG") {
-                        ret += `\0i[${n.src}]`;
-                    } else if (n.nodeName === "BR") {
-                        ret += "\n";
-                    } else {
-                        ret += n.innerText || "";
-                    }
+                    const x = _f(n, depth);
+                    if (x !== null) ret += x;
                 }
                 ret = ret.replaceAll("\n", "\n\0+");
                 return ret;
+            } else if (el.nodeName === "IMG") {
+                return `\0i[${el.src}]`;
+            } else if (el.nodeName === "BR") {
+                return "\n";
             } else {
+                let ret = "";
                 if (el.hasChildNodes()) {
                     for (const n of el.childNodes) {
                         const x = _f(n, depth);
                         if (x !== null) ret += x;
                     }
-                    return ret;
                 } else {
-                    if (el.nodeName === "IMG") {
-                        return `\0i[${el.src}]`;
-                    }
-                    return el.innerText;
+                    ret = el.innerText || "";
                 }
+                return ret;
             }
         };
         const t = _f(this.el, 0);
