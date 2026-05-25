@@ -649,6 +649,10 @@ class Mindmap {
                 let totalHeight = 0;
                 let maxWidth = 0;
 
+                const hPadding = 12;
+                const vPadding = 12;
+                const itemSpacing = 4;
+
                 const addImages = (srcs) => {
                     srcs.forEach(src => {
                         const imgObj = self.getImage(src, () => {
@@ -676,10 +680,11 @@ class Mindmap {
                                 listening: false
                             });
                             elements.push({ node: kImg, w: w, h: h });
-                            totalHeight += h + 2;
+                            totalHeight += h + itemSpacing;
                             maxWidth = Math.max(maxWidth, w);
                         } else {
-                            totalHeight += 20;
+                            // Placeholder height while loading
+                            totalHeight += 20 + itemSpacing;
                             maxWidth = Math.max(maxWidth, 20);
                         }
                     });
@@ -689,7 +694,7 @@ class Mindmap {
 
                 const textNode = this.newText(a);
                 elements.push({ node: textNode, w: textNode.getWidth(), h: textNode.getHeight() });
-                totalHeight += textNode.getHeight();
+                totalHeight += textNode.getHeight() + itemSpacing;
                 maxWidth = Math.max(maxWidth, textNode.getWidth());
 
                 addImages(a.data.commentImages || []);
@@ -697,20 +702,23 @@ class Mindmap {
                 if (a.data.comment != "") {
                     const commentNode = this.newComment(a);
                     elements.push({ node: commentNode, w: commentNode.getWidth(), h: commentNode.getHeight() });
-                    totalHeight += commentNode.getHeight();
+                    totalHeight += commentNode.getHeight() + itemSpacing;
                     maxWidth = Math.max(maxWidth, commentNode.getWidth());
                 }
 
-                const width = maxWidth + 4;
-                const height = totalHeight;
+                // Remove the last spacing
+                if (totalHeight > 0) totalHeight -= itemSpacing;
+
+                const width = maxWidth + hPadding * 2;
+                const height = totalHeight + vPadding * 2;
                 const rect = this.newRect(a, width, height, selected);
                 group.add(rect);
 
-                let currentY = -0.5 * height;
+                let currentY = -0.5 * height + vPadding;
                 elements.forEach(el => {
                     el.node.setPosition({ x: -0.5 * el.w, y: currentY });
                     group.add(el.node);
-                    currentY += el.h;
+                    currentY += el.h + itemSpacing;
                 });
 
                 group.on("touchstart mousedown", (ev) => {
