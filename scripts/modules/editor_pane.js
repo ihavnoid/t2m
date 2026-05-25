@@ -41,7 +41,7 @@ class EditorPane {
                 let p1 = -1, p2 = -1;
                 for (let i = 0; i < lines.length; i++) {
                     const l = lines[i];
-                    if (l.indexOf("\0 n") >= 0 || l.indexOf("\0 r") >= 0) {
+                    if (l.indexOf("\0n") >= 0 || l.indexOf("\0r") >= 0) {
                         if (p1 === -1) p1 = i;
                         else p2 = i;
                     }
@@ -478,19 +478,19 @@ class EditorPane {
         let idx = this.getCaretIndex(this.el);
         let idxb = this.getCaretBeginIndex(this.el);
         if (idx >= 0) {
-            t = t.substring(0, idx) + "\0 r" + t.substring(idx);
+            t = t.substring(0, idx) + "\0r" + t.substring(idx);
             if (idx < idxb) idxb += 3;
         }
         if (idxb >= 0) {
-            t = t.substring(0, idxb) + "\0 n" + t.substring(idxb);
+            t = t.substring(0, idxb) + "\0n" + t.substring(idxb);
         }
         return t;
     }
 
     unmarkCaretPos(t, skip_if_no_content_update = false) {
-        let p1 = t.indexOf("\0 n");
+        let p1 = t.indexOf("\0n");
         if (p1 >= 0) t = t.substring(0, p1) + t.substring(p1 + 3);
-        let p2 = t.indexOf("\0 r");
+        let p2 = t.indexOf("\0r");
         if (p2 >= 0) t = t.substring(0, p2) + t.substring(p2 + 3);
         if (p2 < p1) p1 -= 3;
         if (skip_if_no_content_update) {
@@ -650,9 +650,9 @@ class EditorPane {
             });
 
             tp = tp.replaceAll("\n", "").replaceAll("<br>", "\n").replaceAll(/<[^>]*>/g, "");
-            let p1 = tp.indexOf("\0 n");
+            let p1 = tp.indexOf("\0n");
             if (p1 >= 0) tp = tp.substring(0, p1) + tp.substring(p1 + 3);
-            let p2 = tp.indexOf("\0 r");
+            let p2 = tp.indexOf("\0r");
             if (p2 >= 0) tp = tp.substring(0, p2) + tp.substring(p2 + 3);
             let len_prev = tp.length;
             tp = tp.replace(/^ *\[[0-9\- ]*\] */, "");
@@ -665,8 +665,8 @@ class EditorPane {
                 if (p1 >= 0) p1 += header.length;
                 if (p2 >= 0) p2 += header.length;
             }
-            if (p1 >= 0) tp = tp.substring(0, p1) + "\0 n" + tp.substring(p1);
-            if (p2 >= 0) { if (p2 >= p1) p2 += 3; tp = tp.substring(0, p2) + "\0 r" + tp.substring(p2); }
+            if (p1 >= 0) tp = tp.substring(0, p1) + "\0n" + tp.substring(p1);
+            if (p2 >= 0) { if (p2 >= p1) p2 += 3; tp = tp.substring(0, p2) + "\0r" + tp.substring(p2); }
 
             tp = tp.replace(/\0i(\d+)\0/g, (match, idx) => {
                 const i = parseInt(idx);
@@ -687,7 +687,7 @@ class EditorPane {
 
     findSelectedNodes() {
         let t = this.markCaretPos(this.el ? this.el.innerHTML : "");
-        let r1 = t.indexOf("\0 n"); let r2 = t.indexOf("\0 r");
+        let r1 = t.indexOf("\0n"); let r2 = t.indexOf("\0r");
         if (r1 > r2) [r1, r2] = [r2, r1];
         if (r1 < 0 || r2 < 0) return [0, -1];
         let l1 = -1, l2 = -1; let lipos = -1; let licnt = 0;
@@ -712,7 +712,7 @@ class EditorPane {
         }
         if (lipos < 0) return;
         const clipos = t.indexOf("</li>", lipos);
-        t = t.substring(0, clipos) + "\0 n\0 r" + t.substring(clipos);
+        t = t.substring(0, clipos) + "\0n\0r" + t.substring(clipos);
         this.unmarkCaretPos(t);
         const selection = this.getWindow().getSelection();
         if (selection && selection.rangeCount !== 0) {
