@@ -664,8 +664,16 @@ class Mindmap {
                                     const context = canvas.getContext();
                                     context.drawImage(imgObj, 0, 0, w, h);
                                 },
+                                drawHitFunc: function(canvas) {
+                                    const context = canvas.getContext();
+                                    context.beginPath();
+                                    context.rect(0, 0, w, h);
+                                    context.closePath();
+                                    canvas.fill(this);
+                                },
                                 width: w,
-                                height: h
+                                height: h,
+                                listening: false
                             });
                             elements.push({ node: kImg, w: w, h: h });
                             totalHeight += h + 2;
@@ -778,7 +786,8 @@ class Mindmap {
                     fill: a.data.fontColor,
                     opacity: 0.8,
                     padding: 10 - Math.min(a.data.level * 3, 5),
-                    align: "left"
+                    align: "left",
+                    listening: false
                 });
                 const c = this.maxTextWidth(a);
                 const wh = g.getWidth() * g.getHeight();
@@ -795,7 +804,8 @@ class Mindmap {
                     fontFamily: a.data.font,
                     fill: a.data.fontColor,
                     padding: 10 - Math.min(a.data.level * 3, 5),
-                    align: "left"
+                    align: "left",
+                    listening: false
                 });
                 const c = this.maxTextWidth(a);
                 const wh = g.getWidth() * g.getHeight();
