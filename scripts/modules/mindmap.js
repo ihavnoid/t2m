@@ -19,13 +19,21 @@ class Mindmap {
 
     getImage(src, onload) {
         if (this.imageCache[src]) {
-            if (this.imageCache[src].complete) return this.imageCache[src];
-            // If already loading, just add another listener? 
-            // Better to just wait for the first one which will trigger redraw.
+            if (this.imageCache[src].complete) {
+                if (onload) onload();
+                return this.imageCache[src];
+            }
+            if (onload) {
+                const oldOnload = this.imageCache[src].onload;
+                this.imageCache[src].onload = () => {
+                    if (oldOnload) oldOnload();
+                    onload();
+                };
+            }
             return this.imageCache[src];
         }
         const img = new Image();
-        img.onload = onload;
+        if (onload) img.onload = onload;
         img.src = src;
         this.imageCache[src] = img;
         return img;
@@ -126,6 +134,7 @@ class Mindmap {
     }
 
     indent_depth(b) {
+        if (!b) return 0;
         for (let r = 0, n = 0; n < b.length; n++) {
             const e = b.charAt(n);
             if (" " == e) r++;
@@ -135,33 +144,57 @@ class Mindmap {
         return 0;
     }
 
+    extractImages(text) {
+        const images = [];
+        if (!text) return { cleanText: text, images };
+        
+        // More robust parsing: find all occurrences of \0i[...]
+        let pos = 0;
+        let cleanText = "";
+        while (true) {
+            const start = text.indexOf("\0i[", pos);
+            if (start === -1) {
+                cleanText += text.substring(pos);
+                break;
+            }
+            cleanText += text.substring(pos, start);
+            const end = text.indexOf("]", start + 3);
+            if (end === -1) {
+                cleanText += text.substring(start);
+                break;
+            }
+            const src = text.substring(start + 3, end);
+            if (src) images.push(src);
+            pos = end + 1;
+        }
+        return { cleanText, images };
+    }
+
     trim_label(b) {
         if (typeof b === "undefined" || b === null) return null;
+        
+        const { cleanText, images } = this.extractImages(b);
         const r = {
             label: "",
             linkLabel: false,
             fixed: false,
             x: undefined,
             y: undefined,
-            images: []
+            images: images
         };
 
-        b = b.trim();
-        if (b.length > 0 && b.charAt(0) == '\0' && b.charAt(1) == '-') {
-            b = b.substring(2).trim();
+        let processed = cleanText.trim();
+        if (processed.length > 0 && processed.includes("\0-")) {
+            const idx = processed.indexOf("\0-");
+            processed = processed.substring(idx + 2).trim();
         } else {
             return null;
         }
 
-        b = b.replace(/\0i\[([^\]]*)\]/g, (match, src) => {
-            r.images.push(src);
-            return "";
-        });
-
-        if (b.match(/^\[[0-9\- ]*\]/)) {
-            const n = b.indexOf("]");
+        if (processed.match(/^\[[0-9\- ]*\]/)) {
+            const n = processed.indexOf("]");
             let ftok = "";
-            0 < n && (ftok = b.substr(1, n - 1), b = b.substring(n + 1).trim());
+            0 < n && (ftok = processed.substr(1, n - 1), processed = processed.substring(n + 1).trim());
             const ftok_parts = ftok.split(/  */);
             if (ftok_parts.length == 2) {
                 r.fixed = true;
@@ -170,11 +203,11 @@ class Mindmap {
             }
         }
 
-        if ("(" == b.charAt(0)) {
-            const n = b.indexOf(")");
-            0 < n && (r.linkLabel = b.substr(1, n - 1), b = b.substring(n + 1).trim());
+        if ("(" == processed.charAt(0)) {
+            const n = processed.indexOf(")");
+            0 < n && (r.linkLabel = processed.substr(1, n - 1), processed = processed.substring(n + 1).trim());
         }
-        r.label = b;
+        r.label = processed;
         return r;
     }
 
@@ -840,13 +873,12 @@ class Mindmap {
                                 const t = self.trim_label(j_ptr < j2 ? new_lines[j_ptr] : null);
                                 if (t) {
                                     const rawComment = (comments[j_ptr] || "");
-                                    const commentImages = Array.from(rawComment.matchAll(/\0i\[([^\]]*)\]/g), m => m[1]);
-                                    const cleanComment = rawComment.replace(/\0i\[([^\]]*)\]/g, "").trim();
+                                    const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
 
                                     this.addNode(pos, {
                                         label: t.label,
                                         images: t.images,
-                                        comment: cleanComment,
+                                        comment: cleanComment.trim(),
                                         commentImages: commentImages,
                                         linkLabel: t.linkLabel,
                                         children: 0,
@@ -864,8 +896,7 @@ class Mindmap {
                                     removedNodes++;
                                 } else {
                                     const rawComment = (comments[j_ptr] || "");
-                                    const commentImages = Array.from(rawComment.matchAll(/\0i\[([^\]]*)\]/g), m => m[1]);
-                                    const cleanComment = rawComment.replace(/\0i\[([^\]]*)\]/g, "").trim();
+                                    const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
 
                                     this.nodes[pos].data.label = t.label;
                                     this.nodes[pos].data.images = t.images;
@@ -874,7 +905,7 @@ class Mindmap {
                                         this.nodes[pos].x = t.x; this.nodes[pos].y = t.y;
                                         this.nodes[pos].px = t.x; this.nodes[pos].py = t.y;
                                     }
-                                    this.nodes[pos].data.comment = cleanComment;
+                                    this.nodes[pos].data.comment = cleanComment.trim();
                                     this.nodes[pos].data.commentImages = commentImages;
                                     this.nodes[pos].data.linkLabel = t.linkLabel;
                                 }
@@ -883,10 +914,10 @@ class Mindmap {
                                 const pos = i_ptr - removedNodes + addedNodes;
                                 if (pos < this.nodes.length && j_ptr < j2) {
                                     const rawComment = (comments[j_ptr] || "");
-                                    const cleanComment = rawComment.replace(/\0i\[([^\]]*)\]/g, "").trim();
-                                    if (this.nodes[pos].data.comment != cleanComment) modifiedNodes++;
-                                    this.nodes[pos].data.comment = cleanComment;
-                                    this.nodes[pos].data.commentImages = Array.from(rawComment.matchAll(/\0i\[([^\]]*)\]/g), m => m[1]);
+                                    const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
+                                    if (this.nodes[pos].data.comment != cleanComment.trim()) modifiedNodes++;
+                                    this.nodes[pos].data.comment = cleanComment.trim();
+                                    this.nodes[pos].data.commentImages = commentImages;
                                 }
                             }
                             if (i_ptr < i2) i_ptr++;
