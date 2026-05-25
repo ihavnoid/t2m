@@ -45,7 +45,7 @@ class Settings {
             + "  <li><i>[150 150]</i> Features:</li>"
             + "<ul>  <li>Image Support<br>"
             + "          Paste images from clipboard!</li>"
-            + "      <li><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAt0lEQVQ4T62T0Q3CIAxFHycY6AQ6As6ACzgCHYF9mIDpCPYAnQE6At788yBQKvXlvfS099zXlpL8+Z9vKk4fMvMAfK8ZqAL2B/BExUvVdO5SNoYlD+AEMOfCid13fGIAq/X4pI1NAt6C68YjO9rAt2C78cgOAr6F3o1HdpAAd8C98cgOVhLA0fB7YfG9m90N9x0L8AbcG4/sgpUEuAPujUfWhYUEuANvjYmK9+MscTjP20YxO0vS/gW3B6Z7610Y4AAAAABJRU5ErkJggg==\"></li></ul>"
+            + "      <li><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABXUlEQVQ4T6WTPUhCURSFv3uvCUKCWhuioSVaGoKWhoYWh5YGp6ChoakhSGlwaHBoCQ6HBicXhyAluDS0NEhDU0uEhvS8S693Y0P0+fDve88959zzH9X96pX6SjM+X+m5Pj7r7rWfD0eC9Xp9GZgDMoACVAGvWq3mN689+Zp0X909gInBfMB8L80B68AasAMcgO98vWIn9Nzdg9fNnN/I88O8tAQkgO/AnWpUfIn3FfC6mfMr6W7AnYqZ8xt5p7X6/v+R+sq99S5+wPueAnYAn4E7O6676fAInAF7B67suu6mwyMw98COK7uuu+nwCJwbYGfTdVfdr4AtAz4384YlTbtfAxsGfG7mDUua6pX6SuK6fW7mDWmK6v7Tteu6uw6PwKUB88C1XdfddXgELgz46OqGJVfdr9RXEte967rnDk8UuV/6T78BR/itA305OtcAAAAASUVORK5CYII=\"></li></ul>"
             + "  <li>TODO</li>"
             + "<ul>  <li>Performance optimization<br>"
             + "          Test some ultra-heavy large mindmaps and make sure performance is okay.<br>"
