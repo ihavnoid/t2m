@@ -102,13 +102,17 @@ class EditorPane {
                             img.style.display = "inline-block";
                             img.style.verticalAlign = "middle";
                             this.insertAtCursor(img);
-                            this.refresh();
+                            if (this.refresh()) {
+                                if (this.observerFunc) this.observerFunc();
+                            }
                         };
                         reader.readAsDataURL(blob);
                     } else if (item.type === "text/plain") {
                         item.getAsString((text) => {
                             this.insertAtCursor(document.createTextNode(text));
-                            this.refresh();
+                            if (this.refresh()) {
+                                if (this.observerFunc) this.observerFunc();
+                            }
                         });
                     }
                 }
@@ -147,10 +151,11 @@ class EditorPane {
     }
 
     observe(func) {
+        this.observerFunc = func;
         const options = { subtree: true, childList: true, attributes: true, characterData: true };
         this.observer = new MutationObserver((mutationList) => {
             if (this.refresh()) {
-                func();
+                if (this.observerFunc) this.observerFunc();
             }
         });
         this.on("compositionstart", () => { this.compositionRunning = true; });
