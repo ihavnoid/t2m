@@ -515,7 +515,7 @@ class EditorPane {
         t = t.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (match, src) => {
             const idx = imgs.length;
             imgs.push(src);
-            return `\0 i${idx} `;
+            return `\0i${idx}\0`;
         });
 
         t = t.replace(/<ul[^>]*>/gi, "\0 u").replace(/<\/ul>/gi, "\0 U")
@@ -586,16 +586,16 @@ class EditorPane {
         };
 
         while (true) {
-            const p = t.indexOf("\0 ", ptr);
+            const p = t.indexOf("\0", ptr);
             if (p < 0) { if (tagOpen) tout += t.substring(ptr); break; }
             if (tagOpen) accumText += t.substring(ptr, p);
             
-            const cmd = t.charAt(p + 2);
+            const cmd = t.charAt(p + 1);
             if (cmd === "i") {
-                ptr = p + 3;
-                const nextSpace = t.indexOf(" ", ptr);
-                if (nextSpace >= 0) {
-                    const idxStr = t.substring(ptr, nextSpace);
+                ptr = p + 2;
+                const nextNull = t.indexOf("\0", ptr);
+                if (nextNull >= 0) {
+                    const idxStr = t.substring(ptr, nextNull);
                     const idx = parseInt(idxStr);
                     if (!isNaN(idx) && imgs[idx]) {
                         const imgHtml = `<img src="${imgs[idx]}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`;
@@ -605,13 +605,15 @@ class EditorPane {
                             tout += imgHtml;
                         }
                     }
-                    ptr = nextSpace + 1;
+                    ptr = nextNull + 1;
                 } else {
-                    ptr = p + 3;
+                    ptr = p + 2;
                 }
-            } else {
-                processCommand(cmd);
+            } else if (cmd === " ") {
+                processCommand(t.charAt(p + 2));
                 ptr = p + 3;
+            } else {
+                ptr = p + 1;
             }
         }
         if (nCaretPending || rCaretPending) {
@@ -644,7 +646,7 @@ class EditorPane {
             tp = tp.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (match, src) => {
                 const idx = imgs.length;
                 imgs.push(src);
-                return `\0 i${idx} `;
+                return `\0i${idx}\0`;
             });
 
             tp = tp.replaceAll("\n", "").replaceAll("<br>", "\n").replaceAll(/<[^>]*>/g, "");
@@ -666,7 +668,7 @@ class EditorPane {
             if (p1 >= 0) tp = tp.substring(0, p1) + "\0 n" + tp.substring(p1);
             if (p2 >= 0) { if (p2 >= p1) p2 += 3; tp = tp.substring(0, p2) + "\0 r" + tp.substring(p2); }
 
-            tp = tp.replace(/\0 i(\d+) /g, (match, idx) => {
+            tp = tp.replace(/\0i(\d+)\0/g, (match, idx) => {
                 const i = parseInt(idx);
                 if (imgs[i]) {
                     return `<img src="${imgs[i]}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`;

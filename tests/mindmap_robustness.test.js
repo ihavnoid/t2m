@@ -72,4 +72,27 @@ describe('Mindmap Parser robustnes', () => {
         expect(node.data.comment).toContain("Comment text");
         expect(node.data.commentImages).toContain("data:image/png;base64,comment_img");
     });
+
+    it('should correctly handle images in empty comment section', () => {
+        const mockEngine = mindmap.createEngine('stageHolder', {});
+        mindmap.d = mockEngine;
+        
+        // This simulates a node where Shift+Enter was pressed (\n\0+) followed by an image
+        const text = "\0-Header\n\0+\0i[data:image/png;base64,img]";
+        
+        global.difflib.SequenceMatcher = class {
+            constructor() {
+                this.get_opcodes = vi.fn().mockReturnValue([
+                    ['insert', 0, 0, 0, 1]
+                ]);
+            }
+        };
+
+        mindmap.d.text2mindmap(text);
+        
+        const node = mindmap.d.nodes[0];
+        expect(node.data.label).toBe("Header");
+        expect(node.data.comment).toBe("");
+        expect(node.data.commentImages).toContain("data:image/png;base64,img");
+    });
 });

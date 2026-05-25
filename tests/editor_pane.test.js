@@ -64,4 +64,50 @@ describe('EditorPane Module - Coordinate Updates', () => {
         expect(updatedHtml).toContain("[120 130]");
         expect(updatedHtml).toContain(`src="${imgBase64}"`);
     });
+
+    it('should correctly tokenize images in comment section (after BR)', () => {
+        const imgBase64 = "data:image/png;base64,img";
+        const initialHtml = `<ul><li>Header<br><img src="${imgBase64}"></li></ul>`;
+        editorPane.el.innerHTML = initialHtml;
+
+        editorPane.updateProcessed();
+        const processed = editorPane.getProcessed();
+        
+        // Should produce \0-Header\n\0+\0i[data:...]
+        expect(processed).toContain("\0-Header");
+        expect(processed).toContain("\n\0+");
+        expect(processed).toContain(`\0i[${imgBase64}]`);
+    });
+
+    it('should preserve images in comment section through cleanupHTML', () => {
+        const imgBase64 = "data:image/png;base64,img";
+        // Simulate DOM after Shift+Enter and Paste
+        const initialHtml = `<ul><li>Header<br><img src="${imgBase64}"></li></ul>`;
+        editorPane.el.innerHTML = initialHtml;
+
+        editorPane.cleanupHTML();
+        const finalHtml = editorPane.el.innerHTML;
+        
+        // Final HTML should contain the image in a comment span
+        expect(finalHtml).toContain("Header");
+        expect(finalHtml).toContain("<br>");
+        expect(finalHtml).toContain(`src="${imgBase64}"`);
+        expect(finalHtml).toContain('class="comment"');
+    });
+
+    it('should handle image paste into empty comment through cleanupHTML', () => {
+        const imgBase64 = "data:image/png;base64,empty_comment_img";
+        // Header, followed by a BR, followed by an image
+        const initialHtml = `Header<br><img src="${imgBase64}">`;
+        // Wrapped in LI
+        editorPane.el.innerHTML = `<ul><li>${initialHtml}</li></ul>`;
+
+        editorPane.cleanupHTML();
+        const finalHtml = editorPane.el.innerHTML;
+        
+        expect(finalHtml).toContain("Header");
+        expect(finalHtml).toContain("<br>");
+        expect(finalHtml).toContain(`src="${imgBase64}"`);
+        expect(finalHtml).toContain('class="comment"');
+    });
 });

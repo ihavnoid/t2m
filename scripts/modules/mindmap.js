@@ -843,8 +843,16 @@ class Mindmap {
             },
             text2mindmap: function(a) {
                 const convert_to_comment = (x) => {
-                    x = x.trim();
-                    return x.substring(0, 2) == "\0+" ? x.substring(2) : "";
+                    const trimmed = x.trim();
+                    if (trimmed.substring(0, 2) === "\0+") {
+                        return trimmed.substring(2);
+                    }
+                    // Handle cases where \0+ might be preceded by spaces
+                    const plusIdx = x.indexOf("\0+");
+                    if (plusIdx !== -1) {
+                        return x.substring(plusIdx + 2);
+                    }
+                    return "";
                 };
                 const lines = a.split(/\n/);
                 const filtered_lines = [];
