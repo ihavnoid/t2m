@@ -10,6 +10,7 @@ class ImageDrawer {
         this.isResizing = false;
         this.currentTool = 'pen'; 
         this.history = []; // Array of { dataUrl, width, height }
+        this.redoHistory = [];
         this.onSaveCallback = null;
         this.lastPos = { x: 0, y: 0 };
         
@@ -32,6 +33,7 @@ class ImageDrawer {
         document.getElementById('draw-tool-pen').addEventListener('click', () => this.setTool('pen'));
         document.getElementById('draw-tool-eraser').addEventListener('click', () => this.setTool('eraser'));
         document.getElementById('draw-tool-undo').addEventListener('click', () => this.undo());
+        document.getElementById('draw-tool-redo').addEventListener('click', () => this.redo());
         document.getElementById('draw-tool-clear').addEventListener('click', () => this.clear());
         document.getElementById('draw-save').addEventListener('click', () => this.save());
 
@@ -297,14 +299,29 @@ class ImageDrawer {
             height: this.canvas.height
         });
         if (this.history.length > 50) this.history.shift();
+        this.redoHistory = []; // Clear redo history on new action
     }
 
     undo() {
         if (this.history.length <= 1) return;
         
-        this.history.pop(); 
-        const state = this.history[this.history.length - 1];
+        const currentState = this.history.pop();
+        this.redoHistory.push(currentState);
         
+        const prevState = this.history[this.history.length - 1];
+        this.restoreState(prevState);
+    }
+
+    redo() {
+        if (this.redoHistory.length === 0) return;
+        
+        const nextState = this.redoHistory.pop();
+        this.history.push(nextState);
+        
+        this.restoreState(nextState);
+    }
+
+    restoreState(state) {
         const img = new Image();
         img.onload = () => {
             this.canvas.width = state.width;

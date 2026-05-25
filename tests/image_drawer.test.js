@@ -9,6 +9,7 @@ describe('ImageDrawer Module', () => {
                 <button id="draw-tool-pen"></button>
                 <button id="draw-tool-eraser"></button>
                 <button id="draw-tool-undo"></button>
+                <button id="draw-tool-redo"></button>
                 <button id="draw-tool-clear"></button>
                 <div id="drawing-modal-footer">
                    <button id="draw-save"></button>
@@ -96,6 +97,26 @@ describe('ImageDrawer Module', () => {
         
         expect(imageDrawer.canvas.width).toBe(150);
         expect(imageDrawer.context.drawImage).toHaveBeenCalledWith(expect.anything(), 50, 0);
+    });
+
+    it('should redo last undone action', async () => {
+        // Mock snapshots
+        imageDrawer.history = [
+            { dataUrl: 'state1', width: 100, height: 100 },
+            { dataUrl: 'state2', width: 200, height: 200 }
+        ];
+        imageDrawer.redoHistory = [];
+        
+        // Undo first
+        imageDrawer.undo();
+        expect(imageDrawer.history.length).toBe(1);
+        expect(imageDrawer.redoHistory.length).toBe(1);
+        
+        // Redo
+        imageDrawer.redo();
+        expect(imageDrawer.history.length).toBe(2);
+        expect(imageDrawer.redoHistory.length).toBe(0);
+        expect(imageDrawer.history[1].dataUrl).toBe('state2');
     });
 
     it('should respect max resolution constraints (1000x1000)', () => {

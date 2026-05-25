@@ -54,7 +54,13 @@ class App {
                         appFunctions.editUndo();
                     }
                 },
-                "Ctrl+Y": () => appFunctions.editRedo(),
+                "Ctrl+Y": () => {
+                    if (imageDrawer.isActive) {
+                        imageDrawer.redo();
+                    } else {
+                        appFunctions.editRedo();
+                    }
+                },
                 "Ctrl+I": () => {
                     imageDrawer.open(null, (base64) => {
                         const img = document.createElement("img");

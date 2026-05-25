@@ -207,6 +207,7 @@
 							</div>
 							<span class="divider"></span>
 							<button id="draw-tool-undo" title="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
+							<button id="draw-tool-redo" title="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
 							<button id="draw-tool-clear" title="Clear Canvas"><i class="fa-solid fa-trash"></i></button>
 							<span class="divider"></span>
 							<button id="draw-save" class="button-save" title="Save Image"><i class="fa-solid fa-check"></i> Save</button>
