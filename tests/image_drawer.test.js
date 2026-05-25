@@ -103,12 +103,26 @@ describe('ImageDrawer Module', () => {
         imageDrawer.canvas.height = 100;
         imageDrawer.activeHandle = 'br';
         imageDrawer.isResizing = true;
-        imageDrawer.startResizeState = { width: 100, height: 100, clientX: 0, clientY: 0 };
+        imageDrawer.startResizeState = { 
+            width: 100, 
+            height: 100, 
+            clientX: 0, 
+            clientY: 0,
+            sourceCanvas: document.createElement('canvas')
+        };
 
         // Attempt to resize to 2000x2000
         imageDrawer.doResize({ clientX: 1900, clientY: 1900 });
 
         expect(imageDrawer.canvas.width).toBe(1000);
         expect(imageDrawer.canvas.height).toBe(1000);
+    });
+
+    it('should track isActive state', () => {
+        expect(imageDrawer.isActive).toBe(false);
+        imageDrawer.open();
+        expect(imageDrawer.isActive).toBe(true);
+        imageDrawer.close();
+        expect(imageDrawer.isActive).toBe(false);
     });
 });

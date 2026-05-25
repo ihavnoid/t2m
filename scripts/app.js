@@ -47,7 +47,13 @@ class App {
                 "Ctrl+N": () => appFunctions.fileNew(),
                 "Ctrl+O": () => appFunctions.fileOpen(),
                 "Ctrl+S": () => appFunctions.fileSave(),
-                "Ctrl+Z": () => appFunctions.editUndo(),
+                "Ctrl+Z": () => {
+                    if (imageDrawer.isActive) {
+                        imageDrawer.undo();
+                    } else {
+                        appFunctions.editUndo();
+                    }
+                },
                 "Ctrl+Y": () => appFunctions.editRedo(),
                 "Ctrl+I": () => {
                     imageDrawer.open(null, (base64) => {

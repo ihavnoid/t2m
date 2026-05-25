@@ -20,6 +20,7 @@ class ImageDrawer {
         this.maxWidth = 1000;
         this.maxHeight = 1000;
         this.minSize = 50;
+        this.isActive = false;
     }
 
     init() {
@@ -144,6 +145,7 @@ class ImageDrawer {
         }
 
         document.getElementById('drawing-modal').classList.add('active');
+        this.isActive = true;
     }
 
     setTool(tool) {
@@ -333,6 +335,7 @@ class ImageDrawer {
     close() {
         document.getElementById('drawing-modal').classList.remove('active');
         this.onSaveCallback = null;
+        this.isActive = false;
     }
 }
 
