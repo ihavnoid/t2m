@@ -649,8 +649,9 @@ class Mindmap {
                 let totalHeight = 0;
                 let maxWidth = 0;
 
-                const hPadding = 12;
-                const vPadding = 12;
+                const hPadding = 2;
+                const vPadding = 2;
+                const imgMargin = 8;
                 const itemSpacing = 4;
 
                 const addImages = (srcs) => {
@@ -679,13 +680,13 @@ class Mindmap {
                                 height: h,
                                 listening: false
                             });
-                            elements.push({ node: kImg, w: w, h: h });
-                            totalHeight += h + itemSpacing;
-                            maxWidth = Math.max(maxWidth, w);
+                            elements.push({ node: kImg, w: w, h: h, isImage: true });
+                            totalHeight += h + imgMargin * 2 + itemSpacing;
+                            maxWidth = Math.max(maxWidth, w + imgMargin * 2);
                         } else {
                             // Placeholder height while loading
-                            totalHeight += 20 + itemSpacing;
-                            maxWidth = Math.max(maxWidth, 20);
+                            totalHeight += 20 + imgMargin * 2 + itemSpacing;
+                            maxWidth = Math.max(maxWidth, 20 + imgMargin * 2);
                         }
                     });
                 };
@@ -693,7 +694,7 @@ class Mindmap {
                 addImages(a.data.images || []);
 
                 const textNode = this.newText(a);
-                elements.push({ node: textNode, w: textNode.getWidth(), h: textNode.getHeight() });
+                elements.push({ node: textNode, w: textNode.getWidth(), h: textNode.getHeight(), isImage: false });
                 totalHeight += textNode.getHeight() + itemSpacing;
                 maxWidth = Math.max(maxWidth, textNode.getWidth());
 
@@ -701,7 +702,7 @@ class Mindmap {
 
                 if (a.data.comment != "") {
                     const commentNode = this.newComment(a);
-                    elements.push({ node: commentNode, w: commentNode.getWidth(), h: commentNode.getHeight() });
+                    elements.push({ node: commentNode, w: commentNode.getWidth(), h: commentNode.getHeight(), isImage: false });
                     totalHeight += commentNode.getHeight() + itemSpacing;
                     maxWidth = Math.max(maxWidth, commentNode.getWidth());
                 }
@@ -716,9 +717,10 @@ class Mindmap {
 
                 let currentY = -0.5 * height + vPadding;
                 elements.forEach(el => {
-                    el.node.setPosition({ x: -0.5 * el.w, y: currentY });
+                    const yPos = el.isImage ? currentY + imgMargin : currentY;
+                    el.node.setPosition({ x: -0.5 * el.w, y: yPos });
                     group.add(el.node);
-                    currentY += el.h + itemSpacing;
+                    currentY += el.h + (el.isImage ? imgMargin * 2 : 0) + itemSpacing;
                 });
 
                 group.on("touchstart mousedown", (ev) => {
