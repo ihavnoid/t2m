@@ -659,8 +659,11 @@ class Mindmap {
                             const scale = Math.min(200 / imgObj.width, 200 / imgObj.height, 1.0);
                             const w = imgObj.width * scale;
                             const h = imgObj.height * scale;
-                            const kImg = new Kinetic.Image({
-                                image: imgObj,
+                            const kImg = new Kinetic.Shape({
+                                drawFunc: function(canvas) {
+                                    const context = canvas.getContext();
+                                    context.drawImage(imgObj, 0, 0, w, h);
+                                },
                                 width: w,
                                 height: h
                             });
