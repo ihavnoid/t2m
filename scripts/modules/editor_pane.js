@@ -479,7 +479,7 @@ class EditorPane {
         let idxb = this.getCaretBeginIndex(this.el);
         if (idx >= 0) {
             t = t.substring(0, idx) + "\0r" + t.substring(idx);
-            if (idx < idxb) idxb += 3;
+            if (idx < idxb) idxb += 2;
         }
         if (idxb >= 0) {
             t = t.substring(0, idxb) + "\0n" + t.substring(idxb);
@@ -489,10 +489,10 @@ class EditorPane {
 
     unmarkCaretPos(t, skip_if_no_content_update = false) {
         let p1 = t.indexOf("\0n");
-        if (p1 >= 0) t = t.substring(0, p1) + t.substring(p1 + 3);
+        if (p1 >= 0) t = t.substring(0, p1) + t.substring(p1 + 2);
         let p2 = t.indexOf("\0r");
-        if (p2 >= 0) t = t.substring(0, p2) + t.substring(p2 + 3);
-        if (p2 < p1) p1 -= 3;
+        if (p2 >= 0) t = t.substring(0, p2) + t.substring(p2 + 2);
+        if (p2 < p1) p1 -= 2;
         if (skip_if_no_content_update) {
             if (this.el.innerHTML !== t) {
                 this.el.innerHTML = t;
@@ -518,9 +518,9 @@ class EditorPane {
             return `\0i${idx}\0`;
         });
 
-        t = t.replace(/<ul[^>]*>/gi, "\0 u").replace(/<\/ul>/gi, "\0 U")
-             .replace(/<li[^>]*>/gi, "\0 l").replace(/<br[^>]*>/gi, "\0 b")
-             .replace(/<\/li>/gi, "\0 L").replace(/<[^>]*>/g, "")
+        t = t.replace(/<ul[^>]*>/gi, "\0u").replace(/<\/ul>/gi, "\0U")
+             .replace(/<li[^>]*>/gi, "\0l").replace(/<br[^>]*>/gi, "\0b")
+             .replace(/<\/li>/gi, "\0L").replace(/<[^>]*>/g, "")
              .replace(/\s+/g, " ");
 
         let tout = ""; let ptr = 0; let nodeno = 0; let level = 0;
@@ -528,18 +528,18 @@ class EditorPane {
         let pk = this.lastPressedKey;
         if (["Del", "Clear", "Cut", "EraseEof"].includes(pk)) pk = "Delete";
         if (!["Enter", "Delete", "Backspace"].includes(pk)) pk = "";
-        
+
         let nCaretPending = false; let rCaretPending = false;
         const processCode = (l) => {
             if (firstLine) {
                 let cl = (nodeno in this.nodeColors) ? ` style="background-color:${this.nodeColors[nodeno]};" ` : " ";
-                if (l.match(/^(?:&nbsp;|\s|\0 n|\0 r)*(\[(?:[0-9\- ]|\0 n|\0 r)*\])(.*)$/)) {
-                    l = l.replace(/^((?:&nbsp;|\0 n|\0 r|\s)*)(\[(?:[0-9\- ]|\0 n|\0 r)*\])(.*)$/, `<span class="pos">$1$2</span><span${cl}class="header">$3</span>`);
+                if (l.match(/^(?:&nbsp;|\s|\0n|\0r)*(\[(?:[0-9\- ]|\0n|\0r)*\])(.*)$/)) {
+                    l = l.replace(/^((?:&nbsp;|\0n|\0r|\s)*)(\[(?:[0-9\- ]|\0n|\0r)*\])(.*)$/, `<span class="pos">$1$2</span><span${cl}class="header">$3</span>`);
                 } else {
                     l = `<span${cl}class="header">${l}</span>`;
                 }
             } else {
-                if (l === "" || l === "\0 n" || l === "\0 r" || l === "\0 n\0 r" || l === "\0 r\0 n") return l;
+                if (l === "" || l === "\0n" || l === "\0r" || l === "\0n\0r" || l === "\0r\0n") return l;
                 l = `<span class="comment">${l}</span>`;
             }
             return l;
@@ -553,8 +553,8 @@ class EditorPane {
                 if (level === 0) { processCommand('u'); closeUlOnNextLi = true; }
                 tout += (nodeno >= n1pos && nodeno <= n2pos) ? `<li class="selected_node level${Math.min(level, 8)}">` : `<li class="level${Math.min(level, 8)}">`;
                 firstLine = true; tagOpen = true;
-                if (nCaretPending) { tout += "\0 n"; nCaretPending = false; }
-                if (rCaretPending) { tout += "\0 r"; rCaretPending = false; }
+                if (nCaretPending) { tout += "\0n"; nCaretPending = false; }
+                if (rCaretPending) { tout += "\0r"; rCaretPending = false; }
             } else if (c === "L") {
                 if (tagOpen) {
                     tout += processCode(accumText); tout += "</li>\n"; nodeno++; accumText = "";
@@ -563,24 +563,24 @@ class EditorPane {
                 tagOpen = false;
             } else if (c === "b") { if (tagOpen) { tout += processCode(accumText); accumText = ""; tout += "<br>"; firstLine = false; } }
             else if (c === "n") {
-                if (tagOpen) accumText += "\0 n";
+                if (tagOpen) accumText += "\0n";
                 else {
                     if (pk === "Delete") nCaretPending = true;
                     else if (pk === "Backspace") {
                         let pos = tout.lastIndexOf("</li>");
-                        if (pos < 0) nCaretPending = true; else tout = tout.substring(0, pos) + "\0 n" + tout.substring(pos);
-                    } else if (pk === "Enter") { processCommand('l'); processCommand('L'); processCommand('l'); accumText += "\0 n"; }
-                    else tout += "\0 n";
+                        if (pos < 0) nCaretPending = true; else tout = tout.substring(0, pos) + "\0n" + tout.substring(pos);
+                    } else if (pk === "Enter") { processCommand('l'); processCommand('L'); processCommand('l'); accumText += "\0n"; }
+                    else tout += "\0n";
                 }
             } else if (c === "r") {
-                if (tagOpen) accumText += "\0 r";
+                if (tagOpen) accumText += "\0r";
                 else {
                     if (pk === "Delete") rCaretPending = true;
                     else if (pk === "Backspace") {
                         let pos = tout.lastIndexOf("</li>");
-                        if (pos < 0) rCaretPending = true; else tout = tout.substring(0, pos) + "\0 r" + tout.substring(pos);
-                    } else if (pk === "Enter") { processCommand('l'); processCommand('L'); processCommand('l'); accumText += "\0 r"; }
-                    else tout += "\0 r";
+                        if (pos < 0) rCaretPending = true; else tout = tout.substring(0, pos) + "\0r" + tout.substring(pos);
+                    } else if (pk === "Enter") { processCommand('l'); processCommand('L'); processCommand('l'); accumText += "\0r"; }
+                    else tout += "\0r";
                 }
             }
         };
@@ -589,7 +589,7 @@ class EditorPane {
             const p = t.indexOf("\0", ptr);
             if (p < 0) { if (tagOpen) tout += t.substring(ptr); break; }
             if (tagOpen) accumText += t.substring(ptr, p);
-            
+
             const cmd = t.charAt(p + 1);
             if (cmd === "i") {
                 ptr = p + 2;
@@ -609,17 +609,15 @@ class EditorPane {
                 } else {
                     ptr = p + 2;
                 }
-            } else if (cmd === " ") {
-                processCommand(t.charAt(p + 2));
-                ptr = p + 3;
             } else {
-                ptr = p + 1;
+                processCommand(cmd);
+                ptr = p + 2;
             }
         }
         if (nCaretPending || rCaretPending) {
             processCommand('l');
-            if (nCaretPending) accumText += "\0 n";
-            if (rCaretPending) accumText += "\0 r";
+            if (nCaretPending) accumText += "\0n";
+            if (rCaretPending) accumText += "\0r";
             processCommand('L');
         }
         while (true) {
@@ -651,9 +649,9 @@ class EditorPane {
 
             tp = tp.replaceAll("\n", "").replaceAll("<br>", "\n").replaceAll(/<[^>]*>/g, "");
             let p1 = tp.indexOf("\0n");
-            if (p1 >= 0) tp = tp.substring(0, p1) + tp.substring(p1 + 3);
+            if (p1 >= 0) tp = tp.substring(0, p1) + tp.substring(p1 + 2);
             let p2 = tp.indexOf("\0r");
-            if (p2 >= 0) tp = tp.substring(0, p2) + tp.substring(p2 + 3);
+            if (p2 >= 0) tp = tp.substring(0, p2) + tp.substring(p2 + 2);
             let len_prev = tp.length;
             tp = tp.replace(/^ *\[[0-9\- ]*\] */, "");
             let len_new = tp.length;
@@ -666,7 +664,7 @@ class EditorPane {
                 if (p2 >= 0) p2 += header.length;
             }
             if (p1 >= 0) tp = tp.substring(0, p1) + "\0n" + tp.substring(p1);
-            if (p2 >= 0) { if (p2 >= p1) p2 += 3; tp = tp.substring(0, p2) + "\0r" + tp.substring(p2); }
+            if (p2 >= 0) { if (p2 >= p1) p2 += 2; tp = tp.substring(0, p2) + "\0r" + tp.substring(p2); }
 
             tp = tp.replace(/\0i(\d+)\0/g, (match, idx) => {
                 const i = parseInt(idx);
