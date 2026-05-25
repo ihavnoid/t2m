@@ -77,36 +77,56 @@ class EditorPane {
         });
 
         this.on("paste", (ev) => {
-            const items = (ev.clipboardData || ev.originalEvent.clipboardData).items;
+            const clipboardData = ev.clipboardData || ev.originalEvent.clipboardData;
+            const items = clipboardData.items;
+            let hasImage = false;
             for (const item of items) {
                 if (item.type.indexOf("image") !== -1) {
-                    const blob = item.getAsFile();
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        const base64 = event.target.result;
-                        const img = document.createElement("img");
-                        img.src = base64;
-                        img.style.maxWidth = "200px";
-                        img.style.maxHeight = "200px";
-                        img.style.display = "inline-block";
-                        img.style.verticalAlign = "middle";
-                        
-                        const selection = this.getWindow().getSelection();
-                        if (selection.rangeCount > 0) {
-                            const range = selection.getRangeAt(0);
-                            range.deleteContents();
-                            range.insertNode(img);
-                            range.setStartAfter(img);
-                            range.collapse(true);
-                            selection.removeAllRanges();
-                            selection.addRange(range);
-                        }
-                        this.refresh();
-                    };
-                    reader.readAsDataURL(blob);
+                    hasImage = true;
+                    break;
+                }
+            }
+
+            if (hasImage) {
+                ev.preventDefault();
+                for (const item of items) {
+                    if (item.type.indexOf("image") !== -1) {
+                        const blob = item.getAsFile();
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const base64 = event.target.result;
+                            const img = document.createElement("img");
+                            img.src = base64;
+                            img.style.maxWidth = "200px";
+                            img.style.maxHeight = "200px";
+                            img.style.display = "inline-block";
+                            img.style.verticalAlign = "middle";
+                            this.insertAtCursor(img);
+                            this.refresh();
+                        };
+                        reader.readAsDataURL(blob);
+                    } else if (item.type === "text/plain") {
+                        item.getAsString((text) => {
+                            this.insertAtCursor(document.createTextNode(text));
+                            this.refresh();
+                        });
+                    }
                 }
             }
         });
+    }
+
+    insertAtCursor(node) {
+        const selection = this.getWindow().getSelection();
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            range.deleteContents();
+            range.insertNode(node);
+            range.setStartAfter(node);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
     }
 
     findCnt(str, pattern) {
