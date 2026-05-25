@@ -1,5 +1,7 @@
 import sys
 import requests
+import re
+
 all_files = [
     "scripts/old/d3-dispatch.js",
     "scripts/old/d3-quadtree.js",
@@ -8,22 +10,26 @@ all_files = [
     "scripts/old/kineticjs.js",
     "scripts/old/jquery.cookie.min.js",
     "scripts/old/difflib.js",
-    "scripts/old/mindmap.min.js",
-    "scripts/unsaved_changes.js",
-    "scripts/editor_pane.js",
-    "scripts/settings.js",
-    "scripts/file_import.js",
-    "scripts/file_export.js",
-    "scripts/app_functions.js",
-    "scripts/navbar.js",
-    "scripts/modal.js",
-    "scripts/pane_resizer.js",
-    "scripts/shortcuts.js",
-    "scripts/main.js"
+    "scripts/modules/unsaved_changes.js",
+    "scripts/modules/navbar.js",
+    "scripts/modules/shortcuts.js",
+    "scripts/modules/modal.js",
+    "scripts/modules/pane_resizer.js",
+    "scripts/modules/editor_pane.js",
+    "scripts/modules/settings.js",
+    "scripts/modules/file_import.js",
+    "scripts/modules/file_export.js",
+    "scripts/modules/app_functions.js",
+    "scripts/modules/mindmap.js",
+    "scripts/app.js"
 ]
 f = ""
 for fn in all_files:
-    f += open(fn).read() + "\n"
+    content = open(fn).read()
+    # Strip ES module imports and exports for simple concatenation
+    content = re.sub(r'^import\s+.*?;$', '', content, flags=re.MULTILINE)
+    content = re.sub(r'^export\s+', '', content, flags=re.MULTILINE)
+    f += content + "\n"
 
 response = requests.post('https://www.toptal.com/developers/javascript-minifier/api/raw', data=dict(input=f)).text
 
