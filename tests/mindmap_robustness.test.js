@@ -47,4 +47,29 @@ describe('Mindmap Parser robustnes', () => {
             mindmap.d.text2mindmap(newText);
         }).not.toThrow();
     });
+
+    it('should correctly parse images from label and comments', () => {
+        const mockEngine = mindmap.createEngine('stageHolder', {});
+        mindmap.d = mockEngine;
+        
+        // Data with images in both label and comment
+        const text = "\0-Header Node \0i[data:image/png;base64,header_img]\n\0+Comment text \0i[data:image/png;base64,comment_img]";
+        
+        // Mock difflib to just return a simple insert
+        global.difflib.SequenceMatcher = class {
+            constructor() {
+                this.get_opcodes = vi.fn().mockReturnValue([
+                    ['insert', 0, 0, 0, 1]
+                ]);
+            }
+        };
+
+        mindmap.d.text2mindmap(text);
+        
+        const node = mindmap.d.nodes[0];
+        expect(node.data.label).toContain("Header Node");
+        expect(node.data.images).toContain("data:image/png;base64,header_img");
+        expect(node.data.comment).toContain("Comment text");
+        expect(node.data.commentImages).toContain("data:image/png;base64,comment_img");
+    });
 });

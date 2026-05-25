@@ -14,6 +14,21 @@ class Mindmap {
         this.A = 0;
         this.D = 0;
         this.y = ""; // last processed text
+        this.imageCache = {};
+    }
+
+    getImage(src, onload) {
+        if (this.imageCache[src]) {
+            if (this.imageCache[src].complete) return this.imageCache[src];
+            // If already loading, just add another listener? 
+            // Better to just wait for the first one which will trigger redraw.
+            return this.imageCache[src];
+        }
+        const img = new Image();
+        img.onload = onload;
+        img.src = src;
+        this.imageCache[src] = img;
+        return img;
     }
 
     init() {
@@ -127,7 +142,8 @@ class Mindmap {
             linkLabel: false,
             fixed: false,
             x: undefined,
-            y: undefined
+            y: undefined,
+            images: []
         };
 
         b = b.trim();
@@ -136,6 +152,11 @@ class Mindmap {
         } else {
             return null;
         }
+
+        b = b.replace(/\0i\[([^\]]*)\]/g, (match, src) => {
+            r.images.push(src);
+            return "";
+        });
 
         if (b.match(/^\[[0-9\- ]*\]/)) {
             const n = b.indexOf("]");
@@ -591,25 +612,63 @@ class Mindmap {
             },
             newGroup: function(a, selected) {
                 const group = new Kinetic.Group({ x: a.x, y: a.y });
+                const elements = [];
+                let totalHeight = 0;
+                let maxWidth = 0;
+
+                const addImages = (srcs) => {
+                    srcs.forEach(src => {
+                        const imgObj = self.getImage(src, () => {
+                            a.data.redraw = true;
+                            this.redraw();
+                        });
+                        if (imgObj && imgObj.complete && imgObj.naturalWidth > 0) {
+                            const scale = Math.min(200 / imgObj.width, 200 / imgObj.height, 1.0);
+                            const w = imgObj.width * scale;
+                            const h = imgObj.height * scale;
+                            const kImg = new Kinetic.Image({
+                                image: imgObj,
+                                width: w,
+                                height: h
+                            });
+                            elements.push({ node: kImg, w: w, h: h });
+                            totalHeight += h + 2;
+                            maxWidth = Math.max(maxWidth, w);
+                        } else {
+                            totalHeight += 20;
+                            maxWidth = Math.max(maxWidth, 20);
+                        }
+                    });
+                };
+
+                addImages(a.data.images || []);
+
                 const textNode = this.newText(a);
-                let width, height;
+                elements.push({ node: textNode, w: textNode.getWidth(), h: textNode.getHeight() });
+                totalHeight += textNode.getHeight();
+                maxWidth = Math.max(maxWidth, textNode.getWidth());
+
+                addImages(a.data.commentImages || []);
+
                 if (a.data.comment != "") {
                     const commentNode = this.newComment(a);
-                    width = Math.max(textNode.getWidth(), commentNode.getWidth()) + 4;
-                    height = textNode.getHeight() + commentNode.getHeight();
-                    const rect = this.newRect(a, width, height, selected);
-                    textNode.setPosition({ x: -0.5 * width, y: -0.5 * height });
-                    commentNode.setPosition({ x: -0.5 * width, y: -0.5 * height + textNode.getHeight() });
-                    group.add(rect);
-                    group.add(commentNode);
-                } else {
-                    width = textNode.getWidth() + 4;
-                    height = textNode.getHeight();
-                    const rect = this.newRect(a, width, height, selected);
-                    textNode.setPosition({ x: -0.5 * width, y: -0.5 * height });
-                    group.add(rect);
+                    elements.push({ node: commentNode, w: commentNode.getWidth(), h: commentNode.getHeight() });
+                    totalHeight += commentNode.getHeight();
+                    maxWidth = Math.max(maxWidth, commentNode.getWidth());
                 }
-                group.add(textNode);
+
+                const width = maxWidth + 4;
+                const height = totalHeight;
+                const rect = this.newRect(a, width, height, selected);
+                group.add(rect);
+
+                let currentY = -0.5 * height;
+                elements.forEach(el => {
+                    el.node.setPosition({ x: -0.5 * el.w, y: currentY });
+                    group.add(el.node);
+                    currentY += el.h;
+                });
+
                 group.on("touchstart mousedown", (ev) => {
                     if (!window.editorPane.isEditable()) return;
                     ev.cancelBubble = true;
@@ -780,9 +839,15 @@ class Mindmap {
                                 const pos = i_ptr - removedNodes + addedNodes;
                                 const t = self.trim_label(j_ptr < j2 ? new_lines[j_ptr] : null);
                                 if (t) {
+                                    const rawComment = (comments[j_ptr] || "");
+                                    const commentImages = Array.from(rawComment.matchAll(/\0i\[([^\]]*)\]/g), m => m[1]);
+                                    const cleanComment = rawComment.replace(/\0i\[([^\]]*)\]/g, "").trim();
+
                                     this.addNode(pos, {
                                         label: t.label,
-                                        comment: (comments[j_ptr] || "").trim(),
+                                        images: t.images,
+                                        comment: cleanComment,
+                                        commentImages: commentImages,
                                         linkLabel: t.linkLabel,
                                         children: 0,
                                         fixed: j_ptr == 0 || t.fixed,
@@ -798,21 +863,30 @@ class Mindmap {
                                     this.removeNode(pos);
                                     removedNodes++;
                                 } else {
+                                    const rawComment = (comments[j_ptr] || "");
+                                    const commentImages = Array.from(rawComment.matchAll(/\0i\[([^\]]*)\]/g), m => m[1]);
+                                    const cleanComment = rawComment.replace(/\0i\[([^\]]*)\]/g, "").trim();
+
                                     this.nodes[pos].data.label = t.label;
+                                    this.nodes[pos].data.images = t.images;
                                     this.nodes[pos].fixed = (j_ptr == 0 || t.fixed);
                                     if (t.fixed) {
                                         this.nodes[pos].x = t.x; this.nodes[pos].y = t.y;
                                         this.nodes[pos].px = t.x; this.nodes[pos].py = t.y;
                                     }
-                                    this.nodes[pos].data.comment = (comments[j_ptr] || "").trim();
+                                    this.nodes[pos].data.comment = cleanComment;
+                                    this.nodes[pos].data.commentImages = commentImages;
                                     this.nodes[pos].data.linkLabel = t.linkLabel;
                                 }
                                 modifiedNodes++;
                             } else if (tag == "equal") {
                                 const pos = i_ptr - removedNodes + addedNodes;
                                 if (pos < this.nodes.length && j_ptr < j2) {
-                                    if (this.nodes[pos].data.comment != (comments[j_ptr] || "").trim()) modifiedNodes++;
-                                    this.nodes[pos].data.comment = (comments[j_ptr] || "").trim();
+                                    const rawComment = (comments[j_ptr] || "");
+                                    const cleanComment = rawComment.replace(/\0i\[([^\]]*)\]/g, "").trim();
+                                    if (this.nodes[pos].data.comment != cleanComment) modifiedNodes++;
+                                    this.nodes[pos].data.comment = cleanComment;
+                                    this.nodes[pos].data.commentImages = Array.from(rawComment.matchAll(/\0i\[([^\]]*)\]/g), m => m[1]);
                                 }
                             }
                             if (i_ptr < i2) i_ptr++;

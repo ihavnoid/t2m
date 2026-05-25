@@ -75,6 +75,38 @@ class EditorPane {
                 this.unmarkCaretPos(t);
             }
         });
+
+        this.on("paste", (ev) => {
+            const items = (ev.clipboardData || ev.originalEvent.clipboardData).items;
+            for (const item of items) {
+                if (item.type.indexOf("image") !== -1) {
+                    const blob = item.getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const base64 = event.target.result;
+                        const img = document.createElement("img");
+                        img.src = base64;
+                        img.style.maxWidth = "200px";
+                        img.style.maxHeight = "200px";
+                        img.style.display = "inline-block";
+                        img.style.verticalAlign = "middle";
+                        
+                        const selection = this.getWindow().getSelection();
+                        if (selection.rangeCount > 0) {
+                            const range = selection.getRangeAt(0);
+                            range.deleteContents();
+                            range.insertNode(img);
+                            range.setStartAfter(img);
+                            range.collapse(true);
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                        }
+                        this.refresh();
+                    };
+                    reader.readAsDataURL(blob);
+                }
+            }
+        });
     }
 
     findCnt(str, pattern) {
@@ -175,17 +207,30 @@ class EditorPane {
                     ret += " ";
                 }
                 ret += "\0-";
-                ret += el.innerText;
+                for (const n of el.childNodes) {
+                    if (n.nodeType === Node.TEXT_NODE) {
+                        ret += n.textContent;
+                    } else if (n.nodeName === "IMG") {
+                        ret += `\0i[${n.src}]`;
+                    } else if (n.nodeName === "BR") {
+                        ret += "\n";
+                    } else {
+                        ret += n.innerText || "";
+                    }
+                }
                 ret = ret.replaceAll("\n", "\n\0+");
                 return ret;
             } else {
                 if (el.hasChildNodes()) {
                     for (const n of el.childNodes) {
                         const x = _f(n, depth);
-                        if (x !== null) ret += x + "\n";
+                        if (x !== null) ret += x;
                     }
                     return ret;
                 } else {
+                    if (el.nodeName === "IMG") {
+                        return `\0i[${el.src}]`;
+                    }
                     return el.innerText;
                 }
             }
@@ -449,6 +494,14 @@ class EditorPane {
         if (!this.highlightSelected) { n1pos = -1; n2pos = -1; }
         let t = this.el.innerHTML;
         t = this.markCaretPos(t);
+
+        const imgs = [];
+        t = t.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (match, src) => {
+            const idx = imgs.length;
+            imgs.push(src);
+            return `\0 i${idx} `;
+        });
+
         t = t.replace(/<ul[^>]*>/gi, "\0 u").replace(/<\/ul>/gi, "\0 U")
              .replace(/<li[^>]*>/gi, "\0 l").replace(/<br[^>]*>/gi, "\0 b")
              .replace(/<\/li>/gi, "\0 L").replace(/<[^>]*>/g, "")
@@ -512,6 +565,20 @@ class EditorPane {
                         if (pos < 0) rCaretPending = true; else tout = tout.substring(0, pos) + "\0 r" + tout.substring(pos);
                     } else if (pk === "Enter") { processCommand('l'); processCommand('L'); processCommand('l'); accumText += "\0 r"; }
                     else tout += "\0 r";
+                }
+            } else if (c === "i") {
+                const nextPtr = t.indexOf(" ", ptr);
+                if (nextPtr >= 0) {
+                    const idx = parseInt(t.substring(ptr, nextPtr));
+                    if (!isNaN(idx) && imgs[idx]) {
+                        const imgHtml = `<img src="${imgs[idx]}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`;
+                        if (tagOpen) {
+                            accumText += imgHtml;
+                        } else {
+                            tout += imgHtml;
+                        }
+                    }
+                    ptr = nextPtr + 1;
                 }
             }
         };
