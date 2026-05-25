@@ -566,10 +566,21 @@ class EditorPane {
                     } else if (pk === "Enter") { processCommand('l'); processCommand('L'); processCommand('l'); accumText += "\0 r"; }
                     else tout += "\0 r";
                 }
-            } else if (c === "i") {
-                const nextPtr = t.indexOf(" ", ptr);
-                if (nextPtr >= 0) {
-                    const idx = parseInt(t.substring(ptr, nextPtr));
+            }
+        };
+
+        while (true) {
+            const p = t.indexOf("\0 ", ptr);
+            if (p < 0) { if (tagOpen) tout += t.substring(ptr); break; }
+            if (tagOpen) accumText += t.substring(ptr, p);
+            
+            const cmd = t.charAt(p + 2);
+            if (cmd === "i") {
+                ptr = p + 3;
+                const nextSpace = t.indexOf(" ", ptr);
+                if (nextSpace >= 0) {
+                    const idxStr = t.substring(ptr, nextSpace);
+                    const idx = parseInt(idxStr);
                     if (!isNaN(idx) && imgs[idx]) {
                         const imgHtml = `<img src="${imgs[idx]}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`;
                         if (tagOpen) {
@@ -578,17 +589,14 @@ class EditorPane {
                             tout += imgHtml;
                         }
                     }
-                    ptr = nextPtr + 1;
+                    ptr = nextSpace + 1;
+                } else {
+                    ptr = p + 3;
                 }
+            } else {
+                processCommand(cmd);
+                ptr = p + 3;
             }
-        };
-
-        while (true) {
-            const p = t.indexOf("\0 ", ptr);
-            if (p < 0) { if (tagOpen) tout += t.substring(ptr); break; }
-            if (tagOpen) accumText += t.substring(ptr, p);
-            processCommand(t.charAt(p + 2));
-            ptr = p + 3;
         }
         if (nCaretPending || rCaretPending) {
             processCommand('l');
