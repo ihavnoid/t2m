@@ -27,7 +27,7 @@
 	<link rel="stylesheet" href="styles/old/customstyles.css">
 	<link rel="stylesheet" href="styles/old/jquery-ui-1.10.3.custom.min.css">
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/jquery.minicolors/2.0.4/jquery.minicolors.css"/>
-	<script defer src="https://use.fontawesome.com/releases/v5.0.9/js/all.js" integrity="sha384-8iPTk2s/jMVj81dnzb/iFR2sdA7u06vHJyyLlAd4snFpCl/SnyUjRrbdJsw1pGIl" crossorigin="anonymous"></script>
+	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js" integrity="sha512-GWzVrcGlo0TxTRvz9ttioyYJ+Wwk9Ck0G81D+eO63BaqHaJ3YZX9wuqjwgfcV/MrB2PhaVX9DkYVhbFpStnqpQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script>
         globals = {
@@ -84,18 +84,18 @@
 				<li class="navbar-item navbar-button navbar-dropdown">
 					<a href="#">File</a>
 					<ul class="dropdown-content">
-						<li><a href="#" id="file-new"><i class="fa fa-file fa-fw"></i>New<span class="dropdown-shortcut">Ctrl+N</span></a></li>
-						<li><a href="#" id="file-open"><i class="fa fa-upload fa-fw"></i>Open...<span class="dropdown-shortcut">Ctrl+O</span></a></li>
-						<li><a href="#" id="file-save"><i class="fa fa-save fa-fw"></i>Save...<span class="dropdown-shortcut">Ctrl+S</span></a></li>
+						<li><a href="#" id="file-new"><i class="fa-solid fa-file fa-fw"></i>New<span class="dropdown-shortcut">Ctrl+N</span></a></li>
+						<li><a href="#" id="file-open"><i class="fa-solid fa-upload fa-fw"></i>Open...<span class="dropdown-shortcut">Ctrl+O</span></a></li>
+						<li><a href="#" id="file-save"><i class="fa-solid fa-save fa-fw"></i>Save...<span class="dropdown-shortcut">Ctrl+S</span></a></li>
 					</ul>
 				</li>
 				<li class="navbar-item navbar-button navbar-dropdown">
 					<a href="#">Mind Map</a>
 					<ul class="dropdown-content">
-						<li><a href="#" id="mindmap-lock-all"><i class="fa fa-lock fa-fw"></i>Lock all<span class="dropdown-shortcut"></span></a></li>
-						<li><a href="#" id="mindmap-unlock-all"><i class="fa fa-unlock fa-fw"></i>Unlock all<span class="dropdown-shortcut"></span></a></li>
+						<li><a href="#" id="mindmap-lock-all"><i class="fa-solid fa-lock fa-fw"></i>Lock all<span class="dropdown-shortcut"></span></a></li>
+						<li><a href="#" id="mindmap-unlock-all"><i class="fa-solid fa-unlock fa-fw"></i>Unlock all<span class="dropdown-shortcut"></span></a></li>
 						<li class="dropdown-divider"></li>
-						<li><a href="#" id="file-preferences"><i class="fa fa-cogs fa-fw"></i>Preferences</a></li>
+						<li><a href="#" id="file-preferences"><i class="fa-solid fa-gear fa-fw"></i>Preferences</a></li>
 					</ul>
 				</li>
 				<li class="navbar-item" style="width: 200px;">
@@ -112,12 +112,12 @@
                 <div id="editor">
                         <div class="float-button" id="editor-float-button" style="visibility: visible;left: calc(100% - 29px); top: 0px;">
                                 <div>
-                                    <i class="fa fa-regular fa-window-restore"></i>
+                                    <i class="fa-regular fa-window-restore"></i>
                                 </div>
                             </div>
                         <div class="collapse-button" id="editor-collapse-button" style="visibility: visible;left: calc(100% - 29px);">
                                 <div>
-                                    <i class="fa fa-fw fa-chevron-left"></i>
+                                    <i class="fa-solid fa-fw fa-chevron-left"></i>
                                 </div>
                             </div>
                             <div id="textedit_message"></div>
@@ -127,7 +127,7 @@
 			<div id="viewer-pane">
 				<div class="collapse-button" id="viewer-collapse-button" style="visibility: hidden;">
 					<div>
-						<i class="fa fa-fw fa-chevron-right"></i>
+						<i class="fa-solid fa-fw fa-chevron-right"></i>
 					</div>
 				</div>
 				<div id="dragbar"></div>
@@ -175,7 +175,7 @@
 					<div class="modal-footer">
 						<button class="button close-modal">Cancel</button>
 						<button class="button dark" id="modal-settings-save">
-							<i class="fa fa-save fa-lg"></i>Save
+							<i class="fa-solid fa-save fa-lg"></i>Save
 						</button>
 					</div>
 				</div>
@@ -192,11 +192,14 @@
 					</div>
 					<div class="modal-body">
 						<div class="drawing-toolbar">
-							<button id="draw-tool-pen" class="active" title="Pen (Black)"><i class="fa fa-pencil"></i></button>
-							<button id="draw-tool-eraser" title="Eraser"><i class="fa fa-eraser"></i></button>
+							<button id="draw-tool-pen" class="active" title="Pen (Black)"><i class="fa-solid fa-pencil"></i></button>
+							<button id="draw-tool-eraser" title="Eraser"><i class="fa-solid fa-eraser"></i></button>
 							<span class="divider"></span>
-							<button id="draw-tool-undo" title="Undo"><i class="fa fa-undo"></i></button>
-							<button id="draw-tool-clear" title="Clear Canvas"><i class="fa fa-trash"></i></button>
+							<button id="draw-tool-undo" title="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
+							<button id="draw-tool-clear" title="Clear Canvas"><i class="fa-solid fa-trash"></i></button>
+							<span class="divider"></span>
+							<button id="draw-save" class="button-save" title="Save Image"><i class="fa-solid fa-check"></i> Save</button>
+							<button class="button-cancel close-modal" title="Cancel"><i class="fa-solid fa-xmark"></i> Cancel</button>
 						</div>
 						<div id="drawing-canvas-container">
 							<div id="drawing-canvas-wrapper">
@@ -211,10 +214,6 @@
 								<div class="resize-handle br" data-handle="br"></div>
 							</div>
 						</div>
-					</div>
-					<div class="modal-footer">
-						<button id="draw-save" class="button primary">Save</button>
-						<button class="button close-modal">Cancel</button>
 					</div>
 				</div>
 			</div>

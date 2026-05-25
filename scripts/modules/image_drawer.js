@@ -54,8 +54,11 @@ class ImageDrawer {
         this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
         
         window.addEventListener('mousemove', (e) => {
-            if (this.isDrawing) this.draw(e);
-            if (this.isResizing) this.doResize(e);
+            if (this.isDrawing) {
+                this.draw(e);
+            } else if (this.isResizing) {
+                this.doResize(e);
+            }
         });
         
         window.addEventListener('mouseup', () => {
@@ -180,11 +183,19 @@ class ImageDrawer {
     startResizing(e) {
         this.isResizing = true;
         this.activeHandle = e.target.dataset.handle;
+
+        // Capture original content to avoid cumulative offset errors during real-time resize
+        const sourceCanvas = document.createElement('canvas');
+        sourceCanvas.width = this.canvas.width;
+        sourceCanvas.height = this.canvas.height;
+        sourceCanvas.getContext('2d').drawImage(this.canvas, 0, 0);
+
         this.startResizeState = {
             width: this.canvas.width,
             height: this.canvas.height,
             clientX: e.clientX,
-            clientY: e.clientY
+            clientY: e.clientY,
+            sourceCanvas: sourceCanvas
         };
         e.stopPropagation();
     }
@@ -192,6 +203,7 @@ class ImageDrawer {
     doResize(e) {
         if (!this.isResizing) return;
 
+        // Use total delta from the start of the resize operation
         const deltaX = e.clientX - this.startResizeState.clientX;
         const deltaY = e.clientY - this.startResizeState.clientY;
         
@@ -202,47 +214,42 @@ class ImageDrawer {
 
         const handle = this.activeHandle;
 
-        if (handle.includes('r')) {
-            newWidth = this.startResizeState.width + deltaX;
-        } else if (handle.includes('l')) {
-            newWidth = this.startResizeState.width - deltaX;
-            offsetX = deltaX;
+        // Calculate horizontal changes
+        if (handle.includes('l')) {
+            newWidth = Math.max(this.minSize, Math.min(this.maxWidth, this.startResizeState.width - deltaX));
+            offsetX = this.startResizeState.width - newWidth;
+        } else if (handle.includes('r')) {
+            newWidth = Math.max(this.minSize, Math.min(this.maxWidth, this.startResizeState.width + deltaX));
         }
 
-        if (handle.includes('b')) {
-            newHeight = this.startResizeState.height + deltaY;
-        } else if (handle.includes('t')) {
-            newHeight = this.startResizeState.height - deltaY;
-            offsetY = deltaY;
+        // Calculate vertical changes
+        if (handle.includes('t')) {
+            newHeight = Math.max(this.minSize, Math.min(this.maxHeight, this.startResizeState.height - deltaY));
+            offsetY = this.startResizeState.height - newHeight;
+        } else if (handle.includes('b')) {
+            newHeight = Math.max(this.minSize, Math.min(this.maxHeight, this.startResizeState.height + deltaY));
         }
 
-        // Constraints
-        if (newWidth < this.minSize) {
-            offsetX -= (this.minSize - newWidth) * (handle.includes('l') ? -1 : 0);
-            newWidth = this.minSize;
-        }
-        if (newHeight < this.minSize) {
-            offsetY -= (this.minSize - newHeight) * (handle.includes('t') ? -1 : 0);
-            newHeight = this.minSize;
-        }
-        if (newWidth > this.maxWidth) newWidth = this.maxWidth;
-        if (newHeight > this.maxHeight) newHeight = this.maxHeight;
-
-        this.resizeCanvas(Math.round(newWidth), Math.round(newHeight), Math.round(-offsetX), Math.round(-offsetY));
-        
-        // Update start state for relative Top/Left expansion so we don't accumulate offset
-        // Actually for real-time it's easier to just calculate relative to original start clientX/Y
-        // but we need to update the CLIENT position if we clamped
+        this.resizeCanvas(
+            Math.round(newWidth), 
+            Math.round(newHeight), 
+            Math.round(-offsetX) || 0, 
+            Math.round(-offsetY) || 0, 
+            this.startResizeState.sourceCanvas
+        );
     }
 
-    resizeCanvas(w, h, contentOffsetX, contentOffsetY) {
-        if (w === this.canvas.width && h === this.canvas.height && contentOffsetX === 0 && contentOffsetY === 0) return;
+    resizeCanvas(w, h, contentOffsetX, contentOffsetY, source = null) {
+        if (w === this.canvas.width && h === this.canvas.height && contentOffsetX === 0 && contentOffsetY === 0 && !source) return;
 
-        // Store content
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = this.canvas.width;
-        tempCanvas.height = this.canvas.height;
-        tempCanvas.getContext('2d').drawImage(this.canvas, 0, 0);
+        // Use provided source or current canvas
+        let sourceContent = source;
+        if (!sourceContent) {
+            sourceContent = document.createElement('canvas');
+            sourceContent.width = this.canvas.width;
+            sourceContent.height = this.canvas.height;
+            sourceContent.getContext('2d').drawImage(this.canvas, 0, 0);
+        }
 
         // Resize
         this.canvas.width = w;
@@ -256,12 +263,13 @@ class ImageDrawer {
         this.context.fillRect(0, 0, w, h);
 
         // Draw back content
-        this.context.drawImage(tempCanvas, contentOffsetX, contentOffsetY);
+        this.context.drawImage(sourceContent, contentOffsetX, contentOffsetY);
     }
 
     stopResizing() {
         if (this.isResizing) {
             this.isResizing = false;
+            this.startResizeState = null;
             this.saveSnapshot();
         }
     }

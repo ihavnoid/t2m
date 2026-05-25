@@ -154,6 +154,7 @@
     min-width: 40px;
     height: 40px;
     font-size: 1.2em;
+    gap: 8px;
 }
 
 .drawing-toolbar button:hover {
@@ -164,6 +165,31 @@
     background: #2365ba;
     color: white;
     border-color: #1c4d8e;
+}
+
+.drawing-toolbar .button-save {
+    background-color: #28a745;
+    color: white;
+    border-color: #218838;
+    font-size: 1rem;
+    font-weight: bold;
+    margin-left: auto;
+}
+
+.drawing-toolbar .button-save:hover {
+    background-color: #218838;
+}
+
+.drawing-toolbar .button-cancel {
+    background-color: #dc3545;
+    color: white;
+    border-color: #c82333;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.drawing-toolbar .button-cancel:hover {
+    background-color: #c82333;
 }
 
 .drawing-toolbar .divider {
@@ -193,6 +219,8 @@
     background: white;
     cursor: crosshair;
     touch-action: none;
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
 .resize-handle {
@@ -203,6 +231,8 @@
     border: 2px solid white;
     border-radius: 2px;
     z-index: 10;
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
 .resize-handle:hover {
