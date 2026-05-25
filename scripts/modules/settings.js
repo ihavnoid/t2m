@@ -45,7 +45,7 @@ class Settings {
             + "  <li><i>[150 150]</i> Features:</li>"
             + "<ul>  <li>Image Support<br>"
             + "          Paste images from clipboard!</li>"
-            + "      <li><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAZElEQVQ4T2NkoBAwUqifYfT/f0ZGRAZMDAwMjIyM/xn+MzByMDAwkmsAhidIDf+R7WRkZBy8BqB7AWmAnmYBAwMDRoZ/UP8BA8C0Bf8Z/pMZAnS9uAzA6UV0S0B5D90SZHm8+QEAhwYpCdfy32EAAAAASUVORK5CYII=\"></li></ul>"
+            + "      <li><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAYCAYAAAAVibZIAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAGdYAABnWARjRyu0AAAKjSURBVEhLtdNNaBxlGMDx38zubOompatpINoeJFrFTxA/DgEPhV69SAqCpuDXwUPrQXoUPXmqUD15qgas9eKliFCIFYuelNZiCAiKWhVMGiW1ySazmZ3Xw2STnU22Fqt/GOad533f//vxPBOFEIL/mOh6pM2TJ6XT02Bg/371Q4d6h5T4R+mVo0c1T50qxW6amNA4frwU6+aa0valS+bHx3vDYOTcOdWxsd4wiHsD3aRnz/aGNrhW3xZpZ99fHuPb6b293Rt8PbvX1BSffVF8d5+3JM3bRBEXTvDD+8x8f0DYui74JD7gzM80hovvvtK4wtw3XHyH0CC5mfNjU9JkdGNMmgybfvQ9i7Wqg+M8dA95TtxlKiUqW+H0JCtzhCGiKllEJVvUWL0oj1jYdZ/fhncbupsjRwjRpjCubCP9+FlWzpMOUEmIErIq7RohIVRIY67WeelthhqdmWVK0jOHkRc7BFUWf6S1THugkK5hucKDT5DUizyElHqdxw5uI92OmQ+ZfZe0XtzdGlZz0gpLgaWcWoU77uS5Y8WccmrX9SEvsrk8x+wHxb0KtANZVoj/ivlzJ/N7qD3M5BubmrI0Wn9FxfP5a2QLtCvFQmsZKzmLEZd38MsIy6O88DxJbVOzpQjzvJB/9RYLn9JMCUusNUlbXG3zR4253Vwe4eUJ9txGO990bJHGMdkq331EVicZJBpgrcVKiysJC7uYv5WnH+Hx+8kDlX512k22ur7rUNTf7zOceIVfh/npLh64lzcni3vuFtpupx2qO6jVqQ0W7Vtup5XQHGR0kNefLK4pXs9DN32lHTrnaGe0Y2qBV59i51BxkujfSDuTooioyYvPsG9fUfTd/3uJcJ2sLoVw4XTRzvPe3jJ9E3Uj9DvADfG/SP8GEVxTFp4v8o0AAAAASUVORK5CYII=\"></li></ul>"
             + "  <li>TODO</li>"
             + "<ul>  <li>Performance optimization<br>"
             + "          Test some ultra-heavy large mindmaps and make sure performance is okay.<br>"
