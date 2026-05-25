@@ -98,8 +98,9 @@ class ImageDrawer {
         this.history = [];
         
         const container = document.getElementById('drawing-canvas-container');
-        this.canvas.width = Math.min(container.clientWidth - 80, this.maxWidth);
-        this.canvas.height = Math.min(600, this.maxHeight);
+        // Initial reasonable default size
+        this.canvas.width = Math.min(container.clientWidth - 100, 500);
+        this.canvas.height = 400;
 
         this.setTool('pen');
 

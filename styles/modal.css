@@ -175,19 +175,18 @@
 #drawing-canvas-container {
     border: 1px solid #999;
     background: #ccc; /* Darker background to see canvas edges */
-    display: flex;
-    justify-content: center;
-    align-items: center;
     min-height: 400px;
     max-height: 70vh;
     overflow: auto;
-    padding: 40px; /* Space for handles */
+    padding: 20px;
 }
 
 #drawing-canvas-wrapper {
     position: relative;
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
     line-height: 0;
+    margin: 20px auto; /* Center horizontally and provide space for top/bottom handles */
+    width: fit-content;
 }
 
 #drawing-canvas {
