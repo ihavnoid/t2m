@@ -18,46 +18,58 @@ global.alert = vi.fn();
 
 // Mock Kinetic and d3 for mindmap tests later
 global.Kinetic = {
-    Stage: vi.fn().mockImplementation(() => ({
-        add: vi.fn(),
-        setHeight: vi.fn(),
-        setWidth: vi.fn(),
-        remove: vi.fn(),
-        toDataURL: vi.fn()
-    })),
-    Layer: vi.fn().mockImplementation(() => ({
-        move: vi.fn(),
-        add: vi.fn(),
-        draw: vi.fn(),
-        getScale: vi.fn().mockReturnValue({ x: 1, y: 1 }),
-        setScale: vi.fn(),
-        getX: vi.fn().mockReturnValue(0),
-        getY: vi.fn().mockReturnValue(0),
-        setPosition: vi.fn(),
-        getTransform: vi.fn().mockReturnValue({ m: [1, 0, 0, 1, 0, 0] }),
-        removeChildren: vi.fn(),
-        clone: vi.fn().mockReturnThis()
-    })),
-    Group: vi.fn().mockImplementation(() => ({
-        add: vi.fn(),
-        on: vi.fn(),
-        setPosition: vi.fn(),
-        removeChildren: vi.fn(),
-        remove: vi.fn()
-    })),
-    Line: vi.fn().mockImplementation(() => ({
-        moveToBottom: vi.fn(),
-        setPoints: vi.fn(),
-        remove: vi.fn()
-    })),
-    Text: vi.fn().mockImplementation(() => ({
-        getWidth: vi.fn().mockReturnValue(100),
-        getHeight: vi.fn().mockReturnValue(20),
-        setPosition: vi.fn(),
-        setWidth: vi.fn(),
-        remove: vi.fn()
-    })),
-    Rect: vi.fn().mockImplementation(() => ({}))
+    Stage: class {
+        constructor() {
+            this.add = vi.fn();
+            this.setHeight = vi.fn();
+            this.setWidth = vi.fn();
+            this.remove = vi.fn();
+            this.toDataURL = vi.fn();
+        }
+    },
+    Layer: class {
+        constructor() {
+            this.move = vi.fn();
+            this.add = vi.fn();
+            this.draw = vi.fn();
+            this.getScale = vi.fn().mockReturnValue({ x: 1, y: 1 });
+            this.setScale = vi.fn();
+            this.getX = vi.fn().mockReturnValue(0);
+            this.getY = vi.fn().mockReturnValue(0);
+            this.setPosition = vi.fn();
+            this.getTransform = vi.fn().mockReturnValue({ m: [1, 0, 0, 1, 0, 0] });
+            this.removeChildren = vi.fn();
+            this.clone = vi.fn().mockReturnThis();
+        }
+    },
+    Group: class {
+        constructor() {
+            this.add = vi.fn();
+            this.on = vi.fn();
+            this.setPosition = vi.fn();
+            this.removeChildren = vi.fn();
+            this.remove = vi.fn();
+        }
+    },
+    Line: class {
+        constructor() {
+            this.moveToBottom = vi.fn();
+            this.setPoints = vi.fn();
+            this.remove = vi.fn();
+        }
+    },
+    Text: class {
+        constructor() {
+            this.getWidth = vi.fn().mockReturnValue(100);
+            this.getHeight = vi.fn().mockReturnValue(20);
+            this.setPosition = vi.fn();
+            this.setWidth = vi.fn();
+            this.remove = vi.fn();
+        }
+    },
+    Rect: class {
+        constructor() {}
+    }
 };
 
 global.d3 = {
@@ -71,7 +83,11 @@ global.d3 = {
     force: vi.fn().mockReturnThis(),
     on: vi.fn().mockReturnThis(),
     stop: vi.fn().mockReturnThis(),
-    tick: vi.fn().mockReturnThis()
+    tick: vi.fn().mockReturnThis(),
+    iterations: vi.fn().mockReturnThis(),
+    strength: vi.fn().mockReturnThis(),
+    distance: vi.fn().mockReturnThis(),
+    distanceMax: vi.fn().mockReturnThis()
 };
 
 // Mock difflib

@@ -121,6 +121,7 @@ class Mindmap {
     }
 
     trim_label(b) {
+        if (typeof b === "undefined" || b === null) return null;
         const r = {
             label: "",
             linkLabel: false,
@@ -777,20 +778,22 @@ class Mindmap {
                                 removedNodes++;
                             } else if (tag == "insert" || (tag == "replace" && i1 == i2) || (tag == "replace" && !old_lines[i_ptr])) {
                                 const pos = i_ptr - removedNodes + addedNodes;
-                                const t = self.trim_label(new_lines[j_ptr]);
-                                this.addNode(pos, {
-                                    label: t.label,
-                                    comment: comments[j_ptr].trim(),
-                                    linkLabel: t.linkLabel,
-                                    children: 0,
-                                    fixed: j_ptr == 0 || t.fixed,
-                                    x: t.x,
-                                    y: t.y,
-                                });
-                                addedNodes++;
+                                const t = self.trim_label(j_ptr < j2 ? new_lines[j_ptr] : null);
+                                if (t) {
+                                    this.addNode(pos, {
+                                        label: t.label,
+                                        comment: (comments[j_ptr] || "").trim(),
+                                        linkLabel: t.linkLabel,
+                                        children: 0,
+                                        fixed: j_ptr == 0 || t.fixed,
+                                        x: t.x,
+                                        y: t.y,
+                                    });
+                                    addedNodes++;
+                                }
                             } else if (tag == "replace") {
                                 const pos = i_ptr - removedNodes + addedNodes;
-                                const t = self.trim_label(new_lines[j_ptr]);
+                                const t = self.trim_label(j_ptr < j2 ? new_lines[j_ptr] : null);
                                 if (t == null) {
                                     this.removeNode(pos);
                                     removedNodes++;
@@ -801,15 +804,15 @@ class Mindmap {
                                         this.nodes[pos].x = t.x; this.nodes[pos].y = t.y;
                                         this.nodes[pos].px = t.x; this.nodes[pos].py = t.y;
                                     }
-                                    this.nodes[pos].data.comment = comments[j_ptr].trim();
+                                    this.nodes[pos].data.comment = (comments[j_ptr] || "").trim();
                                     this.nodes[pos].data.linkLabel = t.linkLabel;
                                 }
                                 modifiedNodes++;
                             } else if (tag == "equal") {
                                 const pos = i_ptr - removedNodes + addedNodes;
-                                if (pos < this.nodes.length) {
-                                    if (this.nodes[pos].data.comment != comments[j_ptr].trim()) modifiedNodes++;
-                                    this.nodes[pos].data.comment = comments[j_ptr].trim();
+                                if (pos < this.nodes.length && j_ptr < j2) {
+                                    if (this.nodes[pos].data.comment != (comments[j_ptr] || "").trim()) modifiedNodes++;
+                                    this.nodes[pos].data.comment = (comments[j_ptr] || "").trim();
                                 }
                             }
                             if (i_ptr < i2) i_ptr++;
