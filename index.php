@@ -182,6 +182,34 @@
 			</div>
 			<div class="modal-backdrop close-modal"></div>
 		</div>
+
+		<div class="modal" id="drawing-modal">
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header">
+						<span class="modal-title">Draw Image</span>
+						<button class="close-button close-modal">&times;</button>
+					</div>
+					<div class="modal-body">
+						<div class="drawing-toolbar">
+							<button id="draw-tool-pen" class="active" title="Pen (Black)"><i class="fa fa-pencil"></i></button>
+							<button id="draw-tool-eraser" title="Eraser"><i class="fa fa-eraser"></i></button>
+							<span class="divider"></span>
+							<button id="draw-tool-undo" title="Undo"><i class="fa fa-undo"></i></button>
+							<button id="draw-tool-clear" title="Clear Canvas"><i class="fa fa-trash"></i></button>
+						</div>
+						<div id="drawing-canvas-container">
+							<canvas id="drawing-canvas"></canvas>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button id="draw-save" class="button primary">Save</button>
+						<button class="button close-modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+			<div class="modal-backdrop close-modal"></div>
+		</div>
 	</div>
 	<input id="file-input" type="file" accept=".mindtxt">
 </body>

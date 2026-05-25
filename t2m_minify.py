@@ -20,6 +20,7 @@ all_files = [
     "scripts/modules/file_import.js",
     "scripts/modules/file_export.js",
     "scripts/modules/app_functions.js",
+    "scripts/modules/image_drawer.js",
     "scripts/modules/mindmap.js",
     "scripts/app.js"
 ]

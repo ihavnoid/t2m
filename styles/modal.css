@@ -126,3 +126,66 @@
 .tab-content.active {
 	display: block;
 }
+
+/* Drawing Modal Styles */
+.modal-lg {
+    max-width: 90%;
+}
+
+.drawing-toolbar {
+    margin-bottom: 10px;
+    padding: 5px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.drawing-toolbar button {
+    background: white;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    font-size: 1.2em;
+}
+
+.drawing-toolbar button:hover {
+    background: #e0e0e0;
+}
+
+.drawing-toolbar button.active {
+    background: #2365ba;
+    color: white;
+    border-color: #1c4d8e;
+}
+
+.drawing-toolbar .divider {
+    width: 1px;
+    height: 24px;
+    background: #ccc;
+}
+
+#drawing-canvas-container {
+    border: 1px solid #999;
+    background: #eee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    max-height: 70vh;
+    overflow: auto;
+}
+
+#drawing-canvas {
+    background: white;
+    cursor: crosshair;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    touch-action: none; /* Prevent scrolling while drawing on touch devices */
+}

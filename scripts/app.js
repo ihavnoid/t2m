@@ -12,6 +12,7 @@ import { fileImport } from './modules/file_import.js';
 import { fileExport } from './modules/file_export.js';
 import { appFunctions } from './modules/app_functions.js';
 import { mindmap } from './modules/mindmap.js';
+import { imageDrawer } from './modules/image_drawer.js';
 
 class App {
     constructor() {
@@ -47,9 +48,45 @@ class App {
                 "Ctrl+O": () => appFunctions.fileOpen(),
                 "Ctrl+S": () => appFunctions.fileSave(),
                 "Ctrl+Z": () => appFunctions.editUndo(),
-                "Ctrl+Y": () => appFunctions.editRedo()
+                "Ctrl+Y": () => appFunctions.editRedo(),
+                "Ctrl+I": () => {
+                    imageDrawer.open(null, (base64) => {
+                        const img = document.createElement("img");
+                        img.src = base64;
+                        img.style.maxWidth = "200px";
+                        img.style.maxHeight = "200px";
+                        img.style.display = "inline-block";
+                        img.style.verticalAlign = "middle";
+
+                        // Find the beginning of the current line (LI)
+                        const selection = window.getSelection();
+                        if (selection.rangeCount > 0) {
+                            let node = selection.anchorNode;
+                            while (node && node.nodeName !== "LI" && node !== editorPane.el) {
+                                node = node.parentNode;
+                            }
+                            if (node && node.nodeName === "LI") {
+                                node.insertBefore(img, node.firstChild);
+                                if (editorPane.refresh()) {
+                                    if (editorPane.observerFunc) editorPane.observerFunc();
+                                }
+                            }
+                        }
+                    });
+                }
             };
             shortcuts.addBindings(bindings);
+
+            editorPane.el.addEventListener("dblclick", (ev) => {
+                if (ev.target.tagName === "IMG") {
+                    imageDrawer.open(ev.target.src, (newBase64) => {
+                        ev.target.src = newBase64;
+                        if (editorPane.refresh()) {
+                            if (editorPane.observerFunc) editorPane.observerFunc();
+                        }
+                    });
+                }
+            });
 
             // Initialize Navbar
             navbar.init({
@@ -71,6 +108,9 @@ class App {
 
             // Initialize Mindmap
             mindmap.init();
+
+            // Initialize Image Drawer
+            imageDrawer.init();
 
             // Initialize File Import
             fileImport.init();
@@ -148,3 +188,4 @@ window.fileImport = fileImport;
 window.fileExport = fileExport;
 window.appFunctions = appFunctions;
 window.mindmap = mindmap;
+window.imageDrawer = imageDrawer;

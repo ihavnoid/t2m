@@ -72,6 +72,46 @@ global.Kinetic = {
     }
 };
 
+// Mock Image
+global.Image = class {
+    constructor() {
+        this.onload = null;
+        this.src = '';
+        setTimeout(() => {
+            if (this.onload) this.onload();
+        }, 0);
+    }
+    get complete() { return true; }
+};
+
+// Mock Canvas and Context
+HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+    beginPath: vi.fn(),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+    stroke: vi.fn(),
+    clearRect: vi.fn(),
+    fillRect: vi.fn(),
+    drawImage: vi.fn(),
+    save: vi.fn(),
+    restore: vi.fn(),
+    translate: vi.fn(),
+    scale: vi.fn(),
+    rotate: vi.fn(),
+    measureText: vi.fn().mockReturnValue({ width: 100 }),
+    fillText: vi.fn(),
+    strokeText: vi.fn(),
+    setTransform: vi.fn()
+});
+
+HTMLCanvasElement.prototype.toDataURL = vi.fn().mockReturnValue('data:image/png;base64,mock');
+HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn().mockReturnValue({
+    left: 0,
+    top: 0,
+    width: 500,
+    height: 500
+});
+
 global.d3 = {
     forceSimulation: vi.fn().mockReturnThis(),
     forceCollide: vi.fn().mockReturnThis(),
