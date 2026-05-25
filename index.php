@@ -199,7 +199,17 @@
 							<button id="draw-tool-clear" title="Clear Canvas"><i class="fa fa-trash"></i></button>
 						</div>
 						<div id="drawing-canvas-container">
-							<canvas id="drawing-canvas"></canvas>
+							<div id="drawing-canvas-wrapper">
+								<canvas id="drawing-canvas"></canvas>
+								<div class="resize-handle tl" data-handle="tl"></div>
+								<div class="resize-handle t" data-handle="t"></div>
+								<div class="resize-handle tr" data-handle="tr"></div>
+								<div class="resize-handle l" data-handle="l"></div>
+								<div class="resize-handle r" data-handle="r"></div>
+								<div class="resize-handle bl" data-handle="bl"></div>
+								<div class="resize-handle b" data-handle="b"></div>
+								<div class="resize-handle br" data-handle="br"></div>
+							</div>
 						</div>
 					</div>
 					<div class="modal-footer">

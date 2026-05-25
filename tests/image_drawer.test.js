@@ -47,7 +47,7 @@ describe('ImageDrawer Module', () => {
     it('should stop drawing on mouseup and save snapshot', () => {
         imageDrawer.isDrawing = true;
         const event = new MouseEvent('mouseup');
-        imageDrawer.canvas.dispatchEvent(event);
+        window.dispatchEvent(event);
         expect(imageDrawer.isDrawing).toBe(false);
         expect(imageDrawer.history.length).toBe(1);
     });
@@ -61,10 +61,54 @@ describe('ImageDrawer Module', () => {
 
     it('should undo last action', async () => {
         // Mock snapshots
-        imageDrawer.history = ['state1', 'state2'];
+        imageDrawer.history = [
+            { dataUrl: 'state1', width: 100, height: 100 },
+            { dataUrl: 'state2', width: 200, height: 200 }
+        ];
         imageDrawer.undo();
         // Undo pops the current state and restores the previous one
         expect(imageDrawer.history.length).toBe(1);
-        expect(imageDrawer.history[0]).toBe('state1');
+        expect(imageDrawer.history[0].dataUrl).toBe('state1');
+    });
+
+    it('should resize canvas correctly', () => {
+        imageDrawer.canvas.width = 100;
+        imageDrawer.canvas.height = 100;
+        
+        // Mock clearRect and drawImage for resize
+        const ctx = imageDrawer.context;
+        
+        imageDrawer.resizeCanvas(200, 200, 0, 0);
+        
+        expect(imageDrawer.canvas.width).toBe(200);
+        expect(imageDrawer.canvas.height).toBe(200);
+        expect(ctx.fillRect).toHaveBeenCalled(); // Background fill
+        expect(ctx.drawImage).toHaveBeenCalled(); // Restore content
+    });
+
+    it('should handle expansion in Top and Left directions with offsets', () => {
+        imageDrawer.canvas.width = 100;
+        imageDrawer.canvas.height = 100;
+        
+        // Expand Left by 50px
+        // newWidth = 150, contentOffsetX = 50
+        imageDrawer.resizeCanvas(150, 100, 50, 0);
+        
+        expect(imageDrawer.canvas.width).toBe(150);
+        expect(imageDrawer.context.drawImage).toHaveBeenCalledWith(expect.anything(), 50, 0);
+    });
+
+    it('should respect max resolution constraints (1000x1000)', () => {
+        imageDrawer.canvas.width = 100;
+        imageDrawer.canvas.height = 100;
+        imageDrawer.activeHandle = 'br';
+        imageDrawer.isResizing = true;
+        imageDrawer.startResizeState = { width: 100, height: 100, clientX: 0, clientY: 0 };
+
+        // Attempt to resize to 2000x2000
+        imageDrawer.doResize({ clientX: 1900, clientY: 1900 });
+
+        expect(imageDrawer.canvas.width).toBe(1000);
+        expect(imageDrawer.canvas.height).toBe(1000);
     });
 });

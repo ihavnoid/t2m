@@ -174,18 +174,49 @@
 
 #drawing-canvas-container {
     border: 1px solid #999;
-    background: #eee;
+    background: #ccc; /* Darker background to see canvas edges */
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 400px;
     max-height: 70vh;
     overflow: auto;
+    padding: 40px; /* Space for handles */
+}
+
+#drawing-canvas-wrapper {
+    position: relative;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    line-height: 0;
 }
 
 #drawing-canvas {
     background: white;
     cursor: crosshair;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    touch-action: none; /* Prevent scrolling while drawing on touch devices */
+    touch-action: none;
 }
+
+.resize-handle {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #2365ba;
+    border: 2px solid white;
+    border-radius: 2px;
+    z-index: 10;
+}
+
+.resize-handle:hover {
+    transform: scale(1.2);
+    background: #1c4d8e;
+}
+
+/* Position handles */
+.resize-handle.tl { top: -6px; left: -6px; cursor: nw-resize; }
+.resize-handle.t  { top: -6px; left: calc(50% - 6px); cursor: n-resize; }
+.resize-handle.tr { top: -6px; right: -6px; cursor: ne-resize; }
+.resize-handle.l  { top: calc(50% - 6px); left: -6px; cursor: w-resize; }
+.resize-handle.r  { top: calc(50% - 6px); right: -6px; cursor: e-resize; }
+.resize-handle.bl { bottom: -6px; left: -6px; cursor: sw-resize; }
+.resize-handle.b  { bottom: -6px; left: calc(50% - 6px); cursor: s-resize; }
+.resize-handle.br { bottom: -6px; right: -6px; cursor: se-resize; }
