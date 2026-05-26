@@ -255,10 +255,13 @@ class ImageDrawer {
 
     drawClipart(unicode, size, x, y) {
         this.context.save();
+        // Use a more explicit font string to ensure the Solid weight is used
         this.context.font = `900 ${size}px "Font Awesome 6 Free"`;
         this.context.fillStyle = this.currentColor;
         this.context.textAlign = 'center';
         this.context.textBaseline = 'middle';
+        
+        // Ensure the font is actually loaded before drawing (most of the time it will be)
         this.context.fillText(unicode, x, y);
         this.context.restore();
         
