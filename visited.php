@@ -36,7 +36,11 @@ function build_table() {
         for(let p in setting) {
             if(setting.hasOwnProperty(p)) {
                 let o = setting[p];
-                t2 += "<tr><td>"+o["title"]+"</td>";
+                let title = o["title"] || "";
+                title = title.replace(/\0i\[([^\]]*)\]/g, (match, src) => {
+                    return `<img src="${src}" style="max-width: 50px; max-height: 50px; vertical-align: middle; margin-right: 8px; border: 1px solid #ccc; padding: 2px; background: white;">`;
+                });
+                t2 += "<tr><td>"+title+"</td>";
                 t2 += "<td><a href=\"<?php echo $base?>?k=" + o["rokey"] + "\" target=\"_blank\">Read-only</a></td>";
                 if(o.hasOwnProperty("rwkey")) {
                     t2 += "<td><a href=\"<?php echo $base?>?k=" + o["rwkey"] + "\" target=\"_blank\">Read-write</a></td>";

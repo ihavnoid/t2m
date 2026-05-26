@@ -134,12 +134,16 @@ class Settings {
         this.addVisitedPages();
     }
 
-    findTitle() {
+    findTitle(stripImages = false) {
         const t2 = window.editorPane.getProcessed();
         const begin = t2.indexOf('\0-');
         const end = t2.indexOf('\n', begin);
         let title = t2.substring(begin + 2, end).trim();
         title = title.replace(/^\[[0-9\- ]*\] */g, "");
+        if (stripImages) {
+            title = title.replace(/\0i\[[^\]]*\]/g, "");
+            title = title.trim();
+        }
         return title;
     }
 
