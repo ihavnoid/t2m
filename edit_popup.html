@@ -4,7 +4,7 @@
         function loadme() {
             let te = document.getElementById("textedit");
             let tem = document.getElementById("textedit_message");
-            window.opener.callbackFromPane(te, tem, window);
+            window.opener.editorPane.callbackFromPane(te, tem, window);
             let xf = () => {
                 setTimeout(() => {
                     if(window.opener) {
@@ -16,6 +16,15 @@
             }
             xf();
         }
+        window.onbeforeunload = function() {
+            if (window.opener && !window.opener.closed) {
+                window.opener.editorPane.callbackFromPane(
+                    window.opener.document.getElementById("textedit"),
+                    window.opener.document.getElementById("textedit_message"),
+                    window.opener
+                );
+            }
+        };
     </script>
     <link rel="stylesheet" href="styles/editor.css">
 </head>

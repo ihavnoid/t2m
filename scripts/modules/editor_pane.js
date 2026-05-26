@@ -298,17 +298,37 @@ class EditorPane {
             let pm = "";
             if (this.el !== null) {
                 for (const [ev, f] of this.all_events) {
-                    this.el.removeEventListener(ev, f);
+                    try {
+                        this.el.removeEventListener(ev, f);
+                    } catch (e) {
+                        // Window might be closed
+                    }
                 }
-                pc = this.el.innerHTML;
+                try {
+                    pc = this.el.innerHTML;
+                } catch (e) {
+                    // Fallback to processed if innerHTML is gone, though processed is plaintext
+                    pc = ""; 
+                }
             }
             if (this.elm !== null) {
-                pm = this.elm.innerHTML;
+                try {
+                    pm = this.elm.innerHTML;
+                } catch (e) {
+                    pm = "";
+                }
             }
+            
+            const returning = (this.selfWindow !== window && w === window);
+
             this.el = te;
             this.elm = tem;
             this.selfWindow = w;
-            this.el.innerHTML = pc;
+            
+            if (pc !== "") {
+                this.el.innerHTML = pc;
+            }
+            
             for (const [ev, f] of this.all_events) {
                 this.el.addEventListener(ev, f);
             }
@@ -318,6 +338,11 @@ class EditorPane {
                 this.observer.observe(this.el, options);
             }
             this.setEditable(this.documentEditable, pm);
+            
+            if (returning && this.unfloatCb) {
+                this.unfloatCb();
+                this.unfloatCb = null;
+            }
         };
         this.unfloatCb = unfloat_cb;
         const w = window.open("edit_popup.html", "floatpane", "popup");
@@ -331,12 +356,11 @@ class EditorPane {
 
     getWindow() {
         if (this.selfWindow !== window && this.selfWindow.closed) {
-            this.__cb_pane(
+            this.callbackFromPane(
                 document.getElementById("textedit"),
                 document.getElementById("textedit_message"),
                 window
             );
-            this.unfloatCb();
         }
         return this.selfWindow;
     }
