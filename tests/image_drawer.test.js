@@ -21,6 +21,19 @@ describe('ImageDrawer Module', () => {
                     <button class="thickness-swatch" data-thickness="2"></button>
                     <button class="thickness-swatch active" data-thickness="5"></button>
                 </div>
+                <button id="draw-tool-clipart"></button>
+                <div id="clipart-panel" style="display: none;">
+                    <div class="clipart-header">
+                        <select id="clipart-size">
+                            <option value="32">Small</option>
+                            <option value="64">Medium</option>
+                        </select>
+                        <button id="close-clipart"></button>
+                    </div>
+                    <div class="clipart-grid">
+                        <button class="clipart-item" data-unicode="\uf118"></button>
+                    </div>
+                </div>
                 <div id="drawing-canvas-container">
                     <canvas id="drawing-canvas"></canvas>
                 </div>
@@ -172,6 +185,18 @@ describe('ImageDrawer Module', () => {
 
         expect(imageDrawer.canvas.width).toBe(1000);
         expect(imageDrawer.canvas.height).toBe(1000);
+    });
+
+    it('should draw clipart correctly', () => {
+        const unicode = '\\uf118';
+        const size = 64;
+        imageDrawer.currentColor = '#ff0000';
+        
+        imageDrawer.drawClipart(unicode, size);
+        
+        expect(imageDrawer.context.fillText).toHaveBeenCalledWith(unicode, expect.any(Number), expect.any(Number));
+        expect(imageDrawer.context.fillStyle).toBe('#ff0000');
+        expect(imageDrawer.history.length).toBe(1);
     });
 
     it('should track isActive state', () => {

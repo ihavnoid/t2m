@@ -66,6 +66,29 @@ class ImageDrawer {
             });
         });
 
+        // Clipart Events
+        const clipartBtn = document.getElementById('draw-tool-clipart');
+        const clipartPanel = document.getElementById('clipart-panel');
+        const closeClipartBtn = document.getElementById('close-clipart');
+        const clipartItems = document.querySelectorAll('.clipart-item');
+
+        clipartBtn.addEventListener('click', () => {
+            clipartPanel.style.display = clipartPanel.style.display === 'none' ? 'flex' : 'none';
+        });
+
+        closeClipartBtn.addEventListener('click', () => {
+            clipartPanel.style.display = 'none';
+        });
+
+        clipartItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const unicode = item.dataset.unicode;
+                const size = parseInt(document.getElementById('clipart-size').value);
+                this.drawClipart(unicode, size);
+                clipartPanel.style.display = 'none';
+            });
+        });
+
         // Handle Events
         const handles = document.querySelectorAll('.resize-handle');
         handles.forEach(handle => {
@@ -217,6 +240,21 @@ class ImageDrawer {
             this.isDrawing = false;
             this.saveSnapshot();
         }
+    }
+
+    drawClipart(unicode, size) {
+        const x = this.canvas.width / 2;
+        const y = this.canvas.height / 2;
+        
+        this.context.save();
+        this.context.font = `900 ${size}px "Font Awesome 6 Free"`;
+        this.context.fillStyle = this.currentColor;
+        this.context.textAlign = 'center';
+        this.context.textBaseline = 'middle';
+        this.context.fillText(unicode, x, y);
+        this.context.restore();
+        
+        this.saveSnapshot();
     }
 
     startResizing(e) {
@@ -389,6 +427,7 @@ class ImageDrawer {
 
     close() {
         document.getElementById('drawing-modal').classList.remove('active');
+        document.getElementById('clipart-panel').style.display = 'none';
         this.onSaveCallback = null;
         this.isActive = false;
     }

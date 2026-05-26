@@ -270,6 +270,77 @@
     border-radius: 50%;
 }
 
+.clipart-panel {
+    position: absolute;
+    top: 50px;
+    left: 10px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 100;
+    width: 320px;
+    display: none;
+    flex-direction: column;
+}
+
+.clipart-header {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.clipart-header select {
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+
+.clipart-header #close-clipart {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 5px;
+    color: #666;
+}
+
+.clipart-header #close-clipart:hover {
+    color: #000;
+}
+
+.clipart-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+    padding: 10px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.clipart-item {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+}
+
+.clipart-item:hover {
+    background: #eef4ff;
+    border-color: #2365ba;
+    transform: translateY(-2px);
+}
+
 #drawing-canvas-container {
     border: 1px solid #999;
     background: #ccc; /* Darker background to see canvas edges */
