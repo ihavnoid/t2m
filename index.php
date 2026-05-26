@@ -221,7 +221,7 @@
 							<button class="button-cancel close-modal" title="Cancel"><i class="fa-solid fa-xmark"></i> Cancel</button>
 						</div>
 						
-						<div id="clipart-panel" class="clipart-panel">
+						<div id="clipart-panel" class="clipart-panel" style="display: none;">
 							<div class="clipart-header">
 								<span>Select Clipart</span>
 								<select id="clipart-size">
@@ -232,36 +232,36 @@
 								<button id="close-clipart">&times;</button>
 							</div>
 							<div class="clipart-grid">
-								<button class="clipart-item" data-unicode="\uf118" title="Smile"><i class="fa-solid fa-smile"></i></button>
-								<button class="clipart-item" data-unicode="\uf004" title="Heart"><i class="fa-solid fa-heart"></i></button>
-								<button class="clipart-item" data-unicode="\uf005" title="Star"><i class="fa-solid fa-star"></i></button>
-								<button class="clipart-item" data-unicode="\uf164" title="Thumbs Up"><i class="fa-solid fa-thumbs-up"></i></button>
-								<button class="clipart-item" data-unicode="\uf165" title="Thumbs Down"><i class="fa-solid fa-thumbs-down"></i></button>
-								<button class="clipart-item" data-unicode="\uf00c" title="Check"><i class="fa-solid fa-check"></i></button>
-								<button class="clipart-item" data-unicode="\uf00d" title="X-Mark"><i class="fa-solid fa-xmark"></i></button>
-								<button class="clipart-item" data-unicode="\uf062" title="Arrow Up"><i class="fa-solid fa-arrow-up"></i></button>
-								<button class="clipart-item" data-unicode="\uf063" title="Arrow Down"><i class="fa-solid fa-arrow-down"></i></button>
-								<button class="clipart-item" data-unicode="\uf060" title="Arrow Left"><i class="fa-solid fa-arrow-left"></i></button>
-								<button class="clipart-item" data-unicode="\uf061" title="Arrow Right"><i class="fa-solid fa-arrow-right"></i></button>
-								<button class="clipart-item" data-unicode="\uf111" title="Circle"><i class="fa-solid fa-circle"></i></button>
-								<button class="clipart-item" data-unicode="\uf0c8" title="Square"><i class="fa-solid fa-square"></i></button>
-								<button class="clipart-item" data-unicode="\uf071" title="Warning"><i class="fa-solid fa-triangle-exclamation"></i></button>
-								<button class="clipart-item" data-unicode="\uf129" title="Info"><i class="fa-solid fa-info"></i></button>
-								<button class="clipart-item" data-unicode="\uf128" title="Question"><i class="fa-solid fa-question"></i></button>
-								<button class="clipart-item" data-unicode="\uf0eb" title="Lightbulb"><i class="fa-solid fa-lightbulb"></i></button>
-								<button class="clipart-item" data-unicode="\uf0f3" title="Bell"><i class="fa-solid fa-bell"></i></button>
-								<button class="clipart-item" data-unicode="\uf133" title="Calendar"><i class="fa-solid fa-calendar"></i></button>
-								<button class="clipart-item" data-unicode="\uf017" title="Clock"><i class="fa-solid fa-clock"></i></button>
-								<button class="clipart-item" data-unicode="\uf007" title="User"><i class="fa-solid fa-user"></i></button>
-								<button class="clipart-item" data-unicode="\uf015" title="House"><i class="fa-solid fa-house"></i></button>
-								<button class="clipart-item" data-unicode="\uf0c2" title="Cloud"><i class="fa-solid fa-cloud"></i></button>
-								<button class="clipart-item" data-unicode="\uf185" title="Sun"><i class="fa-solid fa-sun"></i></button>
-								<button class="clipart-item" data-unicode="\uf186" title="Moon"><i class="fa-solid fa-moon"></i></button>
-								<button class="clipart-item" data-unicode="\uf024" title="Flag"><i class="fa-solid fa-flag"></i></button>
-								<button class="clipart-item" data-unicode="\uf0e7" title="Bolt"><i class="fa-solid fa-bolt"></i></button>
-								<button class="clipart-item" data-unicode="\uf06c" title="Leaf"><i class="fa-solid fa-leaf"></i></button>
-								<button class="clipart-item" data-unicode="\uf06d" title="Fire"><i class="fa-solid fa-fire"></i></button>
-								<button class="clipart-item" data-unicode="\uf002" title="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+								<button class="clipart-item" data-unicode="f118" title="Smile"><i class="fa-solid fa-smile"></i></button>
+								<button class="clipart-item" data-unicode="f004" title="Heart"><i class="fa-solid fa-heart"></i></button>
+								<button class="clipart-item" data-unicode="f005" title="Star"><i class="fa-solid fa-star"></i></button>
+								<button class="clipart-item" data-unicode="f164" title="Thumbs Up"><i class="fa-solid fa-thumbs-up"></i></button>
+								<button class="clipart-item" data-unicode="f165" title="Thumbs Down"><i class="fa-solid fa-thumbs-down"></i></button>
+								<button class="clipart-item" data-unicode="f00c" title="Check"><i class="fa-solid fa-check"></i></button>
+								<button class="clipart-item" data-unicode="f00d" title="X-Mark"><i class="fa-solid fa-xmark"></i></button>
+								<button class="clipart-item" data-unicode="f062" title="Arrow Up"><i class="fa-solid fa-arrow-up"></i></button>
+								<button class="clipart-item" data-unicode="f063" title="Arrow Down"><i class="fa-solid fa-arrow-down"></i></button>
+								<button class="clipart-item" data-unicode="f060" title="Arrow Left"><i class="fa-solid fa-arrow-left"></i></button>
+								<button class="clipart-item" data-unicode="f061" title="Arrow Right"><i class="fa-solid fa-arrow-right"></i></button>
+								<button class="clipart-item" data-unicode="f111" title="Circle"><i class="fa-solid fa-circle"></i></button>
+								<button class="clipart-item" data-unicode="f0c8" title="Square"><i class="fa-solid fa-square"></i></button>
+								<button class="clipart-item" data-unicode="f071" title="Warning"><i class="fa-solid fa-triangle-exclamation"></i></button>
+								<button class="clipart-item" data-unicode="f129" title="Info"><i class="fa-solid fa-info"></i></button>
+								<button class="clipart-item" data-unicode="f128" title="Question"><i class="fa-solid fa-question"></i></button>
+								<button class="clipart-item" data-unicode="f0eb" title="Lightbulb"><i class="fa-solid fa-lightbulb"></i></button>
+								<button class="clipart-item" data-unicode="f0f3" title="Bell"><i class="fa-solid fa-bell"></i></button>
+								<button class="clipart-item" data-unicode="f133" title="Calendar"><i class="fa-solid fa-calendar"></i></button>
+								<button class="clipart-item" data-unicode="f017" title="Clock"><i class="fa-solid fa-clock"></i></button>
+								<button class="clipart-item" data-unicode="f007" title="User"><i class="fa-solid fa-user"></i></button>
+								<button class="clipart-item" data-unicode="f015" title="House"><i class="fa-solid fa-house"></i></button>
+								<button class="clipart-item" data-unicode="f0c2" title="Cloud"><i class="fa-solid fa-cloud"></i></button>
+								<button class="clipart-item" data-unicode="f185" title="Sun"><i class="fa-solid fa-sun"></i></button>
+								<button class="clipart-item" data-unicode="f186" title="Moon"><i class="fa-solid fa-moon"></i></button>
+								<button class="clipart-item" data-unicode="f024" title="Flag"><i class="fa-solid fa-flag"></i></button>
+								<button class="clipart-item" data-unicode="f0e7" title="Bolt"><i class="fa-solid fa-bolt"></i></button>
+								<button class="clipart-item" data-unicode="f06c" title="Leaf"><i class="fa-solid fa-leaf"></i></button>
+								<button class="clipart-item" data-unicode="f06d" title="Fire"><i class="fa-solid fa-fire"></i></button>
+								<button class="clipart-item" data-unicode="f002" title="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
 							</div>
 						</div>
 

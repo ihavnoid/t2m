@@ -82,7 +82,8 @@ class ImageDrawer {
 
         clipartItems.forEach(item => {
             item.addEventListener('click', () => {
-                const unicode = item.dataset.unicode;
+                const hex = item.dataset.unicode;
+                const unicode = String.fromCodePoint(parseInt(hex, 16));
                 const size = parseInt(document.getElementById('clipart-size').value);
                 this.pendingClipart = { unicode, size };
                 this.setTool('clipart');
