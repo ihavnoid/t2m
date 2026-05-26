@@ -1,3 +1,5 @@
+import { uploadImage } from './file_upload.js';
+
 /**
  * Editor pane encapsulation.
  */
@@ -93,17 +95,22 @@ class EditorPane {
                     if (item.type.indexOf("image") !== -1) {
                         const blob = item.getAsFile();
                         const reader = new FileReader();
-                        reader.onload = (event) => {
+                        reader.onload = async (event) => {
                             const base64 = event.target.result;
-                            const img = document.createElement("img");
-                            img.src = base64;
-                            img.style.maxWidth = "200px";
-                            img.style.maxHeight = "200px";
-                            img.style.display = "inline-block";
-                            img.style.verticalAlign = "middle";
-                            this.insertAtCursor(img);
-                            if (this.refresh()) {
-                                if (this.observerFunc) this.observerFunc();
+                            try {
+                                const url = await uploadImage(base64);
+                                const img = document.createElement("img");
+                                img.src = url;
+                                img.style.maxWidth = "200px";
+                                img.style.maxHeight = "200px";
+                                img.style.display = "inline-block";
+                                img.style.verticalAlign = "middle";
+                                this.insertAtCursor(img);
+                                if (this.refresh()) {
+                                    if (this.observerFunc) this.observerFunc();
+                                }
+                            } catch (error) {
+                                // Error handled by uploadImage
                             }
                         };
                         reader.readAsDataURL(blob);

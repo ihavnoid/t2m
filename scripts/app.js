@@ -13,6 +13,7 @@ import { fileExport } from './modules/file_export.js';
 import { appFunctions } from './modules/app_functions.js';
 import { mindmap } from './modules/mindmap.js';
 import { imageDrawer } from './modules/image_drawer.js';
+import { uploadImage } from './modules/file_upload.js';
 
 class App {
     constructor() {
@@ -62,9 +63,9 @@ class App {
                     }
                 },
                 "Ctrl+I": () => {
-                    imageDrawer.open(null, (base64) => {
+                    imageDrawer.open(null, async (url) => {
                         const img = document.createElement("img");
-                        img.src = base64;
+                        img.src = url;
                         img.style.maxWidth = "200px";
                         img.style.maxHeight = "200px";
                         img.style.display = "inline-block";

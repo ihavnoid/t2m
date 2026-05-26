@@ -1,3 +1,5 @@
+import { uploadImage } from './file_upload.js';
+
 /**
  * Image drawing tool logic using HTML5 Canvas.
  * Supports drawing, erasing, and real-time resizing/cropping.
@@ -371,11 +373,18 @@ class ImageDrawer {
         }
     }
 
-    save() {
+    async save() {
         if (this.onSaveCallback) {
-            this.onSaveCallback(this.canvas.toDataURL());
+            try {
+                const url = await uploadImage(this.canvas.toDataURL());
+                this.onSaveCallback(url);
+                this.close();
+            } catch (error) {
+                // Error handled by uploadImage (alert)
+            }
+        } else {
+            this.close();
         }
-        this.close();
     }
 
     close() {
