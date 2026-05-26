@@ -43,7 +43,7 @@ class App {
             });
 
             // Set up shortcut bindings
-            $(document).on("keydown", shortcuts.handleKeypress);
+            window.addEventListener("keydown", shortcuts.handleKeypress);
             const bindings = {
                 "Ctrl+N": () => appFunctions.fileNew(),
                 "Ctrl+O": () => appFunctions.fileOpen(),
@@ -91,17 +91,6 @@ class App {
                 }
             };
             shortcuts.addBindings(bindings);
-
-            editorPane.el.addEventListener("dblclick", (ev) => {
-                if (ev.target.tagName === "IMG") {
-                    imageDrawer.open(ev.target.src, (newBase64) => {
-                        ev.target.src = newBase64;
-                        if (editorPane.refresh()) {
-                            if (editorPane.observerFunc) editorPane.observerFunc();
-                        }
-                    });
-                }
-            });
 
             // Initialize Navbar
             navbar.init({

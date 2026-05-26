@@ -1,4 +1,5 @@
 import { uploadImage } from './file_upload.js';
+import { imageDrawer } from './image_drawer.js';
 
 /**
  * Editor pane encapsulation.
@@ -19,6 +20,17 @@ class EditorPane {
         this.compositionRunning = false;
         this.observer = null;
         this.__cb_pane = (te, tem, w) => {};
+
+        this.on("dblclick", (ev) => {
+            if (ev.target.tagName === "IMG") {
+                imageDrawer.open(ev.target.src, (url) => {
+                    ev.target.src = url;
+                    if (this.refresh()) {
+                        if (this.observerFunc) this.observerFunc();
+                    }
+                });
+            }
+        });
     }
 
     init() {
@@ -346,6 +358,13 @@ class EditorPane {
         };
         this.unfloatCb = unfloat_cb;
         const w = window.open("edit_popup.html", "floatpane", "popup");
+        
+        // Register global shortcuts in the new window
+        const shortcuts = window.shortcuts || (window.opener && window.opener.shortcuts);
+        if (shortcuts) {
+            w.addEventListener("keydown", shortcuts.handleKeypress);
+        }
+
         const poll_window_exist = () => {
             if (this.getWindow() !== window) {
                 setTimeout(poll_window_exist, 500);

@@ -26,23 +26,26 @@ class ImageDrawer {
         this.maxHeight = 1000;
         this.minSize = 50;
         this.isActive = false;
+        this.boundWindow = null;
     }
 
-    init() {
-        this.canvas = document.getElementById('drawing-canvas');
+    init(win = window) {
+        this.boundWindow = win;
+        const doc = win.document;
+        this.canvas = doc.getElementById('drawing-canvas');
         if (!this.canvas) return;
         this.context = this.canvas.getContext('2d');
 
         // Toolbar Events
-        document.getElementById('draw-tool-pen').addEventListener('click', () => this.setTool('pen'));
-        document.getElementById('draw-tool-eraser').addEventListener('click', () => this.setTool('eraser'));
+        doc.getElementById('draw-tool-pen').addEventListener('click', () => this.setTool('pen'));
+        doc.getElementById('draw-tool-eraser').addEventListener('click', () => this.setTool('eraser'));
         // Clipart Panel Events
-        const clipartPanel = document.getElementById('clipart-panel');
-        const clipartBackdrop = document.getElementById('clipart-backdrop');
-        const closeClipartBtn = document.getElementById('close-clipart');
-        const clipartItems = document.querySelectorAll('.clipart-item');
+        const clipartPanel = doc.getElementById('clipart-panel');
+        const clipartBackdrop = doc.getElementById('clipart-backdrop');
+        const closeClipartBtn = doc.getElementById('close-clipart');
+        const clipartItems = doc.querySelectorAll('.clipart-item');
 
-        document.getElementById('draw-tool-clipart').addEventListener('click', (e) => {
+        doc.getElementById('draw-tool-clipart').addEventListener('click', (e) => {
             const isHidden = clipartPanel.style.display === 'none';
             clipartPanel.style.display = isHidden ? 'flex' : 'none';
             clipartBackdrop.style.display = isHidden ? 'block' : 'none';
@@ -63,7 +66,7 @@ class ImageDrawer {
             item.addEventListener('click', () => {
                 const hex = item.dataset.unicode;
                 const unicode = String.fromCodePoint(parseInt(hex, 16));
-                const size = parseInt(document.getElementById('clipart-size').value);
+                const size = parseInt(doc.getElementById('clipart-size').value);
                 this.pendingClipart = { unicode, size };
                 this.setTool('clipart');
                 clipartPanel.style.display = 'none';
@@ -71,13 +74,13 @@ class ImageDrawer {
             });
         });
 
-        document.getElementById('draw-tool-undo').addEventListener('click', () => this.undo());
-        document.getElementById('draw-tool-redo').addEventListener('click', () => this.redo());
-        document.getElementById('draw-tool-clear').addEventListener('click', () => this.clear());
-        document.getElementById('draw-save').addEventListener('click', () => this.save());
+        doc.getElementById('draw-tool-undo').addEventListener('click', () => this.undo());
+        doc.getElementById('draw-tool-redo').addEventListener('click', () => this.redo());
+        doc.getElementById('draw-tool-clear').addEventListener('click', () => this.clear());
+        doc.getElementById('draw-save').addEventListener('click', () => this.save());
 
         // Color Picker Events
-        const swatches = document.querySelectorAll('.color-swatch');
+        const swatches = doc.querySelectorAll('.color-swatch');
         swatches.forEach(swatch => {
             swatch.addEventListener('click', () => {
                 this.currentColor = swatch.dataset.color;
@@ -90,7 +93,7 @@ class ImageDrawer {
         });
 
         // Thickness Picker Events
-        const thicknessSwatches = document.querySelectorAll('.thickness-swatch');
+        const thicknessSwatches = doc.querySelectorAll('.thickness-swatch');
         thicknessSwatches.forEach(swatch => {
             swatch.addEventListener('click', () => {
                 this.currentThickness = parseInt(swatch.dataset.thickness);
@@ -103,7 +106,7 @@ class ImageDrawer {
         });
 
         // Handle Events
-        const handles = document.querySelectorAll('.resize-handle');
+        const handles = doc.querySelectorAll('.resize-handle');
         handles.forEach(handle => {
             handle.addEventListener('mousedown', (e) => this.startResizing(e));
             handle.addEventListener('touchstart', (e) => {
@@ -122,7 +125,7 @@ class ImageDrawer {
         // Mouse Events
         this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
         
-        window.addEventListener('mousemove', (e) => {
+        win.addEventListener('mousemove', (e) => {
             if (this.isDrawing) {
                 this.draw(e);
             } else if (this.isResizing) {
@@ -130,7 +133,7 @@ class ImageDrawer {
             }
         });
         
-        window.addEventListener('mouseup', () => {
+        win.addEventListener('mouseup', () => {
             if (this.isDrawing) this.stopDrawing();
             if (this.isResizing) this.stopResizing();
         });
@@ -146,7 +149,7 @@ class ImageDrawer {
             e.preventDefault();
         }, { passive: false });
 
-        window.addEventListener('touchmove', (e) => {
+        win.addEventListener('touchmove', (e) => {
             if (this.isDrawing || this.isResizing) {
                 const touch = e.touches[0];
                 const mouseEvent = new MouseEvent('mousemove', {
@@ -159,7 +162,7 @@ class ImageDrawer {
             }
         }, { passive: false });
 
-        window.addEventListener('touchend', () => {
+        win.addEventListener('touchend', () => {
             if (this.isDrawing) this.stopDrawing();
             if (this.isResizing) this.stopResizing();
         }, { passive: false });
@@ -169,8 +172,19 @@ class ImageDrawer {
         this.onSaveCallback = callback;
         this.history = [];
         this.redoHistory = [];
+
+        // Determine which window to open the editor in
+        let targetWin = window;
+        if (window.editorPane && window.editorPane.selfWindow && !window.editorPane.selfWindow.closed) {
+            targetWin = window.editorPane.selfWindow;
+        }
+
+        if (this.boundWindow !== targetWin) {
+            this.init(targetWin);
+        }
         
-        const container = document.getElementById('drawing-canvas-container');
+        const doc = targetWin.document;
+        const container = doc.getElementById('drawing-canvas-container');
         
         // Initial reasonable default size
         this.canvas.width = Math.min(container.clientWidth - 100, 500);
@@ -180,7 +194,7 @@ class ImageDrawer {
 
         // Initialize Image
         if (base64Image) {
-            const img = new Image();
+            const img = new targetWin.Image();
             img.onload = () => {
                 let w = img.width;
                 let h = img.height;
@@ -202,16 +216,17 @@ class ImageDrawer {
             this.saveSnapshot(); 
         }
 
-        document.getElementById('drawing-modal').classList.add('active');
+        doc.getElementById('drawing-modal').classList.add('active');
         this.isActive = true;
         this.updateUndoRedoButtons();
     }
 
     setTool(tool) {
+        const doc = this.boundWindow.document;
         this.currentTool = tool;
-        document.getElementById('draw-tool-pen').classList.toggle('active', tool === 'pen');
-        document.getElementById('draw-tool-eraser').classList.toggle('active', tool === 'eraser');
-        document.getElementById('draw-tool-clipart').classList.toggle('active', tool === 'clipart');
+        doc.getElementById('draw-tool-pen').classList.toggle('active', tool === 'pen');
+        doc.getElementById('draw-tool-eraser').classList.toggle('active', tool === 'eraser');
+        doc.getElementById('draw-tool-clipart').classList.toggle('active', tool === 'clipart');
         
         this.canvas.classList.toggle('clipart-tool', tool === 'clipart');
 
@@ -284,7 +299,7 @@ class ImageDrawer {
         this.activeHandle = e.target.dataset.handle;
 
         // Capture original content to avoid cumulative offset errors during real-time resize
-        const sourceCanvas = document.createElement('canvas');
+        const sourceCanvas = this.boundWindow.document.createElement('canvas');
         sourceCanvas.width = this.canvas.width;
         sourceCanvas.height = this.canvas.height;
         sourceCanvas.getContext('2d').drawImage(this.canvas, 0, 0);
@@ -344,7 +359,7 @@ class ImageDrawer {
         // Use provided source or current canvas
         let sourceContent = source;
         if (!sourceContent) {
-            sourceContent = document.createElement('canvas');
+            sourceContent = this.boundWindow.document.createElement('canvas');
             sourceContent.width = this.canvas.width;
             sourceContent.height = this.canvas.height;
             sourceContent.getContext('2d').drawImage(this.canvas, 0, 0);
@@ -406,14 +421,15 @@ class ImageDrawer {
     }
 
     updateUndoRedoButtons() {
-        const undoBtn = document.getElementById('draw-tool-undo');
-        const redoBtn = document.getElementById('draw-tool-redo');
+        const doc = this.boundWindow.document;
+        const undoBtn = doc.getElementById('draw-tool-undo');
+        const redoBtn = doc.getElementById('draw-tool-redo');
         if (undoBtn) undoBtn.disabled = this.history.length <= 1;
         if (redoBtn) redoBtn.disabled = this.redoHistory.length === 0;
     }
 
     restoreState(state) {
-        const img = new Image();
+        const img = new this.boundWindow.Image();
         img.onload = () => {
             this.canvas.width = state.width;
             this.canvas.height = state.height;
@@ -426,7 +442,7 @@ class ImageDrawer {
     }
 
     clear() {
-        if (confirm("Are you sure you want to clear the entire canvas?")) {
+        if (this.boundWindow.confirm("Are you sure you want to clear the entire canvas?")) {
             this.context.fillStyle = 'white';
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.saveSnapshot();
@@ -448,9 +464,10 @@ class ImageDrawer {
     }
 
     close() {
-        document.getElementById('drawing-modal').classList.remove('active');
-        document.getElementById('clipart-panel').style.display = 'none';
-        document.getElementById('clipart-backdrop').style.display = 'none';
+        const doc = this.boundWindow.document;
+        doc.getElementById('drawing-modal').classList.remove('active');
+        doc.getElementById('clipart-panel').style.display = 'none';
+        doc.getElementById('clipart-backdrop').style.display = 'none';
         this.onSaveCallback = null;
         this.isActive = false;
     }
