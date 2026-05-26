@@ -14,6 +14,13 @@ describe('ImageDrawer Module', () => {
                 <div id="drawing-modal-footer">
                    <button id="draw-save"></button>
                 </div>
+                <div class="color-picker">
+                    <button class="color-swatch" data-color="#000000"></button>
+                </div>
+                <div class="thickness-picker">
+                    <button class="thickness-swatch" data-thickness="2"></button>
+                    <button class="thickness-swatch active" data-thickness="5"></button>
+                </div>
                 <div id="drawing-canvas-container">
                     <canvas id="drawing-canvas"></canvas>
                 </div>
@@ -38,6 +45,7 @@ describe('ImageDrawer Module', () => {
         imageDrawer.setTool('pen');
         expect(imageDrawer.currentTool).toBe('pen');
         expect(imageDrawer.context.strokeStyle).toBe('#000000');
+        expect(imageDrawer.context.lineWidth).toBe(5);
     });
 
     it('should start drawing on mousedown', () => {

@@ -234,6 +234,42 @@
     z-index: 1;
 }
 
+.thickness-picker {
+    display: flex;
+    gap: 4px;
+    background: #fff;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.thickness-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 2px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+}
+
+.thickness-swatch:hover {
+    background: #f0f0f0;
+}
+
+.thickness-swatch.active {
+    border-color: #2365ba;
+    background: #eef4ff;
+}
+
+.thickness-swatch .dot {
+    background: #333;
+    border-radius: 50%;
+}
+
 #drawing-canvas-container {
     border: 1px solid #999;
     background: #ccc; /* Darker background to see canvas edges */

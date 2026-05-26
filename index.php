@@ -206,6 +206,12 @@
 								<button class="color-swatch" data-color="#2f4f4f" style="background-color: #2f4f4f;" title="Dark Slate Gray"></button>
 							</div>
 							<span class="divider"></span>
+							<div class="thickness-picker">
+								<button class="thickness-swatch" data-thickness="2" title="Thin"><div class="dot" style="width: 4px; height: 4px;"></div></button>
+								<button class="thickness-swatch active" data-thickness="5" title="Medium"><div class="dot" style="width: 8px; height: 8px;"></div></button>
+								<button class="thickness-swatch" data-thickness="10" title="Thick"><div class="dot" style="width: 14px; height: 14px;"></div></button>
+							</div>
+							<span class="divider"></span>
 							<button id="draw-tool-undo" title="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
 							<button id="draw-tool-redo" title="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
 							<button id="draw-tool-clear" title="Clear Canvas"><i class="fa-solid fa-trash"></i></button>

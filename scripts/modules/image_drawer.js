@@ -18,6 +18,7 @@ class ImageDrawer {
         this.startResizeState = null; // { width, height, clientX, clientY }
         
         this.currentColor = '#000000';
+        this.currentThickness = 5;
         this.maxWidth = 1000;
         this.maxHeight = 1000;
         this.minSize = 50;
@@ -46,6 +47,19 @@ class ImageDrawer {
                 swatch.classList.add('active');
                 if (this.currentTool === 'pen') {
                     this.context.strokeStyle = this.currentColor;
+                }
+            });
+        });
+
+        // Thickness Picker Events
+        const thicknessSwatches = document.querySelectorAll('.thickness-swatch');
+        thicknessSwatches.forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                this.currentThickness = parseInt(swatch.dataset.thickness);
+                thicknessSwatches.forEach(s => s.classList.remove('active'));
+                swatch.classList.add('active');
+                if (this.currentTool === 'pen') {
+                    this.context.lineWidth = this.currentThickness;
                 }
             });
         });
@@ -116,8 +130,16 @@ class ImageDrawer {
     open(base64Image, callback) {
         this.onSaveCallback = callback;
         this.history = [];
+        this.redoHistory = [];
         
         const container = document.getElementById('drawing-canvas-container');
+        
+        // Initial reasonable default size
+        this.canvas.width = Math.min(container.clientWidth - 100, 500);
+        this.canvas.height = 400;
+
+        this.setTool('pen');
+
         // Initialize Image
         if (base64Image) {
             const img = new Image();
@@ -129,6 +151,7 @@ class ImageDrawer {
                 
                 this.canvas.width = w;
                 this.canvas.height = h;
+                this.setTool('pen'); // Restore styles after width/height reset
                 this.context.fillStyle = 'white';
                 this.context.fillRect(0, 0, w, h);
                 this.context.drawImage(img, 0, 0);
@@ -157,7 +180,7 @@ class ImageDrawer {
 
         if (tool === 'pen') {
             this.context.strokeStyle = this.currentColor;
-            this.context.lineWidth = 3;
+            this.context.lineWidth = this.currentThickness;
         } else {
             this.context.strokeStyle = 'white';
             this.context.lineWidth = 20;
