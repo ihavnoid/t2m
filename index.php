@@ -283,7 +283,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="modal-backdrop close-modal"></div>
+			<div class="modal-backdrop"></div>
 		</div>
 	</div>
 	<input id="file-input" type="file" accept=".mindtxt">
