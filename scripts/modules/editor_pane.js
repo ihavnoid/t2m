@@ -357,7 +357,7 @@ class EditorPane {
             }
         };
         this.unfloatCb = unfloat_cb;
-        const w = window.open("edit_popup.html", "floatpane", "popup");
+        const w = window.open("edit_popup.php", "floatpane", "popup");
         
         // Register global shortcuts in the new window
         const shortcuts = window.shortcuts || (window.opener && window.opener.shortcuts);
