@@ -36,10 +36,16 @@ class ImageDrawer {
         // Toolbar Events
         document.getElementById('draw-tool-pen').addEventListener('click', () => this.setTool('pen'));
         document.getElementById('draw-tool-eraser').addEventListener('click', () => this.setTool('eraser'));
-        document.getElementById('draw-tool-clipart').addEventListener('click', () => {
+        document.getElementById('draw-tool-clipart').addEventListener('click', (e) => {
             const panel = document.getElementById('clipart-panel');
             panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+            e.stopPropagation();
         });
+
+        const clipartPanel = document.getElementById('clipart-panel');
+        clipartPanel.addEventListener('mousedown', (e) => e.stopPropagation());
+        clipartPanel.addEventListener('click', (e) => e.stopPropagation());
+        
         document.getElementById('draw-tool-undo').addEventListener('click', () => this.undo());
         document.getElementById('draw-tool-redo').addEventListener('click', () => this.redo());
         document.getElementById('draw-tool-clear').addEventListener('click', () => this.clear());
@@ -72,7 +78,6 @@ class ImageDrawer {
         });
 
         // Clipart Panel Events
-        const clipartPanel = document.getElementById('clipart-panel');
         const closeClipartBtn = document.getElementById('close-clipart');
         const clipartItems = document.querySelectorAll('.clipart-item');
 
