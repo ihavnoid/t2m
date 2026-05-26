@@ -64,4 +64,33 @@ describe('Shortcuts Module', () => {
         expect(event.preventDefault).not.toHaveBeenCalled();
         expect(callback).not.toHaveBeenCalled();
     });
+
+    it('should correctly handle Ctrl+[ and Ctrl+]', () => {
+        const cb1 = vi.fn();
+        const cb2 = vi.fn();
+        shortcuts.addBindings({
+            'Ctrl+[': cb1,
+            'Ctrl+]': cb2
+        });
+
+        const event1 = {
+            key: '[',
+            ctrlKey: true,
+            shiftKey: false,
+            altKey: false,
+            preventDefault: vi.fn()
+        };
+        shortcuts.handleKeypress(event1);
+        expect(cb1).toHaveBeenCalled();
+
+        const event2 = {
+            key: ']',
+            ctrlKey: true,
+            shiftKey: false,
+            altKey: false,
+            preventDefault: vi.fn()
+        };
+        shortcuts.handleKeypress(event2);
+        expect(cb2).toHaveBeenCalled();
+    });
 });

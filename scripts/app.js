@@ -62,6 +62,8 @@ class App {
                         appFunctions.editRedo();
                     }
                 },
+                "Ctrl+[": () => appFunctions.unfreezeNodes(),
+                "Ctrl+]": () => appFunctions.freezeNodes(),
                 "Ctrl+I": () => {
                     imageDrawer.open(null, async (url) => {
                         const img = document.createElement("img");

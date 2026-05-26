@@ -69,6 +69,53 @@ class AppFunctions {
             window.mindmap.render();
         }
     }
+
+    freezeNodes() {
+        const [start, end] = window.editorPane.findSelectedNodes();
+        if (start < 0 || end < 0) return;
+
+        const changes = [];
+        for (let i = start; i <= end; i++) {
+            const node = window.mindmap.d.nodes[i];
+            if (node) {
+                changes.push({
+                    nodenum: i,
+                    fixed: true,
+                    xp: node.x,
+                    yp: node.y
+                });
+            }
+        }
+
+        if (changes.length > 0) {
+            window.editorPane.updateTextForCoordinates(changes);
+            if (window.mindmap && window.mindmap.render) {
+                window.mindmap.render();
+            }
+        }
+    }
+
+    unfreezeNodes() {
+        const [start, end] = window.editorPane.findSelectedNodes();
+        if (start < 0 || end < 0) return;
+
+        const changes = [];
+        for (let i = start; i <= end; i++) {
+            changes.push({
+                nodenum: i,
+                fixed: false,
+                xp: 0,
+                yp: 0
+            });
+        }
+
+        if (changes.length > 0) {
+            window.editorPane.updateTextForCoordinates(changes);
+            if (window.mindmap && window.mindmap.render) {
+                window.mindmap.render();
+            }
+        }
+    }
 }
 
 export const appFunctions = new AppFunctions();
