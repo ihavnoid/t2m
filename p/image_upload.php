@@ -49,19 +49,12 @@ $targetFile = $targetDir . $filename;
 if (imagepng($src, $targetFile)) {
     imagedestroy($src);
     
-    // Get the base URL from config if available, otherwise guess it
-    $configPath = __DIR__ . "/../config.json";
-    $baseUrl = "images/";
-    if (file_exists($configPath)) {
-        $config = json_decode(file_get_contents($configPath), true);
-        if (isset($config['base_url'])) {
-            $baseUrl = $config['base_url'] . "images/";
-        }
-    }
+    // Always return a relative path for migration safety
+    $relativeUrl = "images/" . $filename;
     
     echo json_encode([
         'success' => true,
-        'url' => $baseUrl . $filename,
+        'url' => $relativeUrl,
         'hash' => $hash
     ]);
 } else {
