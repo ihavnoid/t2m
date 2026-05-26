@@ -21,6 +21,7 @@ class ImageDrawer {
         
         this.currentColor = '#000000';
         this.currentThickness = 5;
+        this.pendingClipart = null; // { unicode, size }
         this.maxWidth = 1000;
         this.maxHeight = 1000;
         this.minSize = 50;
@@ -35,6 +36,10 @@ class ImageDrawer {
         // Toolbar Events
         document.getElementById('draw-tool-pen').addEventListener('click', () => this.setTool('pen'));
         document.getElementById('draw-tool-eraser').addEventListener('click', () => this.setTool('eraser'));
+        document.getElementById('draw-tool-clipart').addEventListener('click', () => {
+            const panel = document.getElementById('clipart-panel');
+            panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+        });
         document.getElementById('draw-tool-undo').addEventListener('click', () => this.undo());
         document.getElementById('draw-tool-redo').addEventListener('click', () => this.redo());
         document.getElementById('draw-tool-clear').addEventListener('click', () => this.clear());
@@ -47,7 +52,7 @@ class ImageDrawer {
                 this.currentColor = swatch.dataset.color;
                 swatches.forEach(s => s.classList.remove('active'));
                 swatch.classList.add('active');
-                if (this.currentTool === 'pen') {
+                if (this.currentTool === 'pen' || this.currentTool === 'clipart') {
                     this.context.strokeStyle = this.currentColor;
                 }
             });
@@ -66,15 +71,10 @@ class ImageDrawer {
             });
         });
 
-        // Clipart Events
-        const clipartBtn = document.getElementById('draw-tool-clipart');
+        // Clipart Panel Events
         const clipartPanel = document.getElementById('clipart-panel');
         const closeClipartBtn = document.getElementById('close-clipart');
         const clipartItems = document.querySelectorAll('.clipart-item');
-
-        clipartBtn.addEventListener('click', () => {
-            clipartPanel.style.display = clipartPanel.style.display === 'none' ? 'flex' : 'none';
-        });
 
         closeClipartBtn.addEventListener('click', () => {
             clipartPanel.style.display = 'none';
@@ -84,7 +84,8 @@ class ImageDrawer {
             item.addEventListener('click', () => {
                 const unicode = item.dataset.unicode;
                 const size = parseInt(document.getElementById('clipart-size').value);
-                this.drawClipart(unicode, size);
+                this.pendingClipart = { unicode, size };
+                this.setTool('clipart');
                 clipartPanel.style.display = 'none';
             });
         });
@@ -198,7 +199,10 @@ class ImageDrawer {
         this.currentTool = tool;
         document.getElementById('draw-tool-pen').classList.toggle('active', tool === 'pen');
         document.getElementById('draw-tool-eraser').classList.toggle('active', tool === 'eraser');
+        document.getElementById('draw-tool-clipart').classList.toggle('active', tool === 'clipart');
         
+        this.canvas.classList.toggle('clipart-tool', tool === 'clipart');
+
         this.context.lineJoin = 'round';
         this.context.lineCap = 'round';
         this.context.globalCompositeOperation = 'source-over';
@@ -206,7 +210,7 @@ class ImageDrawer {
         if (tool === 'pen') {
             this.context.strokeStyle = this.currentColor;
             this.context.lineWidth = this.currentThickness;
-        } else {
+        } else if (tool === 'eraser') {
             this.context.strokeStyle = 'white';
             this.context.lineWidth = 20;
         }
@@ -221,8 +225,14 @@ class ImageDrawer {
     }
 
     startDrawing(e) {
+        const pos = this.getMousePos(e);
+        if (this.currentTool === 'clipart' && this.pendingClipart) {
+            this.drawClipart(this.pendingClipart.unicode, this.pendingClipart.size, pos.x, pos.y);
+            return;
+        }
+
         this.isDrawing = true;
-        this.lastPos = this.getMousePos(e);
+        this.lastPos = pos;
     }
 
     draw(e) {
@@ -242,10 +252,7 @@ class ImageDrawer {
         }
     }
 
-    drawClipart(unicode, size) {
-        const x = this.canvas.width / 2;
-        const y = this.canvas.height / 2;
-        
+    drawClipart(unicode, size, x, y) {
         this.context.save();
         this.context.font = `900 ${size}px "Font Awesome 6 Free"`;
         this.context.fillStyle = this.currentColor;

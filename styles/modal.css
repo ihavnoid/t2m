@@ -366,6 +366,10 @@
     -webkit-user-drag: none;
 }
 
+#drawing-canvas.clipart-tool {
+    cursor: copy;
+}
+
 .resize-handle {
     position: absolute;
     width: 12px;

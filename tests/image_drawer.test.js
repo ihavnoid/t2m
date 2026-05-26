@@ -192,9 +192,9 @@ describe('ImageDrawer Module', () => {
         const size = 64;
         imageDrawer.currentColor = '#ff0000';
         
-        imageDrawer.drawClipart(unicode, size);
+        imageDrawer.drawClipart(unicode, size, 100, 100);
         
-        expect(imageDrawer.context.fillText).toHaveBeenCalledWith(unicode, expect.any(Number), expect.any(Number));
+        expect(imageDrawer.context.fillText).toHaveBeenCalledWith(unicode, 100, 100);
         expect(imageDrawer.context.fillStyle).toBe('#ff0000');
         expect(imageDrawer.history.length).toBe(1);
     });
