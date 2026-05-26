@@ -351,9 +351,15 @@ class EditorPane {
             }
             this.setEditable(this.documentEditable, pm);
             
-            if (returning && this.unfloatCb) {
-                this.unfloatCb();
-                this.unfloatCb = null;
+            if (returning) {
+                if (this.unfloatCb) {
+                    this.unfloatCb();
+                    this.unfloatCb = null;
+                }
+                // Ensure image editor is closed if it was open in the popup
+                if (imageDrawer && imageDrawer.isActive) {
+                    imageDrawer.close();
+                }
             }
         };
         this.unfloatCb = unfloat_cb;

@@ -79,6 +79,12 @@ class ImageDrawer {
         doc.getElementById('draw-tool-clear').addEventListener('click', () => this.clear());
         doc.getElementById('draw-save').addEventListener('click', () => this.save());
 
+        // Close/Cancel Events
+        const closeButtons = doc.querySelectorAll('#drawing-modal .close-modal');
+        closeButtons.forEach(btn => {
+            btn.addEventListener('click', () => this.close());
+        });
+
         // Color Picker Events
         const swatches = doc.querySelectorAll('.color-swatch');
         swatches.forEach(swatch => {
@@ -464,10 +470,24 @@ class ImageDrawer {
     }
 
     close() {
-        const doc = this.boundWindow.document;
-        doc.getElementById('drawing-modal').classList.remove('active');
-        doc.getElementById('clipart-panel').style.display = 'none';
-        doc.getElementById('clipart-backdrop').style.display = 'none';
+        if (!this.isActive) return;
+        
+        try {
+            if (this.boundWindow && !this.boundWindow.closed) {
+                const doc = this.boundWindow.document;
+                const modal = doc.getElementById('drawing-modal');
+                if (modal) modal.classList.remove('active');
+                
+                const clipartPanel = doc.getElementById('clipart-panel');
+                if (clipartPanel) clipartPanel.style.display = 'none';
+                
+                const clipartBackdrop = doc.getElementById('clipart-backdrop');
+                if (clipartBackdrop) clipartBackdrop.style.display = 'none';
+            }
+        } catch (e) {
+            // Window might be inaccessible
+        }
+        
         this.onSaveCallback = null;
         this.isActive = false;
     }
