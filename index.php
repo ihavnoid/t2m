@@ -222,6 +222,7 @@
 							<button class="button-cancel close-modal" title="Cancel"><i class="fa-solid fa-xmark"></i> Cancel</button>
 						</div>
 						
+						<div id="clipart-backdrop" class="clipart-backdrop" style="display: none;"></div>
 						<div id="clipart-panel" class="clipart-panel" style="display: none;">
 							<div class="clipart-header">
 								<span>Select Clipart</span>

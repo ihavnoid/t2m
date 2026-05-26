@@ -22,6 +22,7 @@ describe('ImageDrawer Module', () => {
                     <button class="thickness-swatch active" data-thickness="5"></button>
                 </div>
                 <button id="draw-tool-clipart"></button>
+                <div id="clipart-backdrop" style="display: none;"></div>
                 <div id="clipart-panel" style="display: none;">
                     <div class="clipart-header">
                         <select id="clipart-size">

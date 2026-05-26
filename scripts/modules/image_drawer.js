@@ -36,16 +36,41 @@ class ImageDrawer {
         // Toolbar Events
         document.getElementById('draw-tool-pen').addEventListener('click', () => this.setTool('pen'));
         document.getElementById('draw-tool-eraser').addEventListener('click', () => this.setTool('eraser'));
+        // Clipart Panel Events
+        const clipartPanel = document.getElementById('clipart-panel');
+        const clipartBackdrop = document.getElementById('clipart-backdrop');
+        const closeClipartBtn = document.getElementById('close-clipart');
+        const clipartItems = document.querySelectorAll('.clipart-item');
+
         document.getElementById('draw-tool-clipart').addEventListener('click', (e) => {
-            const panel = document.getElementById('clipart-panel');
-            panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+            const isHidden = clipartPanel.style.display === 'none';
+            clipartPanel.style.display = isHidden ? 'flex' : 'none';
+            clipartBackdrop.style.display = isHidden ? 'block' : 'none';
             e.stopPropagation();
         });
 
-        const clipartPanel = document.getElementById('clipart-panel');
+        clipartBackdrop.addEventListener('mousedown', (e) => e.stopPropagation());
+        clipartBackdrop.addEventListener('click', (e) => e.stopPropagation());
         clipartPanel.addEventListener('mousedown', (e) => e.stopPropagation());
         clipartPanel.addEventListener('click', (e) => e.stopPropagation());
-        
+
+        closeClipartBtn.addEventListener('click', () => {
+            clipartPanel.style.display = 'none';
+            clipartBackdrop.style.display = 'none';
+        });
+
+        clipartItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const hex = item.dataset.unicode;
+                const unicode = String.fromCodePoint(parseInt(hex, 16));
+                const size = parseInt(document.getElementById('clipart-size').value);
+                this.pendingClipart = { unicode, size };
+                this.setTool('clipart');
+                clipartPanel.style.display = 'none';
+                clipartBackdrop.style.display = 'none';
+            });
+        });
+
         document.getElementById('draw-tool-undo').addEventListener('click', () => this.undo());
         document.getElementById('draw-tool-redo').addEventListener('click', () => this.redo());
         document.getElementById('draw-tool-clear').addEventListener('click', () => this.clear());
@@ -74,25 +99,6 @@ class ImageDrawer {
                 if (this.currentTool === 'pen') {
                     this.context.lineWidth = this.currentThickness;
                 }
-            });
-        });
-
-        // Clipart Panel Events
-        const closeClipartBtn = document.getElementById('close-clipart');
-        const clipartItems = document.querySelectorAll('.clipart-item');
-
-        closeClipartBtn.addEventListener('click', () => {
-            clipartPanel.style.display = 'none';
-        });
-
-        clipartItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const hex = item.dataset.unicode;
-                const unicode = String.fromCodePoint(parseInt(hex, 16));
-                const size = parseInt(document.getElementById('clipart-size').value);
-                this.pendingClipart = { unicode, size };
-                this.setTool('clipart');
-                clipartPanel.style.display = 'none';
             });
         });
 
@@ -261,7 +267,7 @@ class ImageDrawer {
     drawClipart(unicode, size, x, y) {
         this.context.save();
         // Use a more explicit font string to ensure the Solid weight is used
-        this.context.font = `900 ${size}px "Font Awesome 6 Free"`;
+        this.context.font = `600 ${size}px "Font Awesome 6 Free"`;
         this.context.fillStyle = this.currentColor;
         this.context.textAlign = 'center';
         this.context.textBaseline = 'middle';
@@ -444,6 +450,7 @@ class ImageDrawer {
     close() {
         document.getElementById('drawing-modal').classList.remove('active');
         document.getElementById('clipart-panel').style.display = 'none';
+        document.getElementById('clipart-backdrop').style.display = 'none';
         this.onSaveCallback = null;
         this.isActive = false;
     }

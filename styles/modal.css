@@ -270,16 +270,29 @@
     border-radius: 50%;
 }
 
+.clipart-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(1px);
+    z-index: 90;
+    cursor: default;
+}
+
 .clipart-panel {
     position: absolute;
-    top: 50px;
-    left: 10px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     background: white;
     border: 1px solid #ccc;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     z-index: 100;
-    width: 320px;
+    width: 340px;
     display: none;
     flex-direction: column;
 }
