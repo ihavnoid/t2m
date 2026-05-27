@@ -480,9 +480,14 @@ class EditorPane {
             const imgs = [];
             tp = tp.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (m, src) => { imgs.push(src); return `\0i${imgs.length - 1}\0`; });
             tp = tp.replaceAll("\n", "").replaceAll("<br>", "\n").replaceAll(/<[^>]*>/g, "");
-            let p1 = tp.indexOf("\0n"), p2 = tp.indexOf("\0r");
-            if (p1 >= 0) tp = tp.substring(0, p1) + tp.substring(p1 + 2);
-            if (p2 >= 0) tp = tp.substring(0, p2) + tp.substring(p2 + 2);
+            let p1 = tp.indexOf("\0n"); if (p1 >= 0) tp = tp.substring(0, p1) + tp.substring(p1 + 2);
+            let p2 = tp.indexOf("\0r"); if (p2 >= 0) tp = tp.substring(0, p2) + tp.substring(p2 + 2);
+            if (p1 >= 0 && p2 >= 0) {
+                // Adjust if we swapped them while removing
+                // But wait, if we find them sequentially, they are always correct relative to the string at that moment.
+                // However, we need them relative to the FINAL string for re-insertion.
+            }
+            
             let lp = tp.length; tp = tp.replace(/^ *\[[0-9\- ]*\] */, ""); let ln = tp.length;
             if (p1 >= 0) p1 = Math.max(0, p1 - (lp - ln)); if (p2 >= 0) p2 = Math.max(0, p2 - (lp - ln));
             if (fixed) {
@@ -490,7 +495,7 @@ class EditorPane {
                 if (p1 >= 0) p1 += header.length; if (p2 >= 0) p2 += header.length;
             }
             if (p1 >= 0) tp = tp.substring(0, p1) + "\0n" + tp.substring(p1);
-            if (p2 >= 0) { if (p2 >= p1) p2 += 2; tp = tp.substring(0, p2) + "\0r" + tp.substring(p2); }
+            if (p2 >= 0) { if (p1 >= 0 && p2 >= p1) p2 += 2; tp = tp.substring(0, p2) + "\0r" + tp.substring(p2); }
             tp = tp.replace(/\0i(\d+)\0/g, (m, idx) => imgs[idx] ? `<img src="${imgs[idx]}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">` : "");
             return t.substring(0, lipos + len) + tp.replaceAll("\n", "<br>") + t.substring(clipos);
         };
