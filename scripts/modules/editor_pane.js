@@ -241,6 +241,10 @@ class EditorPane {
         }
     }
 
+    isEditable() {
+        return this.documentEditable;
+    }
+
     startFloatMode(unfloat_cb) {
         this._onContextTransfer = (te, tem, w) => {
             let pc = "", pm = "";
