@@ -8,6 +8,14 @@ class Shortcuts {
     }
 
     /**
+     * Attach the shortcut handler to a specific window.
+     * @param {Window} win 
+     */
+    bindToWindow(win) {
+        win.addEventListener("keydown", this.handleKeypress);
+    }
+
+    /**
      * Handler function for all keypress events the user makes.
      * Will convert the key-combination to a string and compare it to existing
      * shortcut bindings. If the binding is found, call the appropriate function.

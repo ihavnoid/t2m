@@ -43,7 +43,7 @@ class App {
             });
 
             // Set up shortcut bindings
-            window.addEventListener("keydown", shortcuts.handleKeypress);
+            shortcuts.bindToWindow(window);
             const bindings = {
                 "Ctrl+N": () => appFunctions.fileNew(),
                 "Ctrl+O": () => appFunctions.fileOpen(),
