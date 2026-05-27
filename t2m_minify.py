@@ -8,7 +8,6 @@ all_files = [
     "scripts/old/d3-timer.js",
     "scripts/old/d3-force.js",
     "scripts/old/kineticjs.js",
-    "scripts/old/jquery.cookie.min.js",
     "scripts/old/difflib.js",
     "scripts/modules/unsaved_changes.js",
     "scripts/modules/navbar.js",
