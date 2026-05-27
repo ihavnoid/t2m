@@ -473,55 +473,98 @@ class EditorPane {
         return this.updateProcessed();
     }
 
+    /**
+     * Updates the text of specific nodes to include or remove coordinate headers [x y].
+     * This is used for "freezing" nodes in place.
+     * @param {Object[]} changedesc Array of { nodenum, fixed, xp, yp }
+     */
     updateTextForCoordinates(changedesc) {
         if (!this.documentEditable) return;
+        if (changedesc.length == 0) return;
+
+        // Internal helper to update a single <li> content
         const _do = (t, nodenum, fixed, xp, yp) => {
+            // Find the N-th <li> tag in the HTML
             let lipos = -1, len = 0;
             for (let i = 0; i < nodenum + 1; i++) [lipos, len] = this.indexOfRegex(t, /<li[^>]*>/i, lipos + 1);
             if (lipos < 0) return t;
+
+            // Extract the content of this <li>
             const clipos = t.indexOf("</li>", lipos);
             let tp = t.substring(lipos + len, clipos);
+
+            // Temporarily tokenize images to avoid interfering with text manipulation
             const imgs = [];
             tp = tp.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (m, src) => { imgs.push(src); return `\0i${imgs.length - 1}\0`; });
+
+            // Flatten HTML to get a clean text representation for caret/header calculations
             tp = tp.replaceAll("\n", "").replaceAll("<br>", "\n").replaceAll(/<[^>]*>/g, "");
+            
+            // Identify where the selection/caret markers are within this flattened text
             let p1 = tp.indexOf("\0n"); if (p1 >= 0) tp = tp.substring(0, p1) + tp.substring(p1 + 2);
             let p2 = tp.indexOf("\0r"); if (p2 >= 0) tp = tp.substring(0, p2) + tp.substring(p2 + 2);
-            if (p1 >= 0 && p2 >= 0) {
-                // Adjust if we swapped them while removing
-                // But wait, if we find them sequentially, they are always correct relative to the string at that moment.
-                // However, we need them relative to the FINAL string for re-insertion.
-            }
             
+            // Remove any existing coordinate header [x y]
             let lp = tp.length; tp = tp.replace(/^ *\[[0-9\- ]*\] */, ""); let ln = tp.length;
+            
+            // Shift caret positions back if they were after the removed header
             if (p1 >= 0) p1 = Math.max(0, p1 - (lp - ln)); if (p2 >= 0) p2 = Math.max(0, p2 - (lp - ln));
+            
+            // Add the new coordinate header if freezing the node
             if (fixed) {
                 const header = `[${Math.round(xp)} ${Math.round(yp)}] `; tp = header + tp;
                 if (p1 >= 0) p1 += header.length; if (p2 >= 0) p2 += header.length;
             }
+
+            // Re-insert caret markers into the updated text
             if (p1 >= 0) tp = tp.substring(0, p1) + "\0n" + tp.substring(p1);
             if (p2 >= 0) { if (p1 >= 0 && p2 >= p1) p2 += 2; tp = tp.substring(0, p2) + "\0r" + tp.substring(p2); }
+
+            // Restore image tokens back to actual <img> tags
             tp = tp.replace(/\0i(\d+)\0/g, (m, idx) => imgs[idx] ? `<img src="${imgs[idx]}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">` : "");
+            
+            // Reconstruct the <li> and return the full HTML
             return t.substring(0, lipos + len) + tp.replaceAll("\n", "<br>") + t.substring(clipos);
         };
+
+        // Capture current caret/selection state using markers \0n and \0r
         let t = this.markCaretPos(this.el.innerHTML);
+        
+        // Apply all requested coordinate changes
         changedesc.forEach(x => t = _do(t, x.nodenum, x.fixed, x.xp, x.yp));
+        
+        // Remove markers and restore the actual browser selection/caret
         this.unmarkCaretPos(t);
     }
 
+    /**
+     * Determines which mindmap nodes (0-indexed) are currently covered by the text selection.
+     * @returns {[number, number]} [startNodeIndex, endNodeIndex]
+     */
     findSelectedNodes() {
+        // Mark selection and find the marker indices
         let t = this.markCaretPos(this.el ? this.el.innerHTML : ""), r1 = t.indexOf("\0n"), r2 = t.indexOf("\0r");
+        
+        // Normalize range
         if (r1 > r2) [r1, r2] = [r2, r1];
         if (r1 < 0 || r2 < 0) return [0, -1];
+
         let l1 = -1, l2 = -1, pos = -1, cnt = 0;
+        // Step through each <li> tag to find which ones contain the selection markers
         while (true) {
             t = t.substring(pos + 1); r1 -= pos + 1; r2 -= pos + 1;
             pos = t.search(/<li[^>]*>/);
             if (pos < 0) break;
-            if (l1 < 0 && pos > r1) l1 = cnt - 1;
-            if (l2 < 0 && pos > r2) { l2 = cnt - 1; break; }
+            
+            // If the start of the current <li> is after our marker, 
+            // then the marker belongs to the PREVIOUS node.
+            if (l1 < 0 && pos > r1) l1 = Math.max(0, cnt - 1);
+            if (l2 < 0 && pos > r2) { l2 = Math.max(0, cnt - 1); break; }
             cnt++;
         }
-        return [l1 < 0 ? cnt - 1 : l1, l2 < 0 ? cnt - 1 : l2];
+        
+        // Fallback for selection extending to the last node
+        return [l1 < 0 ? Math.max(0, cnt - 1) : l1, l2 < 0 ? Math.max(0, cnt - 1) : l2];
     }
 
     moveCursorToNode(nodenum) {
