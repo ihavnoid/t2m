@@ -14,6 +14,7 @@ import { appFunctions } from './modules/app_functions.js';
 import { mindmap } from './modules/mindmap.js';
 import { imageDrawer } from './modules/image_drawer.js';
 import { uploadImage } from './modules/file_upload.js';
+import { historyModule } from './modules/history.js';
 
 class App {
     constructor() {
@@ -92,6 +93,9 @@ class App {
             };
             shortcuts.addBindings(bindings);
 
+            imageDrawer.init();
+            historyModule.init();
+
             // Initialize Navbar
             navbar.init({
                 "file-new": () => appFunctions.fileNew(),
@@ -99,8 +103,8 @@ class App {
                 "file-save": () => appFunctions.fileSave(),
                 "file-rename": () => appFunctions.fileRename(),
                 "file-preferences": () => appFunctions.filePreferences(),
+                "navbar-history": () => historyModule.open(),
             });
-
             // Initialize Modal
             modal.init();
 

@@ -354,6 +354,69 @@
     transform: translateY(-2px);
 }
 
+/* History Modal Styles */
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.history-table th, .history-table td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.history-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.history-thumbnail {
+    max-width: 40px;
+    max-height: 40px;
+    vertical-align: middle;
+    margin-right: 10px;
+    border: 1px solid #ddd;
+    padding: 2px;
+    background: white;
+}
+
+.history-title-cell {
+    font-weight: 500;
+}
+
+.history-link {
+    color: #2365ba;
+    text-decoration: none;
+}
+
+.history-link:hover {
+    text-decoration: underline;
+}
+
+.empty-history {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+}
+
+.button.small {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+}
+
+.button.danger {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+.button.danger:hover {
+    background-color: #c82333;
+}
+
 #drawing-canvas-container {
     border: 1px solid #999;
     background: #ccc; /* Darker background to see canvas edges */

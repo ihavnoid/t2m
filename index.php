@@ -93,7 +93,7 @@
 					</ul>
 				</li>
 				<li class="navbar-item" style="width: 200px;">
-                    <a href="visited.php" target="_blank">Show pages visited</a>
+                    <a href="#" id="navbar-history">Show pages visited</a>
                 </li>
 				<li id="keypane3" class="navbar-item" style="width: 200px;">
                     <a><input type="checkbox" value="true" id="autoupdate" name="autoupdate" disabled> &nbsp; <label for="autoupdate">Auto-update</label></a>
@@ -178,6 +178,7 @@
 		</div>
 
 <?php include "p/drawing_modal.php"; ?>
+<?php include "p/history_modal.php"; ?>
 	</div>
 	<input id="file-input" type="file" accept=".mindtxt">
 </body>
