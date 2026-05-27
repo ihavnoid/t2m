@@ -845,19 +845,29 @@ class Mindmap {
                 }
                 return -1;
             },
+            /**
+             * The core mindmap reconciliation engine. 
+             * This method takes raw text from the editor, compares it to the previous state,
+             * and "patches" the existing node graph to match.
+             * 
+             * This is a complex 4-pass operation to ensure the graph stays stable while editing.
+             */
             text2mindmap: function(a) {
+                // Helper: Extracts comment text by stripping the \0+ prefix
                 const convert_to_comment = (x) => {
                     const trimmed = x.trim();
                     if (trimmed.substring(0, 2) === "\0+") {
                         return trimmed.substring(2);
                     }
-                    // Handle cases where \0+ might be preceded by spaces
                     const plusIdx = x.indexOf("\0+");
                     if (plusIdx !== -1) {
                         return x.substring(plusIdx + 2);
                     }
                     return "";
                 };
+
+                // --- PASS 1: Split and Filter ---
+                // Separate node labels (starting with \0-) from comments (everything else)
                 const lines = a.split(/\n/);
                 const filtered_lines = [];
                 const comments = [];
@@ -868,9 +878,13 @@ class Mindmap {
                         comments[j] = "";
                         j++;
                     } else if (j > 0) {
+                        // Multi-line comments are appended to the previous node's comment buffer
                         comments[j - 1] += "\n" + convert_to_comment(lines[i]);
                     }
                 }
+
+                // --- PASS 2: Structural Analysis ---
+                // Calculate the hierarchy (depth and parent links) for the NEW state
                 const new_text = filtered_lines.join("\n");
                 const new_lines = difflib.stringAsLines(new_text);
                 if (comments.length == 0) comments[0] = "";
@@ -881,28 +895,37 @@ class Mindmap {
                     depths[idx] = self.indent_depth(line);
                     parents[idx] = this.findParent(idx, depths);
                 });
+                // The root node is always at depth 0
                 depths[0] = 0;
                 for (let i = 0; i < depths.length; i++) {
                     depths[i] = parents[i] < 0 ? 0 : depths[parents[i]] + 1;
                     if (self.D < depths[i]) self.D = depths[i];
                 }
 
+                // --- PASS 3: Diff and Patch ---
+                // Reconcile the current node array (this.nodes) with the new line list
                 let addedNodes = 0, removedNodes = 0, modifiedNodes = 0;
                 try {
                     const old_lines = difflib.stringAsLines(self.y);
                     const opcodes = (new difflib.SequenceMatcher(old_lines, new_lines)).get_opcodes();
+                    
+                    // Iterate through the diff operations (insert, delete, replace, equal)
                     for (let l_idx = 0; l_idx < opcodes.length; l_idx++) {
                         const entry = opcodes[l_idx];
                         const tag = entry[0], i1 = entry[1], i2 = entry[2], j1 = entry[3], j2 = entry[4];
                         const count = Math.max(i2 - i1, j2 - j1);
                         let i_ptr = i1, j_ptr = j1;
+
                         for (let v_idx = 0; v_idx < count; v_idx++) {
+                            // Calculate current index in this.nodes based on previous mutations
+                            const pos = i_ptr - removedNodes + addedNodes;
+
                             if (tag == "delete" || (tag == "replace" && j1 == j2)) {
-                                const pos = i_ptr - removedNodes + addedNodes;
+                                // Node removed from text: delete from graph
                                 this.removeNode(pos);
                                 removedNodes++;
                             } else if (tag == "insert" || (tag == "replace" && i1 == i2) || (tag == "replace" && !old_lines[i_ptr])) {
-                                const pos = i_ptr - removedNodes + addedNodes;
+                                // New node in text: add to graph
                                 const t = self.trim_label(j_ptr < j2 ? new_lines[j_ptr] : null);
                                 if (t) {
                                     const rawComment = (comments[j_ptr] || "");
@@ -923,7 +946,7 @@ class Mindmap {
                                     addedNodes++;
                                 }
                             } else if (tag == "replace") {
-                                const pos = i_ptr - removedNodes + addedNodes;
+                                // Node exists but label/coordinates changed: update properties
                                 const t = self.trim_label(j_ptr < j2 ? new_lines[j_ptr] : null);
                                 if (t == null) {
                                     this.removeNode(pos);
@@ -946,7 +969,7 @@ class Mindmap {
                                 }
                                 modifiedNodes++;
                             } else if (tag == "equal") {
-                                const pos = i_ptr - removedNodes + addedNodes;
+                                // Node is structurally identical: just update the comment/images in case they changed
                                 if (pos < this.nodes.length && j_ptr < j2) {
                                     const rawComment = (comments[j_ptr] || "");
                                     const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
@@ -960,22 +983,32 @@ class Mindmap {
                         }
                     }
                 } catch (err) {
-                    console.log(err);
+                    console.error("Diff Patching Error:", err);
                     this.clear();
                     return false;
                 }
+
+                // --- PASS 4: Tree Reconstruction ---
+                // Update relationships and visual attributes for all nodes
                 self.y = new_text;
                 self.A = 0;
                 this.nodes.forEach((node, idx) => {
+                    // Update branch and hierarchical level
                     if (depths[idx] == 0) self.A = 0;
                     node.data.branch = 1 == depths[idx] ? ++self.A : self.A;
+                    
+                    // If the node moved to a new level and isn't fixed, reset its physics position
                     if (node.data.level != depths[idx] && !node.fixed) {
                         node.x = undefined; node.y = undefined;
                     }
                     node.data.level = depths[idx];
                     node.data.parent = parents[idx] < 0 ? false : this.nodes[parents[idx]];
+                    
+                    // Apply visual theme and mark for redraw
                     node.data = this.setTheme(node.data);
                     node.data.redraw = true;
+
+                    // Re-calculate graph links (remove old link, add new parent link)
                     if (node.data.parent && !this.isLinkedTo(node, node.data.parent)) {
                         node.data.parent.data.children++;
                         this.getLinksFrom(node).forEach((l) => this.removeLink(l));
@@ -983,6 +1016,8 @@ class Mindmap {
                     } else if (!node.data.parent) {
                         this.getLinksFrom(node).forEach((l) => this.removeLink(l));
                     }
+
+                    // Update link labels if they changed
                     const parentLink = this.getLinksFrom(node)[0];
                     if (parentLink && parentLink.data.label != node.data.linkLabel) {
                         parentLink.data.label = node.data.linkLabel;
@@ -990,6 +1025,8 @@ class Mindmap {
                     }
                     window.editorPane.setNodeColor(idx, node.data.color);
                 });
+
+                // Trigger layout engine with a starting position if a large change occurred
                 const updatedRate = (modifiedNodes + addedNodes + removedNodes - 5) / (this.nodes.length + 1e-6);
                 this.buildStartingPos(updatedRate);
                 return true;
