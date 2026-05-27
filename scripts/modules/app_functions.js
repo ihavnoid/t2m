@@ -77,7 +77,7 @@ class AppFunctions {
         const changes = [];
         for (let i = start; i <= end; i++) {
             const node = window.mindmap.d.nodes[i];
-            if (node) {
+            if (node && !node.frozen) {
                 changes.push({
                     nodenum: i,
                     frozen: true,
@@ -102,7 +102,7 @@ class AppFunctions {
         const changes = [];
         for (let i = start; i <= end; i++) {
             const node = window.mindmap.d.nodes[i];
-            if (node) {
+            if (node && node.frozen) {
                 changes.push({
                     nodenum: i,
                     frozen: false,

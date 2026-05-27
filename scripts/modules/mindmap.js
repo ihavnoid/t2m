@@ -471,7 +471,7 @@ class Mindmap {
                 this.nodes.forEach((b, pos) => {
                     if (b.data.parent) {
                         b.fixed = a;
-                        xx.push({ nodenum: pos, fixed: b.fixed, xp: b.x, yp: b.y });
+                        xx.push({ nodenum: pos, frozen: b.fixed, xp: b.x, yp: b.y });
                     }
                 });
                 window.editorPane.updateTextForCoordinates(xx);
@@ -914,6 +914,7 @@ class Mindmap {
                                         linkLabel: t.linkLabel,
                                         children: 0,
                                         fixed: j_ptr == 0 || t.frozen,
+                                        frozen: t.frozen,
                                         x: t.x,
                                         y: t.y,
                                     });
@@ -932,6 +933,7 @@ class Mindmap {
                                     this.nodes[pos].data.label = t.label;
                                     this.nodes[pos].data.images = t.images;
                                     this.nodes[pos].fixed = (j_ptr == 0 || t.frozen);
+                                    this.nodes[pos].frozen = t.frozen;
                                     if (t.frozen) {
                                         this.nodes[pos].x = t.x; this.nodes[pos].y = t.y;
                                         this.nodes[pos].px = t.x; this.nodes[pos].py = t.y;
@@ -1144,7 +1146,7 @@ class Mindmap {
                 const xx = [];
                 engine.m_nodes.forEach((n) => {
                     if (!n.data.parent) n.fixed = true;
-                    if (n.fixed) xx.push({ nodenum: engine.nodes.indexOf(n), fixed: n.fixed, xp: n.x, yp: n.y });
+                    if (n.fixed) xx.push({ nodenum: engine.nodes.indexOf(n), frozen: n.fixed, xp: n.x, yp: n.y });
                 });
                 window.editorPane.updateTextForCoordinates(xx);
                 engine.drag_start.x = engine.drag_start.y = false;
@@ -1176,7 +1178,7 @@ class Mindmap {
             const xx = [];
             engine.m_nodes.forEach((n) => {
                 if (!n.data.parent) n.fixed = true;
-                if (n.fixed) xx.push({ nodenum: engine.nodes.indexOf(n), fixed: n.fixed, xp: n.x, yp: n.y });
+                if (n.fixed) xx.push({ nodenum: engine.nodes.indexOf(n), frozen: n.fixed, xp: n.x, yp: n.y });
             });
             window.editorPane.updateTextForCoordinates(xx);
             engine.drag_start.x = engine.drag_start.y = false;

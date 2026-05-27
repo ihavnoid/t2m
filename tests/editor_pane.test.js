@@ -26,7 +26,7 @@ describe('EditorPane Module - Coordinate Updates', () => {
         // We simulate a change descriptor for the first node (index 0)
         const changedesc = [{
             nodenum: 0,
-            fixed: true,
+            frozen: true,
             xp: 100,
             yp: 200
         }];
@@ -50,7 +50,7 @@ describe('EditorPane Module - Coordinate Updates', () => {
 
         const changedesc = [{
             nodenum: 0,
-            fixed: true,
+            frozen: true,
             xp: 120,
             yp: 130
         }];
@@ -143,7 +143,7 @@ describe('EditorPane Module - Coordinate Updates', () => {
         it('should not garble text when unfreezing a node with a selection', () => {
             editorPane.el.innerHTML = '<ul><li>[100 100] First Node</li></ul>';
             vi.spyOn(editorPane, 'markCaretPos').mockImplementation(() => '<ul><li>[100 100] First Node\0n\0r</li></ul>');
-            editorPane.updateTextForCoordinates([{ nodenum: 0, fixed: false, xp: 0, yp: 0 }]);
+            editorPane.updateTextForCoordinates([{ nodenum: 0, frozen: false, xp: 0, yp: 0 }]);
             expect(editorPane.el.innerHTML).toBe('<ul><li>First Node</li></ul>');
             editorPane.markCaretPos.mockRestore();
         });
@@ -151,7 +151,7 @@ describe('EditorPane Module - Coordinate Updates', () => {
         it('should not garble text when caret is inside the coordinate block being removed', () => {
             editorPane.el.innerHTML = '<ul><li>[100 100] Node</li></ul>';
             vi.spyOn(editorPane, 'markCaretPos').mockImplementation(() => '<ul><li>[100 \0n\0r100] Node</li></ul>');
-            editorPane.updateTextForCoordinates([{ nodenum: 0, fixed: false, xp: 0, yp: 0 }]);
+            editorPane.updateTextForCoordinates([{ nodenum: 0, frozen: false, xp: 0, yp: 0 }]);
             expect(editorPane.el.innerHTML).toBe('<ul><li>Node</li></ul>');
             editorPane.markCaretPos.mockRestore();
         });
