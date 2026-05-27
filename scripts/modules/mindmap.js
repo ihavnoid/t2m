@@ -177,7 +177,7 @@ class Mindmap {
         const r = {
             label: "",
             linkLabel: false,
-            fixed: false,
+            frozen: false,
             x: undefined,
             y: undefined,
             images: images
@@ -197,7 +197,7 @@ class Mindmap {
             0 < n && (ftok = processed.substr(1, n - 1), processed = processed.substring(n + 1).trim());
             const ftok_parts = ftok.split(/  */);
             if (ftok_parts.length == 2) {
-                r.fixed = true;
+                r.frozen = true;
                 r.x = ftok_parts[0] * 1.0;
                 r.y = ftok_parts[1] * 1.0;
             }
@@ -913,7 +913,7 @@ class Mindmap {
                                         commentImages: commentImages,
                                         linkLabel: t.linkLabel,
                                         children: 0,
-                                        fixed: j_ptr == 0 || t.fixed,
+                                        fixed: j_ptr == 0 || t.frozen,
                                         x: t.x,
                                         y: t.y,
                                     });
@@ -931,8 +931,8 @@ class Mindmap {
 
                                     this.nodes[pos].data.label = t.label;
                                     this.nodes[pos].data.images = t.images;
-                                    this.nodes[pos].fixed = (j_ptr == 0 || t.fixed);
-                                    if (t.fixed) {
+                                    this.nodes[pos].fixed = (j_ptr == 0 || t.frozen);
+                                    if (t.frozen) {
                                         this.nodes[pos].x = t.x; this.nodes[pos].y = t.y;
                                         this.nodes[pos].px = t.x; this.nodes[pos].py = t.y;
                                     }

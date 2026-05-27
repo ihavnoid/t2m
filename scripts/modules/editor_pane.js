@@ -476,14 +476,14 @@ class EditorPane {
     /**
      * Updates the text of specific nodes to include or remove coordinate headers [x y].
      * This is used for "freezing" nodes in place.
-     * @param {Object[]} changedesc Array of { nodenum, fixed, xp, yp }
+     * @param {Object[]} changedesc Array of { nodenum, frozen, xp, yp }
      */
     updateTextForCoordinates(changedesc) {
         if (!this.documentEditable) return;
         if (changedesc.length == 0) return;
 
         // Internal helper to update a single <li> content
-        const _do = (t, nodenum, fixed, xp, yp) => {
+        const _do = (t, nodenum, frozen, xp, yp) => {
             // Find the N-th <li> tag in the HTML
             let lipos = -1, len = 0;
             for (let i = 0; i < nodenum + 1; i++) [lipos, len] = this.indexOfRegex(t, /<li[^>]*>/i, lipos + 1);
@@ -511,7 +511,7 @@ class EditorPane {
             if (p1 >= 0) p1 = Math.max(0, p1 - (lp - ln)); if (p2 >= 0) p2 = Math.max(0, p2 - (lp - ln));
             
             // Add the new coordinate header if freezing the node
-            if (fixed) {
+            if (frozen) {
                 const header = `[${Math.round(xp)} ${Math.round(yp)}] `; tp = header + tp;
                 if (p1 >= 0) p1 += header.length; if (p2 >= 0) p2 += header.length;
             }
@@ -531,7 +531,7 @@ class EditorPane {
         let t = this.markCaretPos(this.el.innerHTML);
         
         // Apply all requested coordinate changes
-        changedesc.forEach(x => t = _do(t, x.nodenum, x.fixed, x.xp, x.yp));
+        changedesc.forEach(x => t = _do(t, x.nodenum, x.frozen, x.xp, x.yp));
         
         // Remove markers and restore the actual browser selection/caret
         this.unmarkCaretPos(t);
