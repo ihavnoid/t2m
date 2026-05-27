@@ -89,6 +89,7 @@ class AppFunctions {
 
         if (changes.length > 0) {
             window.editorPane.updateTextForCoordinates(changes);
+            window.editorPane.updateProcessed();
             if (window.mindmap && window.mindmap.render) {
                 window.mindmap.render();
             }
@@ -114,6 +115,7 @@ class AppFunctions {
 
         if (changes.length > 0) {
             window.editorPane.updateTextForCoordinates(changes);
+            window.editorPane.updateProcessed();
             if (window.mindmap && window.mindmap.render) {
                 window.mindmap.render();
             }
