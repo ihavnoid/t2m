@@ -845,29 +845,17 @@ class Mindmap {
                 }
                 return -1;
             },
-            /**
-             * The core mindmap reconciliation engine. 
-             * This method takes raw text from the editor, compares it to the previous state,
-             * and "patches" the existing node graph to match.
-             * 
-             * This is a complex 4-pass operation to ensure the graph stays stable while editing.
-             */
             text2mindmap: function(a) {
                 // Helper: Extracts comment text by stripping the \0+ prefix
                 const convert_to_comment = (x) => {
                     const trimmed = x.trim();
-                    if (trimmed.substring(0, 2) === "\0+") {
-                        return trimmed.substring(2);
-                    }
+                    if (trimmed.substring(0, 2) === "\0+") return trimmed.substring(2);
                     const plusIdx = x.indexOf("\0+");
-                    if (plusIdx !== -1) {
-                        return x.substring(plusIdx + 2);
-                    }
+                    if (plusIdx !== -1) return x.substring(plusIdx + 2);
                     return "";
                 };
 
                 // --- PASS 1: Split and Filter ---
-                // Separate node labels (starting with \0-) from comments (everything else)
                 const lines = a.split(/\n/);
                 const filtered_lines = [];
                 const comments = [];
@@ -878,15 +866,14 @@ class Mindmap {
                         comments[j] = "";
                         j++;
                     } else if (j > 0) {
-                        // Multi-line comments are appended to the previous node's comment buffer
                         comments[j - 1] += "\n" + convert_to_comment(lines[i]);
                     }
                 }
 
                 // --- PASS 2: Structural Analysis ---
-                // Calculate the hierarchy (depth and parent links) for the NEW state
                 const new_text = filtered_lines.join("\n");
-                const new_lines = difflib.stringAsLines(new_text);
+                const new_lines = filtered_lines.map(l => l.replace(/[\n\r]*$/g, ""));
+                
                 if (comments.length == 0) comments[0] = "";
                 const depths = [];
                 const parents = [];
@@ -895,133 +882,124 @@ class Mindmap {
                     depths[idx] = self.indent_depth(line);
                     parents[idx] = this.findParent(idx, depths);
                 });
-                // The root node is always at depth 0
                 depths[0] = 0;
                 for (let i = 0; i < depths.length; i++) {
                     depths[i] = parents[i] < 0 ? 0 : depths[parents[i]] + 1;
                     if (self.D < depths[i]) self.D = depths[i];
                 }
 
-                // --- PASS 3: Diff and Patch ---
-                // This phase is the heart of the "surgical update". It compares the old node list
-                // with the new one and applies only the necessary mutations to the live graph.
-                //
-                // STATE VARIABLES:
-                // - addedNodes/removedNodes: These track the NET CHANGE in array length caused
-                //   by previous instructions in THIS run. They are vital for translating an 
-                //   original 'old_lines' index into the current 'this.nodes' index.
+                // --- PASS 3: Custom Diff and Patch (Independent of difflib) ---
+                // We identify identical prefix and suffix blocks to isolate the changed "middle".
+                const old_text = self.y || "";
+                const old_lines = old_text === "" ? [] : old_text.split("\n");
+
                 let addedNodes = 0, removedNodes = 0, modifiedNodes = 0;
+
                 try {
-                    const old_lines = difflib.stringAsLines(self.y);
-                    const opcodes = (new difflib.SequenceMatcher(old_lines, new_lines)).get_opcodes();
-                    
-                    // Iterate through each instruction from the diff engine.
-                    // Instruction format: [tag, old_start, old_end, new_start, new_end]
-                    for (let l_idx = 0; l_idx < opcodes.length; l_idx++) {
-                        const entry = opcodes[l_idx];
-                        const tag = entry[0], i1 = entry[1], i2 = entry[2], j1 = entry[3], j2 = entry[4];
-                        
-                        // 'count' is the max lines affected by this instruction.
-                        // We iterate 'count' times to ensure we process every line in both the
-                        // old and new ranges of the instruction.
-                        const count = Math.max(i2 - i1, j2 - j1);
-                        
-                        // i_ptr/j_ptr: pointers into old_lines/new_lines respectively.
-                        // They start at the block boundaries provided by difflib.
-                        let i_ptr = i1, j_ptr = j1;
+                    // 1. Scan from start to find unchanged lines
+                    let prefixLen = 0;
+                    while (prefixLen < old_lines.length && prefixLen < new_lines.length && old_lines[prefixLen] === new_lines[prefixLen]) {
+                        prefixLen++;
+                    }
 
-                        for (let v_idx = 0; v_idx < count; v_idx++) {
-                            // !!! CRITICAL INDEX CALCULATION !!!
-                            // 'pos' is the target index in the LIVE 'this.nodes' array.
-                            // We start with the original index (i_ptr) and adjust for all 
-                            // insertions and deletions that occurred EARLIER in this loop.
-                            // If this math is off by even 1, we will remove or update the wrong node,
-                            // which can lead to a cascading corruption of the graph structure.
-                            const pos = i_ptr - removedNodes + addedNodes;
+                    // 2. Scan from end to find unchanged lines (without overlapping with prefix)
+                    let oldEnd = old_lines.length - 1;
+                    let newEnd = new_lines.length - 1;
+                    while (oldEnd >= prefixLen && newEnd >= prefixLen && old_lines[oldEnd] === new_lines[newEnd]) {
+                        oldEnd--;
+                        newEnd--;
+                    }
 
-                            if (tag == "delete" || (tag == "replace" && j1 == j2)) {
-                                // CASE: Deleting nodes.
-                                // Occurs if line was removed, or a replace block has fewer new lines.
-                                this.removeNode(pos);
-                                removedNodes++;
-                            } else if (tag == "insert" || (tag == "replace" && i1 == i2) || (tag == "replace" && !old_lines[i_ptr])) {
-                                // CASE: Inserting nodes.
-                                // Occurs if new line added, or a replace block has more new lines.
-                                // '!old_lines[i_ptr]' means we've finished the 'old' nodes in this block
-                                // and everything else in the 'new' block must be a fresh insertion.
-                                const t = self.trim_label(j_ptr < j2 ? new_lines[j_ptr] : null);
-                                if (t) {
-                                    const rawComment = (comments[j_ptr] || "");
-                                    const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
-
-                                    // Insert a brand new node object. 
-                                    // Note: This resets the physics state (x,y) for this node.
-                                    this.addNode(pos, {
-                                        label: t.label,
-                                        images: t.images,
-                                        comment: cleanComment.trim(),
-                                        commentImages: commentImages,
-                                        linkLabel: t.linkLabel,
-                                        children: 0,
-                                        fixed: j_ptr == 0 || t.frozen,
-                                        frozen: t.frozen,
-                                        x: t.x,
-                                        y: t.y,
-                                    });
-                                    addedNodes++;
-                                }
-                            } else if (tag == "replace") {
-                                // CASE: Updating an existing node.
-                                // We've identified that an old node maps to a new line.
-                                // We update its properties to keep the object identity stable.
-                                const t = self.trim_label(j_ptr < j2 ? new_lines[j_ptr] : null);
-                                if (t == null) {
-                                    // If parsing fails for some reason, we must remove the node
-                                    // to keep the array size in sync with the text.
-                                    this.removeNode(pos);
-                                    removedNodes++;
-                                } else {
-                                    const rawComment = (comments[j_ptr] || "");
-                                    const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
-
-                                    // Preserve identity, update data.
-                                    this.nodes[pos].data.label = t.label;
-                                    this.nodes[pos].data.images = t.images;
-                                    this.nodes[pos].fixed = (j_ptr == 0 || t.frozen);
-                                    this.nodes[pos].frozen = t.frozen;
-                                    
-                                    // If coordinates were explicitly provided in the text [x y],
-                                    // overwrite the current physics position.
-                                    if (t.frozen) {
-                                        this.nodes[pos].x = t.x; this.nodes[pos].y = t.y;
-                                        this.nodes[pos].px = t.x; this.nodes[pos].py = t.y;
-                                    }
-                                    this.nodes[pos].data.comment = cleanComment.trim();
-                                    this.nodes[pos].data.commentImages = commentImages;
-                                    this.nodes[pos].data.linkLabel = t.linkLabel;
-                                }
+                    // 3. Update comments for unchanged prefix nodes
+                    for (let i = 0; i < prefixLen; i++) {
+                        if (this.nodes[i]) {
+                            const rawComment = (comments[i] || "");
+                            const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
+                            if (this.nodes[i].data.comment != cleanComment.trim()) {
+                                this.nodes[i].data.comment = cleanComment.trim();
+                                this.nodes[i].data.commentImages = commentImages;
                                 modifiedNodes++;
-                            } else if (tag == "equal") {
-                                // CASE: Structure is identical. 
-                                // We only update comments/images which are NOT handled by difflib.
-                                if (pos < this.nodes.length && j_ptr < j2) {
-                                    const rawComment = (comments[j_ptr] || "");
-                                    const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
-                                    
-                                    if (this.nodes[pos].data.comment != cleanComment.trim()) modifiedNodes++;
-                                    this.nodes[pos].data.comment = cleanComment.trim();
-                                    this.nodes[pos].data.commentImages = commentImages;
-                                }
                             }
-                            
-                            // Increment pointers but stop at block boundaries to ensure stability.
-                            if (i_ptr < i2) i_ptr++;
-                            if (j_ptr < j2) j_ptr++;
+                        }
+                    }
+
+                    // 4. Reconcile the "Middle" changed region
+                    const oldRegionLen = oldEnd - prefixLen + 1;
+                    const newRegionLen = newEnd - prefixLen + 1;
+
+                    // Step A: Update overlapping nodes in the middle
+                    const commonMidLen = Math.min(oldRegionLen, newRegionLen);
+                    for (let i = 0; i < commonMidLen; i++) {
+                        const idx = prefixLen + i;
+                        const t = self.trim_label(new_lines[idx]);
+                        if (t && this.nodes[idx]) {
+                            const rawComment = (comments[idx] || "");
+                            const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
+
+                            const node = this.nodes[idx];
+                            node.data.label = t.label;
+                            node.data.images = t.images;
+                            node.fixed = (idx == 0 || t.frozen);
+                            node.frozen = t.frozen;
+                            if (t.frozen) {
+                                node.x = t.x; node.y = t.y;
+                                node.px = t.x; node.py = t.y;
+                            }
+                            node.data.comment = cleanComment.trim();
+                            node.data.commentImages = commentImages;
+                            node.data.linkLabel = t.linkLabel;
+                            modifiedNodes++;
+                        }
+                    }
+
+                    // Handle remaining nodes in the middle (Delete then Insert)
+                    if (oldRegionLen > newRegionLen) {
+                        const toDelete = oldRegionLen - newRegionLen;
+                        for (let i = 0; i < toDelete; i++) {
+                            this.removeNode(prefixLen + commonMidLen);
+                            removedNodes++;
+                        }
+                    } else if (newRegionLen > oldRegionLen) {
+                        const toInsert = newRegionLen - oldRegionLen;
+                        for (let i = 0; i < toInsert; i++) {
+                            const idx = prefixLen + commonMidLen + i;
+                            const t = self.trim_label(new_lines[idx]);
+                            if (t) {
+                                const rawComment = (comments[idx] || "");
+                                const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
+                                this.addNode(idx, {
+                                    label: t.label,
+                                    images: t.images,
+                                    comment: cleanComment.trim(),
+                                    commentImages: commentImages,
+                                    linkLabel: t.linkLabel,
+                                    children: 0,
+                                    fixed: idx == 0 || t.frozen,
+                                    frozen: t.frozen,
+                                    x: t.x,
+                                    y: t.y,
+                                });
+                                addedNodes++;
+                            }
+                        }
+                    }
+
+                    // 5. Update comments for unchanged suffix nodes
+                    const suffixLen = old_lines.length - 1 - oldEnd;
+                    for (let i = 0; i < suffixLen; i++) {
+                        const newIdx = newEnd + 1 + i;
+                        const node = this.nodes[newIdx];
+                        if (node) {
+                            const rawComment = (comments[newIdx] || "");
+                            const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
+                            if (node.data.comment != cleanComment.trim()) {
+                                node.data.comment = cleanComment.trim();
+                                node.data.commentImages = commentImages;
+                                modifiedNodes++;
+                            }
                         }
                     }
                 } catch (err) {
-                    // CATASTROPHIC FALLBACK: If the patching logic throws (e.g. index error),
-                    // we clear the entire graph to avoid showing a corrupted or partially-synced state.
                     console.error("Diff Patching Error:", err);
                     this.clear(); 
                     return false;
