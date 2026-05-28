@@ -308,6 +308,7 @@ class Mindmap {
 class MindmapEngine {
     constructor(mindmap, containerId, initialSettings) {
         this.mindmap = mindmap;
+        this.containerId = containerId;
         this.maxTextWidthCache = {};
         this.prevNb = -1;
         this.prevNe = -1;
@@ -408,14 +409,15 @@ class MindmapEngine {
                 }
                 const changes = [];
                 this.draggedNodes.forEach((node) => {
-                    if (!node.data.parent) node.fixed = true;
-                    if (node.fixed)
+                    if (!node.data.parent) {
+                        node.fixed = true;
                         changes.push({
                             nodenum: this.nodes.indexOf(node),
                             frozen: true,
                             xp: node.x,
                             yp: node.y,
                         });
+                    }
                 });
                 window.editorPane.updateTextForCoordinates(changes);
                 this.dragStart.x = this.dragStart.y = false;
@@ -451,14 +453,15 @@ class MindmapEngine {
             }
             const changes = [];
             this.draggedNodes.forEach((node) => {
-                if (!node.data.parent) node.fixed = true;
-                if (node.fixed)
+                if (!node.data.parent) {
+                    node.fixed = true;
                     changes.push({
                         nodenum: this.nodes.indexOf(node),
                         frozen: true,
                         xp: node.x,
                         yp: node.y,
                     });
+                }
             });
             window.editorPane.updateTextForCoordinates(changes);
             this.dragStart.x = this.dragStart.y = false;
@@ -1033,7 +1036,8 @@ class MindmapEngine {
         });
         group.on("mouseover", () => {
             if (!this.shiftKey) {
-                document.getElementById(containerId).style.cursor = "pointer";
+                document.getElementById(this.containerId).style.cursor =
+                    "pointer";
                 const [selectedStart, selectedEnd] =
                     window.editorPane.findSelectedNodes();
                 const index = this.nodes.indexOf(node);
@@ -1058,7 +1062,7 @@ class MindmapEngine {
         });
         group.on("mouseout", () => {
             if (this.draggedNodes.length == 0)
-                document.getElementById(containerId).style.cursor = "move";
+                document.getElementById(this.containerId).style.cursor = "move";
             this.redraw();
         });
         return [group, width, height];
@@ -1578,7 +1582,7 @@ class MindmapEngine {
                 x: (pageX - transform[4]) / transform[0],
                 y: (pageY - transform[5]) / transform[3],
             };
-        const offset = $("#" + containerId).offset();
+        const offset = $("#" + this.containerId).offset();
         return {
             x: (pageX - offset.left - transform[4]) / transform[0],
             y: (pageY - offset.top - transform[5]) / transform[3],
