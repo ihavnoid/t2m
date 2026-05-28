@@ -272,15 +272,133 @@ class Mindmap {
     }
 
     createEngine(containerId, initialSettings) {
-        const self = this;
-        const engine = {
-            maxTextWidthCache: {},
-            prevNb: -1,
-            prevNe: -1,
-            nodes: [],
-            links: [],
-            config: {}, // Current engine settings
-            settings: function(settingsObj, triggerRedraw) {
+        return new MindmapEngine(this, containerId, initialSettings);
+    }
+}
+
+class MindmapEngine {
+    constructor(mindmap, containerId, initialSettings) {
+        this.mindmap = mindmap;
+        this.maxTextWidthCache = {};
+        this.prevNb = -1;
+        this.prevNe = -1;
+        this.nodes = [];
+        this.links = [];
+        this.config = {};
+        
+        // Engine State Initialization
+        this.config = $.extend({
+        bgcolors: "#3f3a3a #2365ba #16c75e #ff481c #ffa81c #365C8E #31975A #C2583F #C2903F #9d9d9d".split(" "),
+        coloringMode: 2,
+        fontSize: 26,
+        fontMinSize: 11,
+        font: "Helvetica, Verdana, sans-serif",
+        fontColor: "#ffffff",
+        lineColor: "#cccccc",
+        lineWidth: 1.5,
+        scale: 1,
+        lockAfterMoving: true,
+        linkLength: 10,
+        friction: 0.9,
+        charge: 1400,
+        width: 400,
+        height: 400,
+        gravity: -0.001
+        }, initialSettings);
+
+        this.nextNodeId = 0;
+        this.parentCounts = {};
+        this.draggedNodes = [];
+        this.isDraggingStage = false;
+        this.dragStart = { x: 0, y: 0 };
+        this.lastXPos = 0;
+        this.lastYPos = 0;
+        this.shiftKey = false;
+        this.layer = new Kinetic.Layer();
+        this.stage = new Kinetic.Stage({ container: containerId, width: this.config.width, height: this.config.height });
+        this.stage.add(this.layer);
+        this.layer.move($("#viewer-container").innerWidth() / 2, $("#viewer-container").innerHeight() / 2);
+        
+        this._initDragAndDropEvents(containerId);
+    }
+
+    _initDragAndDropEvents(containerId) {
+        const $stage = $("#" + containerId);
+        $stage.on("touchstart mousedown", (event) => {
+        this.shiftKey = event.shiftKey;
+        if (this.draggedNodes.length == 0) {
+        this.isDraggingStage = true;
+        $(window).on("touchmove mousemove", (ev) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+        if (!this.dragStart.x && !this.dragStart.y) {
+        this.dragStart.x = ev.pageX || ev.originalEvent.touches[0].pageX;
+        this.dragStart.y = ev.pageY || ev.originalEvent.touches[0].pageY;
+        }
+        const bx = ev.pageX || ev.originalEvent.touches[0].pageX;
+        const by = ev.pageY || ev.originalEvent.touches[0].pageY;
+        this.layer.move(bx - this.dragStart.x, by - this.dragStart.y);
+        this.dragStart.x = bx;
+        this.dragStart.y = by;
+        this.layer.draw();
+        });
+        }
+        event.stopPropagation();
+        });
+
+        $stage.on("touchmove mousemove", (event) => {
+        this.lastXPos = (event.pageX || event.originalEvent.touches[0].pageX) - $("#viewer-container").offset().left;
+        this.lastYPos = (event.pageY || event.originalEvent.touches[0].pageY) - $("#viewer-container").offset().top;
+        this.shiftKey = event.shiftKey;
+        if (event.buttons == 0) {
+        if (this.isDraggingStage) {
+        $(window).off("touchmove mousemove");
+        this.isDraggingStage = false;
+        }
+        const changes = [];
+        this.draggedNodes.forEach((node) => {
+        if (!node.data.parent) node.fixed = true;
+        if (node.fixed) changes.push({ nodenum: this.nodes.indexOf(node), frozen: true, xp: node.x, yp: node.y });
+        });
+        window.editorPane.updateTextForCoordinates(changes);
+        this.dragStart.x = this.dragStart.y = false;
+        this.draggedNodes = [];
+        }
+        if (this.draggedNodes.length > 0) {
+        const pos = this.getPointerPos(event.pageX || event.originalEvent.targetTouches[0].pageX, event.pageY || event.originalEvent.targetTouches[0].pageY);
+        this.draggedNodes.forEach((node) => {
+        node.x += pos.x - this.dragLastPos.x;
+        node.y += pos.y - this.dragLastPos.y;
+        node.px = node.x; node.py = node.y;
+        });
+        this.dragLastPos.x = pos.x; this.dragLastPos.y = pos.y;
+        this.updateFixedNodeCoordinates();
+        if (this.simulation && 0.02 > this.simulation.alpha()) {
+        this.simulation.alpha(0.025).restart();
+        } else {
+        this.redraw();
+        }
+        }
+        });
+
+        $(window).on("mouseup touchend", (event) => {
+        this.shiftKey = event.shiftKey;
+        if (this.isDraggingStage) {
+        $(window).off("touchmove mousemove");
+        this.isDraggingStage = false;
+        }
+        const changes = [];
+        this.draggedNodes.forEach((node) => {
+        if (!node.data.parent) node.fixed = true;
+        if (node.fixed) changes.push({ nodenum: this.nodes.indexOf(node), frozen: true, xp: node.x, yp: node.y });
+        });
+        window.editorPane.updateTextForCoordinates(changes);
+        this.dragStart.x = this.dragStart.y = false;
+        this.draggedNodes = [];
+        });
+    }
+
+    settings(settingsObj, triggerRedraw) {
                 triggerRedraw = "undefined" == typeof triggerRedraw ? true : triggerRedraw;
                 if ("object" == typeof settingsObj) {
                     this.config = $.extend({}, this.config, settingsObj);
@@ -305,11 +423,11 @@ class Mindmap {
                         this.config.lockAfterMoving = settingsObj.lockAfterMoving;
                     }
                 } else if ("string" == typeof settingsObj) return "transform" == settingsObj ? this.layer.getTransform().m : this.config[settingsObj];
-            },
-            stopForce: function() {
+    }
+    stopForce() {
                 this.simulation && this.simulation.stop();
-            },
-            updateFixedNodeCoordinates: function() {
+    }
+    updateFixedNodeCoordinates() {
                 this.nodes.forEach((node) => {
                     if (node.fixed) {
                         node.fx = node.x;
@@ -319,8 +437,8 @@ class Mindmap {
                         node.fy = null;
                     }
                 });
-            },
-            createSimulation: function(sizeScale) {
+    }
+    createSimulation(sizeScale) {
                 this.redraw();
                 for (let i = 0; i < this.nodes.length; i++) {
                     const node = this.nodes[i];
@@ -370,8 +488,8 @@ class Mindmap {
                     .force("center", d3.forceCenter(0, 0).strength(0.05))
                     .force("manybody", d3.forceManyBody().strength(-10).distanceMax(300));
                 return this.simulation;
-            },
-            runSimulation: function() {
+    }
+    runSimulation() {
                 this.simulation = this.createSimulation(1.0);
                 this.simulation.on("tick", () => {
                     const alpha = this.simulation.alpha();
@@ -387,8 +505,8 @@ class Mindmap {
                     }
                     this.redraw();
                 });
-            },
-            execute: function(processedText, skipHistory) {
+    }
+    execute(processedText, skipHistory) {
                 if (this.simulation) this.simulation.stop();
                 this.text2mindmap(processedText);
                 if (true !== skipHistory) {
@@ -396,18 +514,18 @@ class Mindmap {
                     $(".saveMsg").show();
                 }
                 this.runSimulation();
-            },
-            clear: function() {
+    }
+    clear() {
                 this.layer.removeChildren();
                 this.nodes = [];
                 this.links = [];
                 this.simulation = false;
-                self.lastProcessedText = "";
+                this.mindmap.lastProcessedText = "";
                 this.execute("");
-            },
-            getBranches: function() { return self.branchCount; },
-            getLevels: function() { return self.maxDepth; },
-            zoom: function(delta) {
+    }
+    getBranches() { return this.mindmap.branchCount; }
+    getLevels() { return this.mindmap.maxDepth; }
+    zoom(delta) {
                 const oldScale = this.layer.getScale().x;
                 let newScale;
                 if (delta > 0) {
@@ -417,8 +535,8 @@ class Mindmap {
                 }
                 this.settings({ scale: newScale });
                 this.redraw();
-            },
-            addNode: function(index, data) {
+    }
+    addNode(index, data) {
                 if (this.simulation) this.simulation.stop();
                 const node = {
                     id: this.nextNodeId++,
@@ -432,8 +550,8 @@ class Mindmap {
                 };
                 this.nodes.splice(index, 0, node);
                 return node;
-            },
-            addLink: function(sourceNode, targetNode) {
+    }
+    addLink(sourceNode, targetNode) {
                 this.links.push({
                     source: sourceNode,
                     target: targetNode,
@@ -443,22 +561,22 @@ class Mindmap {
                         label: sourceNode.data.linkLabel
                     }
                 });
-            },
-            getNode: function(index) { return this.nodes[index]; },
-            getLinksFrom: function(node) {
+    }
+    getNode(index) { return this.nodes[index]; }
+    getLinksFrom(node) {
                 const result = [];
                 this.links.forEach((link) => {
                     if (link.source.id == node.id) result.push(link);
                 });
                 return result;
-            },
-            isLinkedTo: function(nodeA, nodeB) {
+    }
+    isLinkedTo(nodeA, nodeB) {
                 for (let i = 0; i < this.links.length; i++) {
                     if (this.links[i].source.id == nodeA.id && this.links[i].target.id == nodeB.id) return true;
                 }
                 return false;
-            },
-            removeLink: function(linkToRemove) {
+    }
+    removeLink(linkToRemove) {
                 this.links.forEach((link, index) => {
                     if (link == linkToRemove) {
                         if (link.ui) {
@@ -468,8 +586,8 @@ class Mindmap {
                         this.links.splice(index, 1);
                     }
                 });
-            },
-            setNodeLocks: function(isLocked) {
+    }
+    setNodeLocks(isLocked) {
                 const changes = [];
                 this.nodes.forEach((node, index) => {
                     if (node.data.parent) {
@@ -480,8 +598,8 @@ class Mindmap {
                 });
                 window.editorPane.updateTextForCoordinates(changes);
                 this.execute(window.editorPane.getProcessed(), false);
-            },
-            removeNode: function(index) {
+    }
+    removeNode(index) {
                 if (this.simulation) this.simulation.stop();
                 const node = this.nodes[index];
                 if (node) {
@@ -495,8 +613,8 @@ class Mindmap {
                     }
                     this.nodes.splice(index, 1);
                 }
-            },
-            setStartPosition: function(node, index, totalCount) {
+    }
+    setStartPosition(node, index, totalCount) {
                 if (!node.data.parent) {
                     if (index == 0) {
                         node.x = 0; node.y = 0; node.px = node.x; node.py = node.y;
@@ -536,8 +654,8 @@ class Mindmap {
                 }
                 node.px = node.x; node.py = node.y;
                 return node;
-            },
-            redrawAll: function() {
+    }
+    redrawAll() {
                 this.nodes.forEach((node, index) => {
                     node.data = this.setTheme(node.data);
                     window.editorPane.setNodeColor(index, node.data.color);
@@ -550,8 +668,8 @@ class Mindmap {
                 });
                 window.editorPane.refresh();
                 this.redraw();
-            },
-            moveViewToCurrentSelection: function() {
+    }
+    moveViewToCurrentSelection() {
                 if (this.shiftKey) return;
                 const [selectedStart, selectedEnd] = window.editorPane.findSelectedNodes();
                 if (selectedStart != selectedEnd || selectedStart < 0) return;
@@ -567,8 +685,8 @@ class Mindmap {
                 if (newX < curX - width / 2.2 || newX > curX + width / 2.2 || newY < curY - height / 2.2 || newY > curY + height / 2.2) {
                     this.layer.setPosition({ x: newX, y: newY });
                 }
-            },
-            redraw: function() {
+    }
+    redraw() {
                 this.links.forEach((link) => {
                     if (link.ui && !link.data.redraw) {
                         link.ui.setPoints([link.source, link.target]);
@@ -609,8 +727,8 @@ class Mindmap {
                 this.prevNb = selectedStart;
                 this.prevNe = selectedEnd;
                 this.layer.draw();
-            },
-            newLine: function(link, sourceNode, targetNode) {
+    }
+    newLine(link, sourceNode, targetNode) {
                 if (link.data.label) {
                     const dx = targetNode.x - sourceNode.x;
                     const dy = targetNode.y - sourceNode.y;
@@ -646,8 +764,8 @@ class Mindmap {
                     stroke: link.data.color,
                     strokeWidth: link.data.weight
                 });
-            },
-            newGroup: function(node, isSelected) {
+    }
+    newGroup(node, isSelected) {
                 const group = new Kinetic.Group({ x: node.x, y: node.y });
                 const elements = [];
                 let totalHeight = 0;
@@ -660,7 +778,7 @@ class Mindmap {
 
                 const addImages = (srcs) => {
                     srcs.forEach(src => {
-                        const imgObj = self.getImage(src, () => {
+                        const imgObj = this.mindmap.getImage(src, () => {
                             node.data.redraw = true;
                             this.redraw();
                         });
@@ -771,8 +889,8 @@ class Mindmap {
                     this.redraw();
                 });
                 return [group, width, height];
-            },
-            newRect: function(node, width, height, isSelected) {
+    }
+    newRect(node, width, height, isSelected) {
                 return new Kinetic.Rect({
                     x: -0.5 * width - 1,
                     y: -0.5 * height,
@@ -788,8 +906,8 @@ class Mindmap {
                     strokeWidth: isSelected ? 4 : 0.01,
                     shadowOpacity: 0.5
                 });
-            },
-            newComment: function(node) {
+    }
+    newComment(node) {
                 const text = new Kinetic.Text({
                     x: 0,
                     y: 0,
@@ -807,8 +925,8 @@ class Mindmap {
                 const area = text.getWidth() * text.getHeight();
                 if (text.getWidth() > maxWidth) text.setWidth(Math.max(maxWidth, Math.sqrt(area)));
                 return text;
-            },
-            newText: function(node) {
+    }
+    newText(node) {
                 const text = new Kinetic.Text({
                     x: 0,
                     y: 0,
@@ -825,8 +943,8 @@ class Mindmap {
                 const area = text.getWidth() * text.getHeight();
                 if (text.getWidth() > maxWidth) text.setWidth(Math.max(maxWidth, Math.sqrt(area)));
                 return text;
-            },
-            maxTextWidth: function(node) {
+    }
+    maxTextWidth(node) {
                 if (this.maxTextWidthCache[node.data.fontSize] && this.maxTextWidthCache[node.data.fontSize][node.data.font]) {
                     return this.maxTextWidthCache[node.data.fontSize][node.data.font];
                 }
@@ -839,15 +957,15 @@ class Mindmap {
                 const width = text.getWidth();
                 this.maxTextWidthCache[node.data.fontSize][node.data.font] = width;
                 return width;
-            },
-            findParent: function(index, depths) {
+    }
+    findParent(index, depths) {
                 if (0 == index) return -1;
                 for (let depth = depths[index]; 0 <= index; index--) {
                     if (depths[index] < depth) return index;
                 }
                 return -1;
-            },
-            text2mindmap: function(text) {
+    }
+    text2mindmap(text) {
                 // Helper: Extracts comment text by stripping the \0+ prefix
                 const convert_to_comment = (line) => {
                     const trimmed = line.trim();
@@ -879,20 +997,20 @@ class Mindmap {
                 if (comments.length == 0) comments[0] = "";
                 const depths = [];
                 const parents = [];
-                self.maxDepth = 0;
+                this.mindmap.maxDepth = 0;
                 new_lines.forEach((line, idx) => {
-                    depths[idx] = self.indent_depth(line);
+                    depths[idx] = this.mindmap.indent_depth(line);
                     parents[idx] = this.findParent(idx, depths);
                 });
                 depths[0] = 0;
                 for (let index = 0; index < depths.length; index++) {
                     depths[index] = parents[index] < 0 ? 0 : depths[parents[index]] + 1;
-                    if (self.maxDepth < depths[index]) self.maxDepth = depths[index];
+                    if (this.mindmap.maxDepth < depths[index]) this.mindmap.maxDepth = depths[index];
                 }
 
                 // --- PASS 3: Custom Diff and Patch (Independent of difflib) ---
                 // We identify identical prefix and suffix blocks to isolate the changed "middle".
-                const old_text = self.lastProcessedText || "";
+                const old_text = this.mindmap.lastProcessedText || "";
                 const old_lines = old_text === "" ? [] : old_text.split("\n");
 
                 let addedNodesCount = 0, removedNodesCount = 0, modifiedNodesCount = 0;
@@ -916,7 +1034,7 @@ class Mindmap {
                     for (let index = 0; index < prefixLen; index++) {
                         if (this.nodes[index]) {
                             const rawComment = (comments[index] || "");
-                            const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
+                            const { cleanText: cleanComment, images: commentImages } = this.mindmap.extractImages(rawComment);
                             if (this.nodes[index].data.comment != cleanComment.trim()) {
                                 this.nodes[index].data.comment = cleanComment.trim();
                                 this.nodes[index].data.commentImages = commentImages;
@@ -933,10 +1051,10 @@ class Mindmap {
                     const commonMidLen = Math.min(oldRegionLen, newRegionLen);
                     for (let i = 0; i < commonMidLen; i++) {
                         const index = prefixLen + i;
-                        const t = self.trim_label(new_lines[index]);
+                        const t = this.mindmap.trim_label(new_lines[index]);
                         if (t && this.nodes[index]) {
                             const rawComment = (comments[index] || "");
-                            const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
+                            const { cleanText: cleanComment, images: commentImages } = this.mindmap.extractImages(rawComment);
 
                             const node = this.nodes[index];
                             node.data.label = t.label;
@@ -965,10 +1083,10 @@ class Mindmap {
                         const toInsertCount = newRegionLen - oldRegionLen;
                         for (let i = 0; i < toInsertCount; i++) {
                             const index = prefixLen + commonMidLen + i;
-                            const t = self.trim_label(new_lines[index]);
+                            const t = this.mindmap.trim_label(new_lines[index]);
                             if (t) {
                                 const rawComment = (comments[index] || "");
-                                const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
+                                const { cleanText: cleanComment, images: commentImages } = this.mindmap.extractImages(rawComment);
                                 this.addNode(index, {
                                     label: t.label,
                                     images: t.images,
@@ -993,7 +1111,7 @@ class Mindmap {
                         const node = this.nodes[newIdx];
                         if (node) {
                             const rawComment = (comments[newIdx] || "");
-                            const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
+                            const { cleanText: cleanComment, images: commentImages } = this.mindmap.extractImages(rawComment);
                             if (node.data.comment != cleanComment.trim()) {
                                 node.data.comment = cleanComment.trim();
                                 node.data.commentImages = commentImages;
@@ -1009,19 +1127,19 @@ class Mindmap {
 
                 // --- PASS 4: Tree Reconstruction ---
                 return this.reconstructTree(new_text, depths, parents, modifiedNodesCount, addedNodesCount, removedNodesCount);
-            },
+    }
             /**
              * Final phase of mindmap update: reconstructs parent-child links,
              * applies visual themes, and restarts the layout simulation.
              */
-            reconstructTree: function(new_text, depths, parents, modifiedNodes, addedNodes, removedNodes) {
+    reconstructTree(new_text, depths, parents, modifiedNodes, addedNodes, removedNodes) {
                 // Update relationships and visual attributes for all nodes
-                self.lastProcessedText = new_text;
-                self.branchCount = 0;
+                this.mindmap.lastProcessedText = new_text;
+                this.mindmap.branchCount = 0;
                 this.nodes.forEach((node, index) => {
                     // Update branch and hierarchical level
-                    if (depths[index] == 0) self.branchCount = 0;
-                    node.data.branch = 1 == depths[index] ? ++self.branchCount : self.branchCount;
+                    if (depths[index] == 0) this.mindmap.branchCount = 0;
+                    node.data.branch = 1 == depths[index] ? ++this.mindmap.branchCount : this.mindmap.branchCount;
                     
                     // If the node moved to a new level and isn't fixed, reset its physics position
                     if (node.data.level != depths[index] && !node.fixed) {
@@ -1056,8 +1174,8 @@ class Mindmap {
                 const updatedRate = (modifiedNodes + addedNodes + removedNodes - 5) / (this.nodes.length + 1e-6);
                 this.buildStartingPos(updatedRate);
                 return true;
-            },
-            repositionFloatingNodes: function() {
+    }
+    repositionFloatingNodes() {
                 let count = 0;
                 this.nodes.forEach((node) => {
                     if (!node.fixed && node.data.parent) {
@@ -1066,8 +1184,8 @@ class Mindmap {
                     }
                 });
                 this.buildStartingPos(count / (this.nodes.length + 1e-6));
-            },
-            buildStartingPos: function(updatedRate) {
+    }
+    buildStartingPos(updatedRate) {
                 this.nodes.forEach((node, index) => {
                     node.fixedtemp = node.fixed;
                     if (typeof node.x === "undefined") {
@@ -1117,8 +1235,8 @@ class Mindmap {
                     this.createSimulation(Math.min(1.0, sizeScale)).alpha(0.3).alphaDecay(0).tick(100).stop();
                 }
                 this.nodes.forEach((node) => node.fixed = node.fixedtemp);
-            },
-            setTheme: function(data) {
+    }
+    setTheme(data) {
                 data.font = this.config.font;
                 data.fontColor = this.config.fontColor ? this.config.fontColor : "#fff";
                 data.fontSize = Math.max(this.config.fontMinSize, Math.round(this.config.fontSize * (1 - 0.17 * data.level)));
@@ -1134,124 +1252,12 @@ class Mindmap {
                 data.shadow = "#" + (0 | 256 + red + 10 * (256 - red) / 100).toString(16).substr(1) +
                     (0 | 256 + green + 10 * (256 - green) / 100).toString(16).substr(1) + (0 | 256 + blue + 10 * (256 - blue) / 100).toString(16).substr(1);
                 return data;
-            },
-            getPointerPos: function(pageX, pageY, isRaw) {
+    }
+    getPointerPos(pageX, pageY, isRaw) {
                 const transform = this.layer.getTransform().m;
                 if (isRaw) return { x: (pageX - transform[4]) / transform[0], y: (pageY - transform[5]) / transform[3] };
                 const offset = $("#" + containerId).offset();
                 return { x: (pageX - offset.left - transform[4]) / transform[0], y: (pageY - offset.top - transform[5]) / transform[3] };
-            }
-        };
-
-        // Engine State Initialization
-        engine.config = $.extend({
-            bgcolors: "#3f3a3a #2365ba #16c75e #ff481c #ffa81c #365C8E #31975A #C2583F #C2903F #9d9d9d".split(" "),
-            coloringMode: 2,
-            fontSize: 26,
-            fontMinSize: 11,
-            font: "Helvetica, Verdana, sans-serif",
-            fontColor: "#ffffff",
-            lineColor: "#cccccc",
-            lineWidth: 1.5,
-            scale: 1,
-            lockAfterMoving: true,
-            linkLength: 10,
-            friction: 0.9,
-            charge: 1400,
-            width: 400,
-            height: 400,
-            gravity: -0.001
-        }, initialSettings);
-
-        engine.nextNodeId = 0;
-        engine.parentCounts = {};
-        engine.draggedNodes = [];
-        engine.isDraggingStage = false;
-        engine.dragStart = { x: 0, y: 0 };
-        engine.lastXPos = 0;
-        engine.lastYPos = 0;
-        engine.shiftKey = false;
-        engine.layer = new Kinetic.Layer();
-        engine.stage = new Kinetic.Stage({ container: containerId, width: engine.config.width, height: engine.config.height });
-        engine.stage.add(engine.layer);
-        engine.layer.move($("#viewer-container").innerWidth() / 2, $("#viewer-container").innerHeight() / 2);
-
-        const $stage = $("#" + containerId);
-        $stage.on("touchstart mousedown", (event) => {
-            engine.shiftKey = event.shiftKey;
-            if (engine.draggedNodes.length == 0) {
-                engine.isDraggingStage = true;
-                $(window).on("touchmove mousemove", (ev) => {
-                    ev.stopPropagation();
-                    ev.preventDefault();
-                    if (!engine.dragStart.x && !engine.dragStart.y) {
-                        engine.dragStart.x = ev.pageX || ev.originalEvent.touches[0].pageX;
-                        engine.dragStart.y = ev.pageY || ev.originalEvent.touches[0].pageY;
-                    }
-                    const bx = ev.pageX || ev.originalEvent.touches[0].pageX;
-                    const by = ev.pageY || ev.originalEvent.touches[0].pageY;
-                    engine.layer.move(bx - engine.dragStart.x, by - engine.dragStart.y);
-                    engine.dragStart.x = bx;
-                    engine.dragStart.y = by;
-                    engine.layer.draw();
-                });
-            }
-            event.stopPropagation();
-        });
-
-        $stage.on("touchmove mousemove", (event) => {
-            engine.lastXPos = (event.pageX || event.originalEvent.touches[0].pageX) - $("#viewer-container").offset().left;
-            engine.lastYPos = (event.pageY || event.originalEvent.touches[0].pageY) - $("#viewer-container").offset().top;
-            engine.shiftKey = event.shiftKey;
-            if (event.buttons == 0) {
-                if (engine.isDraggingStage) {
-                    $(window).off("touchmove mousemove");
-                    engine.isDraggingStage = false;
-                }
-                const changes = [];
-                engine.draggedNodes.forEach((node) => {
-                    if (!node.data.parent) node.fixed = true;
-                    if (node.fixed) changes.push({ nodenum: engine.nodes.indexOf(node), frozen: true, xp: node.x, yp: node.y });
-                });
-                window.editorPane.updateTextForCoordinates(changes);
-                engine.dragStart.x = engine.dragStart.y = false;
-                engine.draggedNodes = [];
-            }
-            if (engine.draggedNodes.length > 0) {
-                const pos = engine.getPointerPos(event.pageX || event.originalEvent.targetTouches[0].pageX, event.pageY || event.originalEvent.targetTouches[0].pageY);
-                engine.draggedNodes.forEach((node) => {
-                    node.x += pos.x - engine.dragLastPos.x;
-                    node.y += pos.y - engine.dragLastPos.y;
-                    node.px = node.x; node.py = node.y;
-                });
-                engine.dragLastPos.x = pos.x; engine.dragLastPos.y = pos.y;
-                engine.updateFixedNodeCoordinates();
-                if (engine.simulation && 0.02 > engine.simulation.alpha()) {
-                    engine.simulation.alpha(0.025).restart();
-                } else {
-                    engine.redraw();
-                }
-            }
-        });
-
-        $(window).on("mouseup touchend", (event) => {
-            engine.shiftKey = event.shiftKey;
-            if (engine.isDraggingStage) {
-                $(window).off("touchmove mousemove");
-                engine.isDraggingStage = false;
-            }
-            const changes = [];
-            engine.draggedNodes.forEach((node) => {
-                if (!node.data.parent) node.fixed = true;
-                if (node.fixed) changes.push({ nodenum: engine.nodes.indexOf(node), frozen: true, xp: node.x, yp: node.y });
-            });
-            window.editorPane.updateTextForCoordinates(changes);
-            engine.dragStart.x = engine.dragStart.y = false;
-            engine.draggedNodes = [];
-        });
-
-        return engine;
     }
 }
-
 export const mindmap = new Mindmap();
