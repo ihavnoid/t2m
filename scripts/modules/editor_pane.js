@@ -749,15 +749,18 @@ class EditorPane {
 
             let tp = t.substring(lipos + len, endOfHeader);
 
-            // Tokenize ALL HTML tags to preserve them (bold, italic, images, etc.)
-            const tags = [];
-            tp = tp.replace(/<[^>]+>/g, (tag) => {
-                tags.push(tag);
-                return `\0t${tags.length - 1}\0`;
+            // Temporarily tokenize images to avoid interfering with text manipulation
+            const imgs = [];
+            tp = tp.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (m, src) => {
+                imgs.push(src);
+                return `\0i${imgs.length - 1}\0`;
             });
 
-            // Flatten for text manipulation
-            tp = tp.replaceAll("\n", "").replaceAll("<br>", "\n");
+            // Flatten for text manipulation (strip all other formatting tags)
+            tp = tp
+                .replaceAll("\n", "")
+                .replaceAll("<br>", "\n")
+                .replaceAll(/<[^>]*>/g, "");
 
             // Identify selection markers
             let p1 = tp.indexOf("\0n");
@@ -786,8 +789,12 @@ class EditorPane {
                 tp = tp.substring(0, p2) + "\0r" + tp.substring(p2);
             }
 
-            // Restore ALL tags
-            tp = tp.replace(/\0t(\d+)\0/g, (m, idx) => tags[idx] || "");
+            // Restore image tokens back to actual <img> tags
+            tp = tp.replace(/\0i(\d+)\0/g, (m, idx) =>
+                imgs[idx]
+                    ? `<img src="${imgs[idx]}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`
+                    : "",
+            );
 
             // Reconstruct the <li> by swapping the old header with the new one
             return (

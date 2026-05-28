@@ -101,7 +101,7 @@ describe('EditorPane - Detailed Logic Verification', () => {
             editorPane.markCaretPos.mockRestore();
         });
 
-        it('should handle nodes with complex inline HTML', () => {
+        it('should strip inline HTML formatting tags (except images) when updating coordinates', () => {
             const html = '<ul><li><b>Bold</b> [50 50] <i>Italic</i></li></ul>';
             editorPane.el.innerHTML = html;
             
@@ -109,8 +109,10 @@ describe('EditorPane - Detailed Logic Verification', () => {
             
             const output = editorPane.el.innerHTML;
             expect(output).toContain('[100 100]');
-            expect(output).toContain('<b>Bold</b>');
-            expect(output).toContain('<i>Italic</i>');
+            expect(output).not.toContain('<b>'); // Should be stripped
+            expect(output).toContain('Bold');    // But text remains
+            expect(output).not.toContain('<i>'); // Should be stripped
+            expect(output).toContain('Italic');  // But text remains
         });
 
         it('should correctly strip existing coordinates even if they have extra spaces', () => {

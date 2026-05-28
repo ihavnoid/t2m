@@ -40,10 +40,12 @@ describe('ImageDrawer Module', () => {
                 </div>
             </div>
         `;
+        // Reset the singleton instance to a clean state for every test
         imageDrawer.history = [];
         imageDrawer.redoHistory = [];
         imageDrawer.isDrawing = false;
         imageDrawer.isActive = false;
+        imageDrawer.initializedDocs = new WeakSet();
         imageDrawer.init();
     });
 
