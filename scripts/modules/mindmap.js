@@ -5,15 +5,15 @@
 
 class Mindmap {
     constructor() {
-        this.v = new Date(1, 1, 2E3, 12, 0, 0);
-        this.B = false;
-        this.z = 500;
-        this.d = null;
-        this.l = 0;
+        this.epochDate = new Date(1, 1, 2E3, 12, 0, 0);
+        this.isPaused = false;
+        this.updateInterval = 500;
+        this.engine = null;
+        this.lastRenderTime = 0;
         this.picker = null;
-        this.A = 0;
-        this.D = 0;
-        this.y = ""; // last processed text
+        this.branchCount = 0;
+        this.maxDepth = 0;
+        this.lastProcessedText = ""; // last processed text
         this.imageCache = {};
     }
 
@@ -40,66 +40,66 @@ class Mindmap {
     }
 
     init() {
-        this.d = this.createEngine("stageHolder", {
+        this.engine = this.createEngine("stageHolder", {
             width: $("#viewer-container").innerWidth(),
             height: $("#viewer-container").innerHeight()
         });
 
-        $(window).on("keydown", (a) => {
-            if (13 == a.which && a.ctrlKey) {
-                a.preventDefault();
-                this.d.repositionFloatingNodes();
+        $(window).on("keydown", (event) => {
+            if (13 == event.which && event.ctrlKey) {
+                event.preventDefault();
+                this.engine.repositionFloatingNodes();
                 this.render();
             }
         });
 
-        $("#stageHolder").on("wheel", (e) => {
-            this.d.zoom(-e.originalEvent.deltaY);
+        $("#stageHolder").on("wheel", (event) => {
+            this.engine.zoom(-event.originalEvent.deltaY);
         });
 
         $("#lockAfterMoving").change(function() {
-            window.mindmap.d.settings({
+            window.mindmap.engine.settings({
                 lockAfterMoving: $(this).prop("checked")
             });
-            window.mindmap.d.redrawAll();
+            window.mindmap.engine.redrawAll();
         });
 
         $("#coloringMode").change(function() {
-            window.mindmap.d.settings({
+            window.mindmap.engine.settings({
                 coloringMode: $(this).val()
             });
-            window.mindmap.d.redrawAll();
+            window.mindmap.engine.redrawAll();
         });
 
         $("a.fonts").on("touchstart click", function() {
-            window.mindmap.d.settings({
+            window.mindmap.engine.settings({
                 font: $(this).text()
             });
-            window.mindmap.d.redrawAll();
+            window.mindmap.engine.redrawAll();
         });
 
         $("a.fontSize").on("mouseover touchstart", function() {
-            window.mindmap.d.settings({
+            window.mindmap.engine.settings({
                 fontSize: $(this).text()
             });
-            window.mindmap.d.redrawAll();
+            window.mindmap.engine.redrawAll();
         });
 
         $(".lineWidth").on("mouseover touchstart", function() {
-            window.mindmap.d.settings({
+            window.mindmap.engine.settings({
                 lineWidth: $(this).attr("val")
             });
-            window.mindmap.d.redrawAll();
+            window.mindmap.engine.redrawAll();
         });
 
         $("input.fontcolor").minicolors({
             textfield: false,
             animationSpeed: 0,
-            change: function(a) {
-                window.mindmap.d.settings({
-                    fontColor: a
+            change: function(color) {
+                window.mindmap.engine.settings({
+                    fontColor: color
                 });
-                window.mindmap.d.redrawAll();
+                window.mindmap.engine.redrawAll();
             },
             position: "top left",
             hideSpeed: 0,
@@ -109,36 +109,36 @@ class Mindmap {
         $("input.linecolor").minicolors({
             textfield: false,
             animationSpeed: 0,
-            change: function(a) {
-                window.mindmap.d.settings({
-                    lineColor: a
+            change: function(color) {
+                window.mindmap.engine.settings({
+                    lineColor: color
                 });
-                window.mindmap.d.redrawAll();
+                window.mindmap.engine.redrawAll();
             },
             position: "top left",
             hideSpeed: 0,
             showSpeed: 0
         });
 
-        $("#mindmap-lock-all").on("touchstart click", (a) => {
-            a.stopPropagation();
-            this.d.setNodeLocks(true);
+        $("#mindmap-lock-all").on("touchstart click", (event) => {
+            event.stopPropagation();
+            this.engine.setNodeLocks(true);
             return false;
         });
 
-        $("#mindmap-unlock-all").on("touchstart click", (a) => {
-            a.stopPropagation();
-            this.d.setNodeLocks(false);
+        $("#mindmap-unlock-all").on("touchstart click", (event) => {
+            event.stopPropagation();
+            this.engine.setNodeLocks(false);
             return false;
         });
     }
 
-    indent_depth(b) {
-        if (!b) return 0;
-        for (let r = 0, n = 0; n < b.length; n++) {
-            const e = b.charAt(n);
-            if (" " == e) r++;
-            else if ("\0" == e) return r;
+    indent_depth(line) {
+        if (!line) return 0;
+        for (let depth = 0, i = 0; i < line.length; i++) {
+            const char = line.charAt(i);
+            if (" " == char) depth++;
+            else if ("\0" == char) return depth;
             else return 0;
         }
         return 0;
@@ -170,11 +170,11 @@ class Mindmap {
         return { cleanText, images };
     }
 
-    trim_label(b) {
-        if (typeof b === "undefined" || b === null) return null;
+    trim_label(line) {
+        if (typeof line === "undefined" || line === null) return null;
         
-        const { cleanText, images } = this.extractImages(b);
-        const r = {
+        const { cleanText, images } = this.extractImages(line);
+        const result = {
             label: "",
             linkLabel: false,
             frozen: false,
@@ -192,74 +192,74 @@ class Mindmap {
         }
 
         if (processed.match(/^\[[0-9\- ]*\]/)) {
-            const n = processed.indexOf("]");
+            const closingBracketIndex = processed.indexOf("]");
             let ftok = "";
-            0 < n && (ftok = processed.substr(1, n - 1), processed = processed.substring(n + 1).trim());
+            0 < closingBracketIndex && (ftok = processed.substr(1, closingBracketIndex - 1), processed = processed.substring(closingBracketIndex + 1).trim());
             const ftok_parts = ftok.split(/  */);
             if (ftok_parts.length == 2) {
-                r.frozen = true;
-                r.x = ftok_parts[0] * 1.0;
-                r.y = ftok_parts[1] * 1.0;
+                result.frozen = true;
+                result.x = ftok_parts[0] * 1.0;
+                result.y = ftok_parts[1] * 1.0;
             }
         }
 
         if ("(" == processed.charAt(0)) {
-            const n = processed.indexOf(")");
-            0 < n && (r.linkLabel = processed.substr(1, n - 1), processed = processed.substring(n + 1).trim());
+            const closingBracketIndex = processed.indexOf(")");
+            0 < closingBracketIndex && (result.linkLabel = processed.substr(1, closingBracketIndex - 1), processed = processed.substring(closingBracketIndex + 1).trim());
         }
-        r.label = processed;
-        return r;
+        result.label = processed;
+        return result;
     }
 
     moveViewToCurrentSelection() {
-        if (this.d) this.d.moveViewToCurrentSelection();
+        if (this.engine) this.engine.moveViewToCurrentSelection();
     }
 
-    render(a) {
-        if (this.d) {
-            this.d.execute(window.editorPane.getProcessed(), a);
-            this.l = +new Date();
+    render(skipHistory) {
+        if (this.engine) {
+            this.engine.execute(window.editorPane.getProcessed(), skipHistory);
+            this.lastRenderTime = +new Date();
             this.updateColorPicker();
         }
         return false;
     }
 
     updateCanvasSize() {
-        if (this.d) {
-            this.d.settings({
+        if (this.engine) {
+            this.engine.settings({
                 width: $("#viewer-container").innerWidth(),
                 height: $("#viewer-container").innerHeight()
             });
-            this.d.redraw();
+            this.engine.redraw();
         }
     }
 
     redraw() {
-        if (this.d) this.d.redrawAll();
+        if (this.engine) this.engine.redrawAll();
     }
 
     updateColorPicker() {
-        const a = 1 == this.d.settings("coloringMode", false) ? this.d.getLevels() + 1 : this.d.getBranches() + 1;
-        const g = 1 == this.d.settings("coloringMode", false) ? "Level" : "Branch";
+        const count = 1 == this.engine.settings("coloringMode", false) ? this.engine.getLevels() + 1 : this.engine.getBranches() + 1;
+        const modeLabel = 1 == this.engine.settings("coloringMode", false) ? "Level" : "Branch";
         
         $("#colorsdiv").empty();
-        const c = this.d.settings("bgcolors", false);
+        const bgColors = this.engine.settings("bgcolors", false);
         
-        for (let h = 0; h < a; h++) {
-            if (!c[h]) {
-                c[h] = c[c.length - 1];
-                this.d.settings({ bgcolors: c });
+        for (let index = 0; index < count; index++) {
+            if (!bgColors[index]) {
+                bgColors[index] = bgColors[bgColors.length - 1];
+                this.engine.settings({ bgcolors: bgColors });
             }
-            const e = 0 == h ? "Root" : g + " " + h;
-            $("#colorsdiv").append("<input class='bgcolors' id='color" + h + "' pickerNbr=" + h + " data-default-value=" + c[h] + " type=text value='" + c[h] + "'>").append("<span class=s50>" + e + "</span><br>");
+            const label = 0 == index ? "Root" : modeLabel + " " + index;
+            $("#colorsdiv").append("<input class='bgcolors' id='color" + index + "' pickerNbr=" + index + " data-default-value=" + bgColors[index] + " type=text value='" + bgColors[index] + "'>").append("<span class=s50>" + label + "</span><br>");
         }
 
         $(".bgcolors").minicolors({
             textfield: false,
             change: (val) => {
-                const g = this.d.settings("bgcolors", false);
-                g[parseInt(this.picker)] = val;
-                this.d.settings({ bgcolors: g });
+                const colors = this.engine.settings("bgcolors", false);
+                colors[parseInt(this.picker)] = val;
+                this.engine.settings({ bgcolors: colors });
             },
             show: (event) => {
                 this.picker = $(event.currentTarget).attr("pickerNbr");
@@ -268,10 +268,10 @@ class Mindmap {
             hideSpeed: 0,
             showSpeed: 0
         });
-        this.d.redrawAll();
+        this.engine.redrawAll();
     }
 
-    createEngine(q, r) {
+    createEngine(containerId, initialSettings) {
         const self = this;
         const engine = {
             maxTextWidthCache: {},
@@ -279,346 +279,348 @@ class Mindmap {
             prevNe: -1,
             nodes: [],
             links: [],
-            settings: function(a, g) {
-                g = "undefined" == typeof g ? true : g;
-                if ("object" == typeof a) {
-                    this.e = $.extend({}, this.e, a);
-                    if ("undefined" != typeof a.scale) {
-                        const c = this.l.getScale().x;
-                        const d = a.scale;
-                        this.l.setScale(d);
-                        this.l.move((this.l.getX() - this.lastXPos) * (d - c) / c, (this.l.getY() - this.lastYPos) * (d - c) / c);
+            config: {}, // Current engine settings
+            settings: function(settingsObj, triggerRedraw) {
+                triggerRedraw = "undefined" == typeof triggerRedraw ? true : triggerRedraw;
+                if ("object" == typeof settingsObj) {
+                    this.config = $.extend({}, this.config, settingsObj);
+                    if ("undefined" != typeof settingsObj.scale) {
+                        const oldScale = this.layer.getScale().x;
+                        const newScale = settingsObj.scale;
+                        this.layer.setScale(newScale);
+                        this.layer.move((this.layer.getX() - this.lastXPos) * (newScale - oldScale) / oldScale, (this.layer.getY() - this.lastYPos) * (newScale - oldScale) / oldScale);
                     }
-                    if ("undefined" != typeof a.height || "undefined" != typeof a.width) {
-                        this.f && this.f.stop();
-                        this.v.setHeight(this.e.height);
-                        this.v.setWidth(this.e.width);
-                        this.f && this.f.alpha(0.02);
+                    if ("undefined" != typeof settingsObj.height || "undefined" != typeof settingsObj.width) {
+                        if (this.simulation) this.simulation.stop();
+                        this.stage.setHeight(this.config.height);
+                        this.stage.setWidth(this.config.width);
+                        if (this.simulation) this.simulation.alpha(0.02);
                     }
-                    if ("undefined" != typeof a.transform) {
-                        const h = a.transform;
-                        this.l.move(h[4], h[5]);
-                        this.l.setScale(h[0], h[3]);
+                    if ("undefined" != typeof settingsObj.transform) {
+                        const transform = settingsObj.transform;
+                        this.layer.move(transform[4], transform[5]);
+                        this.layer.setScale(transform[0], transform[3]);
                     }
-                    if ("undefined" != typeof a.lockAfterMoving) {
-                        this.e.lockAfterMoving = a.lockAfterMoving;
+                    if ("undefined" != typeof settingsObj.lockAfterMoving) {
+                        this.config.lockAfterMoving = settingsObj.lockAfterMoving;
                     }
-                } else if ("string" == typeof a) return "transform" == a ? this.l.getTransform().m : this.e[a];
+                } else if ("string" == typeof settingsObj) return "transform" == settingsObj ? this.layer.getTransform().m : this.config[settingsObj];
             },
             stopForce: function() {
-                this.f && this.f.stop();
+                this.simulation && this.simulation.stop();
             },
             updateFixedNodeCoordinates: function() {
-                this.nodes.forEach((x) => {
-                    if (x.fixed) {
-                        x.fx = x.x;
-                        x.fy = x.y;
+                this.nodes.forEach((node) => {
+                    if (node.fixed) {
+                        node.fx = node.x;
+                        node.fy = node.y;
                     } else {
-                        x.fx = null;
-                        x.fy = null;
+                        node.fx = null;
+                        node.fy = null;
                     }
                 });
             },
-            createSimulation: function(size_scale) {
+            createSimulation: function(sizeScale) {
                 this.redraw();
                 for (let i = 0; i < this.nodes.length; i++) {
-                    const x = this.nodes[i];
-                    x.area = x.w * x.h;
-                    x.children_set = new Set();
-                    x.children_set.add(x);
+                    const node = this.nodes[i];
+                    node.area = node.w * node.h;
+                    node.children_set = new Set();
+                    node.children_set.add(node);
                 }
                 for (let i = this.nodes.length - 1; i >= 0; i--) {
-                    const x = this.nodes[i];
-                    if (x.data.parent) {
-                        for (const v of x.children_set) {
-                            x.data.parent.children_set.add(v);
+                    const node = this.nodes[i];
+                    if (node.data.parent) {
+                        for (const childNode of node.children_set) {
+                            node.data.parent.children_set.add(childNode);
                         }
-                        x.data.parent.area += x.area;
+                        node.data.parent.area += node.area;
                     }
                 }
                 if (this.nodes.length > 0) {
                     this.nodes[0].fixed = true;
                 }
-                this.nodes.forEach((x) => {
-                    x.distance_map = new Map();
-                    x.distance_map.set(x.id, 0);
+                this.nodes.forEach((node) => {
+                    node.distance_map = new Map();
+                    node.distance_map.set(node.id, 0);
                 });
                 for (let i = 0; i < 5; i++) {
-                    this.links.forEach((lnk) => {
-                        const src = lnk.source;
-                        const tgt = lnk.target;
-                        for (const [n, d] of src.distance_map) {
-                            if (d == i && !tgt.distance_map.has(n)) {
-                                tgt.distance_map.set(n, d + 1);
+                    this.links.forEach((link) => {
+                        const source = link.source;
+                        const target = link.target;
+                        for (const [nodeId, distance] of source.distance_map) {
+                            if (distance == i && !target.distance_map.has(nodeId)) {
+                                target.distance_map.set(nodeId, distance + 1);
                             }
                         }
-                        for (const [n, d] of tgt.distance_map) {
-                            if (d == i && !src.distance_map.has(n)) {
-                                src.distance_map.set(n, d + 1);
+                        for (const [nodeId, distance] of target.distance_map) {
+                            if (distance == i && !source.distance_map.has(nodeId)) {
+                                source.distance_map.set(nodeId, distance + 1);
                             }
                         }
                     });
                 }
                 this.updateFixedNodeCoordinates();
-                this.f = d3.forceSimulation(this.nodes)
+                this.simulation = d3.forceSimulation(this.nodes)
                     .alpha(0.3)
-                    .force("collide", d3.forceCollide((n) => {
-                        return { x: n.w / 2.2 * size_scale, y: n.h / 2.2 * size_scale };
+                    .force("collide", d3.forceCollide((node) => {
+                        return { x: node.w / 2.2 * sizeScale, y: node.h / 2.2 * sizeScale };
                     }).iterations(2).strength(0.3))
                     .force("link", d3.forceLink(this.links).strength(0.1).distance(() => 10))
                     .force("center", d3.forceCenter(0, 0).strength(0.05))
                     .force("manybody", d3.forceManyBody().strength(-10).distanceMax(300));
-                return this.f;
+                return this.simulation;
             },
             runSimulation: function() {
-                this.f = this.createSimulation(1.0);
-                this.f.on("tick", () => {
-                    const a = this.f.alpha();
-                    if (0.011 > a) this.f.alpha(0.8 * a);
-                    if (a < 0.02) {
-                        this.nodes.forEach((x) => {
-                            if (!x.data.parent) {
-                                x.fixed = true;
-                                x.fx = x.x;
-                                x.fy = x.y;
+                this.simulation = this.createSimulation(1.0);
+                this.simulation.on("tick", () => {
+                    const alpha = this.simulation.alpha();
+                    if (0.011 > alpha) this.simulation.alpha(0.8 * alpha);
+                    if (alpha < 0.02) {
+                        this.nodes.forEach((node) => {
+                            if (!node.data.parent) {
+                                node.fixed = true;
+                                node.fx = node.x;
+                                node.fy = node.y;
                             }
                         });
                     }
                     this.redraw();
                 });
             },
-            execute: function(a, g) {
-                if (this.f) this.f.stop();
-                this.text2mindmap(a);
-                if (true !== g) {
+            execute: function(processedText, skipHistory) {
+                if (this.simulation) this.simulation.stop();
+                this.text2mindmap(processedText);
+                if (true !== skipHistory) {
                     window.unsavedChanges.setHasChanges(true);
                     $(".saveMsg").show();
                 }
                 this.runSimulation();
             },
             clear: function() {
-                this.l.removeChildren();
+                this.layer.removeChildren();
                 this.nodes = [];
                 this.links = [];
-                this.f = false;
-                self.y = "";
+                this.simulation = false;
+                self.lastProcessedText = "";
                 this.execute("");
             },
-            getBranches: function() { return self.A; },
-            getLevels: function() { return self.D; },
-            zoom: function(a) {
-                const aorg = this.l.getScale().x;
-                if (a > 0) {
-                    a = Math.max(0.5, aorg * 1.1);
+            getBranches: function() { return self.branchCount; },
+            getLevels: function() { return self.maxDepth; },
+            zoom: function(delta) {
+                const oldScale = this.layer.getScale().x;
+                let newScale;
+                if (delta > 0) {
+                    newScale = Math.max(0.5, oldScale * 1.1);
                 } else {
-                    a = Math.max(0.5, aorg / 1.1);
+                    newScale = Math.max(0.5, oldScale / 1.1);
                 }
-                this.settings({ scale: a });
+                this.settings({ scale: newScale });
                 this.redraw();
             },
-            addNode: function(a, b) {
-                if (this.f) this.f.stop();
-                const c = {
-                    id: this.w_cnt++,
-                    fixed: b.fixed,
-                    frozen: b.frozen,
-                    x: b.x,
-                    y: b.y,
-                    px: b.x,
-                    py: b.y,
-                    data: b
+            addNode: function(index, data) {
+                if (this.simulation) this.simulation.stop();
+                const node = {
+                    id: this.nextNodeId++,
+                    fixed: data.fixed,
+                    frozen: data.frozen,
+                    x: data.x,
+                    y: data.y,
+                    px: data.x,
+                    py: data.y,
+                    data: data
                 };
-                this.nodes.splice(a, 0, c);
-                return c;
+                this.nodes.splice(index, 0, node);
+                return node;
             },
-            addLink: function(a, b) {
+            addLink: function(sourceNode, targetNode) {
                 this.links.push({
-                    source: a,
-                    target: b,
+                    source: sourceNode,
+                    target: targetNode,
                     data: {
-                        color: this.e.lineColor,
-                        weight: this.e.lineWidth,
-                        label: a.data.linkLabel
+                        color: this.config.lineColor,
+                        weight: this.config.lineWidth,
+                        label: sourceNode.data.linkLabel
                     }
                 });
             },
-            getNode: function(x) { return this.nodes[x]; },
-            getLinksFrom: function(a) {
-                const b = [];
-                this.links.forEach((c) => {
-                    if (c.source.id == a.id) b.push(c);
+            getNode: function(index) { return this.nodes[index]; },
+            getLinksFrom: function(node) {
+                const result = [];
+                this.links.forEach((link) => {
+                    if (link.source.id == node.id) result.push(link);
                 });
-                return b;
+                return result;
             },
-            isLinkedTo: function(a, b) {
-                for (let c = 0; c < this.links.length; c++) {
-                    if (this.links[c].source.id == a.id && this.links[c].target.id == b.id) return true;
+            isLinkedTo: function(nodeA, nodeB) {
+                for (let i = 0; i < this.links.length; i++) {
+                    if (this.links[i].source.id == nodeA.id && this.links[i].target.id == nodeB.id) return true;
                 }
                 return false;
             },
-            removeLink: function(a) {
-                this.links.forEach((b, c) => {
-                    if (b == a) {
-                        if (b.ui) {
-                            if (b.ui.removeChildren) b.ui.removeChildren();
-                            b.ui.remove();
+            removeLink: function(linkToRemove) {
+                this.links.forEach((link, index) => {
+                    if (link == linkToRemove) {
+                        if (link.ui) {
+                            if (link.ui.removeChildren) link.ui.removeChildren();
+                            link.ui.remove();
                         }
-                        this.links.splice(c, 1);
+                        this.links.splice(index, 1);
                     }
                 });
             },
-            setNodeLocks: function(a) {
-                const xx = [];
-                this.nodes.forEach((b, pos) => {
-                    if (b.data.parent) {
-                        b.fixed = a;
-                        b.frozen = a;
-                        xx.push({ nodenum: pos, frozen: a, xp: b.x, yp: b.y });
+            setNodeLocks: function(isLocked) {
+                const changes = [];
+                this.nodes.forEach((node, index) => {
+                    if (node.data.parent) {
+                        node.fixed = isLocked;
+                        node.frozen = isLocked;
+                        changes.push({ nodenum: index, frozen: isLocked, xp: node.x, yp: node.y });
                     }
                 });
-                window.editorPane.updateTextForCoordinates(xx);
+                window.editorPane.updateTextForCoordinates(changes);
                 this.execute(window.editorPane.getProcessed(), false);
             },
-            removeNode: function(a) {
-                if (this.f) this.f.stop();
-                const b = this.nodes[a];
-                if (b) {
-                    this.getLinksFrom(b).forEach((l) => this.removeLink(l));
-                    this.links.forEach((lnk, idx) => {
-                        if (lnk.target.id == b.id) this.removeLink(lnk);
+            removeNode: function(index) {
+                if (this.simulation) this.simulation.stop();
+                const node = this.nodes[index];
+                if (node) {
+                    this.getLinksFrom(node).forEach((link) => this.removeLink(link));
+                    this.links.forEach((link) => {
+                        if (link.target.id == node.id) this.removeLink(link);
                     });
-                    if (b.ui) {
-                        b.ui.removeChildren();
-                        b.ui.remove();
+                    if (node.ui) {
+                        node.ui.removeChildren();
+                        node.ui.remove();
                     }
-                    this.nodes.splice(a, 1);
+                    this.nodes.splice(index, 1);
                 }
             },
-            setStartPosition: function(a, id, total_cnt) {
-                if (!a.data.parent) {
-                    if (id == 0) {
-                        a.x = 0; a.y = 0; a.px = a.x; a.py = a.y;
-                        return a;
+            setStartPosition: function(node, index, totalCount) {
+                if (!node.data.parent) {
+                    if (index == 0) {
+                        node.x = 0; node.y = 0; node.px = node.x; node.py = node.y;
+                        return node;
                     }
-                    const r = Math.sqrt(total_cnt) * 200;
-                    const r1val = Math.cos(id / total_cnt * 3.141592 * 2);
-                    const r2val = Math.sin(id / total_cnt * 3.141592 * 2);
-                    a.x = r * r1val; a.y = r * r2val; a.px = a.x; a.py = a.y;
-                    return a;
+                    const radius = Math.sqrt(totalCount) * 200;
+                    const cos = Math.cos(index / totalCount * 3.141592 * 2);
+                    const sin = Math.sin(index / totalCount * 3.141592 * 2);
+                    node.x = radius * cos; node.y = radius * sin; node.px = node.x; node.py = node.y;
+                    return node;
                 }
-                a.x = a.data.parent.x;
-                a.y = a.data.parent.y;
+                node.x = node.data.parent.x;
+                node.y = node.data.parent.y;
                 let vx = 0, vy = 0;
-                if (a.data.parent.data.parent) {
-                    vx = a.x - a.data.parent.data.parent.x;
-                    vy = a.y - a.data.parent.data.parent.y;
+                if (node.data.parent.data.parent) {
+                    vx = node.x - node.data.parent.data.parent.x;
+                    vy = node.y - node.data.parent.data.parent.y;
                 }
-                const b = a.data.parent.data.children || 4;
-                if (!this.p_cnts[a.data.parent.id]) this.p_cnts[a.data.parent.id] = 1;
-                const c = this.p_cnts[a.data.parent.id]++;
-                const angle = 2 * Math.PI / b * c - Math.PI;
-                const dist = 20;
-                const l_len = Math.sqrt(vx * vx + vy * vy);
-                if (l_len < 1e-3) {
+                const totalChildren = node.data.parent.data.children || 4;
+                if (!this.parentCounts[node.data.parent.id]) this.parentCounts[node.data.parent.id] = 1;
+                const childIdx = this.parentCounts[node.data.parent.id]++;
+                const angle = 2 * Math.PI / totalChildren * childIdx - Math.PI;
+                const offsetDistance = 20;
+                const parentDist = Math.sqrt(vx * vx + vy * vy);
+                if (parentDist < 1e-3) {
                     const cosine = Math.cos(angle);
                     const sine = Math.sin(angle);
                     vx = 1; vy = 0;
-                    a.x += dist * (cosine * vx + sine * vy) + Math.random() * 5;
-                    a.y += dist * (-sine * vx + cosine * vy) + Math.random() * 5;
+                    node.x += offsetDistance * (cosine * vx + sine * vy) + Math.random() * 5;
+                    node.y += offsetDistance * (-sine * vx + cosine * vy) + Math.random() * 5;
                 } else {
                     const cosine = Math.cos(angle / 4);
                     const sine = Math.sin(angle / 4);
-                    vx /= l_len; vy /= l_len;
-                    a.x += dist * (cosine * vx + sine * vy) + Math.random() * 5;
-                    a.y += dist * (-sine * vx + cosine * vy) + Math.random() * 5;
+                    vx /= parentDist; vy /= parentDist;
+                    node.x += offsetDistance * (cosine * vx + sine * vy) + Math.random() * 5;
+                    node.y += offsetDistance * (-sine * vx + cosine * vy) + Math.random() * 5;
                 }
-                a.px = a.x; a.py = a.y;
-                return a;
+                node.px = node.x; node.py = node.y;
+                return node;
             },
             redrawAll: function() {
-                this.nodes.forEach((a, b) => {
-                    a.data = this.setTheme(a.data);
-                    window.editorPane.setNodeColor(b, a.data.color);
-                    a.data.redraw = true;
+                this.nodes.forEach((node, index) => {
+                    node.data = this.setTheme(node.data);
+                    window.editorPane.setNodeColor(index, node.data.color);
+                    node.data.redraw = true;
                 });
-                this.links.forEach((a) => {
-                    a.data.color = this.e.lineColor;
-                    a.data.weight = this.e.lineWidth;
-                    a.data.redraw = true;
+                this.links.forEach((link) => {
+                    link.data.color = this.config.lineColor;
+                    link.data.weight = this.config.lineWidth;
+                    link.data.redraw = true;
                 });
                 window.editorPane.refresh();
                 this.redraw();
             },
             moveViewToCurrentSelection: function() {
                 if (this.shiftKey) return;
-                const [nb, ne] = window.editorPane.findSelectedNodes();
-                if (nb != ne || nb < 0) return;
-                const n = this.nodes[nb];
-                if (!n) return;
-                const scl = this.settings("scale");
-                const w = $("#stageHolder").width();
-                const h = $("#stageHolder").height();
-                const newx = -n.x * scl + w / 2;
-                const newy = -n.y * scl + h / 2;
-                const curx = this.l.getX();
-                const cury = this.l.getY();
-                if (newx < curx - w / 2.2 || newx > curx + w / 2.2 || newy < cury - h / 2.2 || newy > cury + h / 2.2) {
-                    this.l.setPosition({ x: newx, y: newy });
+                const [selectedStart, selectedEnd] = window.editorPane.findSelectedNodes();
+                if (selectedStart != selectedEnd || selectedStart < 0) return;
+                const node = this.nodes[selectedStart];
+                if (!node) return;
+                const scale = this.settings("scale");
+                const width = $("#stageHolder").width();
+                const height = $("#stageHolder").height();
+                const newX = -node.x * scale + width / 2;
+                const newY = -node.y * scale + height / 2;
+                const curX = this.layer.getX();
+                const curY = this.layer.getY();
+                if (newX < curX - width / 2.2 || newX > curX + width / 2.2 || newY < curY - height / 2.2 || newY > curY + height / 2.2) {
+                    this.layer.setPosition({ x: newX, y: newY });
                 }
             },
             redraw: function() {
-                this.links.forEach((a) => {
-                    if (a.ui && !a.data.redraw) {
-                        a.ui.setPoints([a.source, a.target]);
+                this.links.forEach((link) => {
+                    if (link.ui && !link.data.redraw) {
+                        link.ui.setPoints([link.source, link.target]);
                     } else {
-                        if (a.ui) {
-                            if (a.ui.removeChildren) a.ui.removeChildren();
-                            a.ui.remove();
+                        if (link.ui) {
+                            if (link.ui.removeChildren) link.ui.removeChildren();
+                            link.ui.remove();
                         }
-                        a.ui = this.newLine(a, a.source, a.target);
-                        this.l.add(a.ui);
-                        a.ui.moveToBottom();
-                        a.data.redraw = false;
+                        link.ui = this.newLine(link, link.source, link.target);
+                        this.layer.add(link.ui);
+                        link.ui.moveToBottom();
+                        link.data.redraw = false;
                     }
                 });
-                const [nb, ne] = window.editorPane.findSelectedNodes();
-                const checkRedraw = (pos) => {
-                    const inrange = (pos >= nb && pos <= ne);
-                    const p_inrange = (pos >= this.prevNb && pos <= this.prevNe);
-                    return (inrange && !p_inrange) || (!inrange && p_inrange);
+                const [selectedStart, selectedEnd] = window.editorPane.findSelectedNodes();
+                const checkRedraw = (index) => {
+                    const isInSelectionRange = (index >= selectedStart && index <= selectedEnd);
+                    const wasInSelectionRange = (index >= this.prevNb && index <= this.prevNe);
+                    return (isInSelectionRange && !wasInSelectionRange) || (!isInSelectionRange && wasInSelectionRange);
                 };
-                this.nodes.forEach((a, pos) => {
-                    if (a.ui && !checkRedraw(pos) && !a.data.redraw) {
-                        a.ui.setPosition({ x: a.x, y: a.y });
+                this.nodes.forEach((node, index) => {
+                    if (node.ui && !checkRedraw(index) && !node.data.redraw) {
+                        node.ui.setPosition({ x: node.x, y: node.y });
                     } else {
-                        if (a.ui) {
-                            a.ui.removeChildren();
-                            a.ui.remove();
+                        if (node.ui) {
+                            node.ui.removeChildren();
+                            node.ui.remove();
                         }
-                        const selected = (pos >= nb && pos <= ne);
-                        const g = this.newGroup(a, selected);
-                        a.ui = g[0];
-                        a.w = g[1];
-                        a.h = g[2];
-                        this.l.add(a.ui);
-                        a.data.redraw = false;
+                        const isSelected = (index >= selectedStart && index <= selectedEnd);
+                        const group = this.newGroup(node, isSelected);
+                        node.ui = group[0];
+                        node.w = group[1];
+                        node.h = group[2];
+                        this.layer.add(node.ui);
+                        node.data.redraw = false;
                     }
                 });
-                this.prevNb = nb;
-                this.prevNe = ne;
-                this.l.draw();
+                this.prevNb = selectedStart;
+                this.prevNe = selectedEnd;
+                this.layer.draw();
             },
-            newLine: function(a, b, c) {
-                if (a.data.label) {
-                    const dx = c.x - b.x;
-                    const dy = c.y - b.y;
+            newLine: function(link, sourceNode, targetNode) {
+                if (link.data.label) {
+                    const dx = targetNode.x - sourceNode.x;
+                    const dy = targetNode.y - sourceNode.y;
                     const line = new Kinetic.Line({
                         points: [0, 0, dx, dy],
-                        stroke: a.data.color,
-                        strokeWidth: a.data.weight
+                        stroke: link.data.color,
+                        strokeWidth: link.data.weight
                     });
                     const text = new Kinetic.Text({
-                        text: a.data.label,
+                        text: link.data.label,
                         fontSize: 11,
                         fontFamily: "Arial",
                         fill: "#666",
@@ -627,7 +629,7 @@ class Mindmap {
                         width: 100,
                         align: "center"
                     });
-                    const group = new Kinetic.Group({ x: b.x, y: b.y });
+                    const group = new Kinetic.Group({ x: sourceNode.x, y: sourceNode.y });
                     group.add(line);
                     group.add(text);
                     group.setPoints = (pts) => {
@@ -640,13 +642,13 @@ class Mindmap {
                     return group;
                 }
                 return new Kinetic.Line({
-                    points: [b.x, b.y, c.x, c.y],
-                    stroke: a.data.color,
-                    strokeWidth: a.data.weight
+                    points: [sourceNode.x, sourceNode.y, targetNode.x, targetNode.y],
+                    stroke: link.data.color,
+                    strokeWidth: link.data.weight
                 });
             },
-            newGroup: function(a, selected) {
-                const group = new Kinetic.Group({ x: a.x, y: a.y });
+            newGroup: function(node, isSelected) {
+                const group = new Kinetic.Group({ x: node.x, y: node.y });
                 const elements = [];
                 let totalHeight = 0;
                 let maxWidth = 0;
@@ -659,32 +661,32 @@ class Mindmap {
                 const addImages = (srcs) => {
                     srcs.forEach(src => {
                         const imgObj = self.getImage(src, () => {
-                            a.data.redraw = true;
+                            node.data.redraw = true;
                             this.redraw();
                         });
                         if (imgObj && imgObj.complete && imgObj.naturalWidth > 0) {
                             const scale = Math.min(200 / imgObj.width, 200 / imgObj.height, 1.0);
-                            const w = imgObj.width * scale;
-                            const h = imgObj.height * scale;
+                            const width = imgObj.width * scale;
+                            const height = imgObj.height * scale;
                             const kImg = new Kinetic.Shape({
                                 drawFunc: function(canvas) {
                                     const context = canvas.getContext();
-                                    context.drawImage(imgObj, 0, 0, w, h);
+                                    context.drawImage(imgObj, 0, 0, width, height);
                                 },
                                 drawHitFunc: function(canvas) {
                                     const context = canvas.getContext();
                                     context.beginPath();
-                                    context.rect(0, 0, w, h);
+                                    context.rect(0, 0, width, height);
                                     context.closePath();
                                     canvas.fill(this);
                                 },
-                                width: w,
-                                height: h,
+                                width: width,
+                                height: height,
                                 listening: false
                             });
-                            elements.push({ node: kImg, w: w, h: h, isImage: true });
-                            totalHeight += h + imgMargin * 2 + itemSpacing;
-                            maxWidth = Math.max(maxWidth, w + imgMargin * 2);
+                            elements.push({ node: kImg, w: width, h: height, isImage: true });
+                            totalHeight += height + imgMargin * 2 + itemSpacing;
+                            maxWidth = Math.max(maxWidth, width + imgMargin * 2);
                         } else {
                             // Placeholder height while loading
                             totalHeight += 20 + imgMargin * 2 + itemSpacing;
@@ -693,17 +695,17 @@ class Mindmap {
                     });
                 };
 
-                addImages(a.data.images || []);
+                addImages(node.data.images || []);
 
-                const textNode = this.newText(a);
+                const textNode = this.newText(node);
                 elements.push({ node: textNode, w: textNode.getWidth(), h: textNode.getHeight(), isImage: false });
                 totalHeight += textNode.getHeight() + itemSpacing;
                 maxWidth = Math.max(maxWidth, textNode.getWidth());
 
-                addImages(a.data.commentImages || []);
+                addImages(node.data.commentImages || []);
 
-                if (a.data.comment != "") {
-                    const commentNode = this.newComment(a);
+                if (node.data.comment != "") {
+                    const commentNode = this.newComment(node);
                     elements.push({ node: commentNode, w: commentNode.getWidth(), h: commentNode.getHeight(), isImage: false });
                     totalHeight += commentNode.getHeight() + itemSpacing;
                     maxWidth = Math.max(maxWidth, commentNode.getWidth());
@@ -714,7 +716,7 @@ class Mindmap {
 
                 const width = maxWidth + hPadding * 2;
                 const height = totalHeight + vPadding * 2;
-                const rect = this.newRect(a, width, height, selected);
+                const rect = this.newRect(node, width, height, isSelected);
                 group.add(rect);
 
                 let currentY = -0.5 * height + vPadding;
@@ -725,148 +727,148 @@ class Mindmap {
                     currentY += el.h + (el.isImage ? imgMargin * 2 : 0) + itemSpacing;
                 });
 
-                group.on("touchstart mousedown", (ev) => {
+                group.on("touchstart mousedown", (event) => {
                     if (!window.editorPane.isEditable()) return;
-                    ev.cancelBubble = true;
-                    if (ev.shiftKey) {
-                        this.m_nodes = [a];
+                    event.cancelBubble = true;
+                    if (event.shiftKey) {
+                        this.draggedNodes = [node];
                         this.nodes.forEach((n) => {
-                            if (this.m_nodes.indexOf(n.data.parent) >= 0) this.m_nodes.push(n);
+                            if (this.draggedNodes.indexOf(n.data.parent) >= 0) this.draggedNodes.push(n);
                         });
                     } else {
-                        this.m_nodes = [a];
+                        this.draggedNodes = [node];
                     }
                     window.getSelection().removeAllRanges();
-                    a.fixedtemp = a.fixed || this.e.lockAfterMoving;
-                    a.fixed = true;
-                    this.C_pos = this.getPointerPos(ev.pageX || ev.targetTouches[0].pageX, ev.pageY || ev.targetTouches[0].pageY);
+                    node.fixedtemp = node.fixed || this.config.lockAfterMoving;
+                    node.fixed = true;
+                    this.dragLastPos = this.getPointerPos(event.pageX || event.targetTouches[0].pageX, event.pageY || event.targetTouches[0].pageY);
                 });
                 group.on("mouseover", () => {
                     if (!this.shiftKey) {
-                        document.getElementById(q).style.cursor = "pointer";
-                        const [nb, ne] = window.editorPane.findSelectedNodes();
-                        const idx = this.nodes.indexOf(a);
-                        if (nb != idx || ne != idx) {
-                            window.editorPane.moveCursorToNode(idx);
-                            a.data.redraw = true;
+                        document.getElementById(containerId).style.cursor = "pointer";
+                        const [selectedStart, selectedEnd] = window.editorPane.findSelectedNodes();
+                        const index = this.nodes.indexOf(node);
+                        if (selectedStart != index || selectedEnd != index) {
+                            window.editorPane.moveCursorToNode(index);
+                            node.data.redraw = true;
                             window.editorPane.refresh();
                             this.redraw();
                         }
                     }
                 });
                 group.on("mouseup touchend", () => {
-                    const [nb, ne] = window.editorPane.findSelectedNodes();
-                    const idx = this.nodes.indexOf(a);
-                    if (nb != idx || ne != idx) {
-                        window.editorPane.moveCursorToNode(idx);
+                    const [selectedStart, selectedEnd] = window.editorPane.findSelectedNodes();
+                    const index = this.nodes.indexOf(node);
+                    if (selectedStart != index || selectedEnd != index) {
+                        window.editorPane.moveCursorToNode(index);
                         this.redraw();
                     }
-                    a.fixed = a.fixedtemp;
+                    node.fixed = node.fixedtemp;
                     this.updateFixedNodeCoordinates();
                 });
                 group.on("mouseout", () => {
-                    if (this.m_nodes.length == 0) document.getElementById(q).style.cursor = "move";
+                    if (this.draggedNodes.length == 0) document.getElementById(containerId).style.cursor = "move";
                     this.redraw();
                 });
                 return [group, width, height];
             },
-            newRect: function(a, b, c, selected) {
+            newRect: function(node, width, height, isSelected) {
                 return new Kinetic.Rect({
-                    x: -0.5 * b - 1,
-                    y: -0.5 * c,
-                    width: b + 2,
-                    height: c,
+                    x: -0.5 * width - 1,
+                    y: -0.5 * height,
+                    width: width + 2,
+                    height: height,
                     cornerRadius: 2,
-                    fill: a.data.color,
+                    fill: node.data.color,
                     opacity: 1,
                     shadowColor: "#999",
                     shadowBlur: 2,
                     shadowOffset: { x: 2, y: 2 },
                     stroke: "#000000",
-                    strokeWidth: selected ? 4 : 0.01,
+                    strokeWidth: isSelected ? 4 : 0.01,
                     shadowOpacity: 0.5
                 });
             },
-            newComment: function(a) {
-                const g = new Kinetic.Text({
+            newComment: function(node) {
+                const text = new Kinetic.Text({
                     x: 0,
                     y: 0,
-                    text: a.data.comment,
+                    text: node.data.comment,
                     lineHeight: 1.25,
-                    fontSize: a.data.fontSize * 0.8,
-                    fontFamily: a.data.font,
-                    fill: a.data.fontColor,
+                    fontSize: node.data.fontSize * 0.8,
+                    fontFamily: node.data.font,
+                    fill: node.data.fontColor,
                     opacity: 0.8,
-                    padding: 10 - Math.min(a.data.level * 3, 5),
+                    padding: 10 - Math.min(node.data.level * 3, 5),
                     align: "left",
                     listening: false
                 });
-                const c = this.maxTextWidth(a);
-                const wh = g.getWidth() * g.getHeight();
-                if (g.getWidth() > c) g.setWidth(Math.max(c, Math.sqrt(wh)));
-                return g;
+                const maxWidth = this.maxTextWidth(node);
+                const area = text.getWidth() * text.getHeight();
+                if (text.getWidth() > maxWidth) text.setWidth(Math.max(maxWidth, Math.sqrt(area)));
+                return text;
             },
-            newText: function(a) {
-                const g = new Kinetic.Text({
+            newText: function(node) {
+                const text = new Kinetic.Text({
                     x: 0,
                     y: 0,
-                    text: a.data.label,
+                    text: node.data.label,
                     lineHeight: 1.1,
-                    fontSize: a.data.fontSize,
-                    fontFamily: a.data.font,
-                    fill: a.data.fontColor,
-                    padding: 10 - Math.min(a.data.level * 3, 5),
+                    fontSize: node.data.fontSize,
+                    fontFamily: node.data.font,
+                    fill: node.data.fontColor,
+                    padding: 10 - Math.min(node.data.level * 3, 5),
                     align: "left",
                     listening: false
                 });
-                const c = this.maxTextWidth(a);
-                const wh = g.getWidth() * g.getHeight();
-                if (g.getWidth() > c) g.setWidth(Math.max(c, Math.sqrt(wh)));
-                return g;
+                const maxWidth = this.maxTextWidth(node);
+                const area = text.getWidth() * text.getHeight();
+                if (text.getWidth() > maxWidth) text.setWidth(Math.max(maxWidth, Math.sqrt(area)));
+                return text;
             },
-            maxTextWidth: function(a) {
-                if (this.maxTextWidthCache[a.data.fontSize] && this.maxTextWidthCache[a.data.fontSize][a.data.font]) {
-                    return this.maxTextWidthCache[a.data.fontSize][a.data.font];
+            maxTextWidth: function(node) {
+                if (this.maxTextWidthCache[node.data.fontSize] && this.maxTextWidthCache[node.data.fontSize][node.data.font]) {
+                    return this.maxTextWidthCache[node.data.fontSize][node.data.font];
                 }
-                if (!this.maxTextWidthCache[a.data.fontSize]) this.maxTextWidthCache[a.data.fontSize] = {};
-                const t = new Kinetic.Text({
+                if (!this.maxTextWidthCache[node.data.fontSize]) this.maxTextWidthCache[node.data.fontSize] = {};
+                const text = new Kinetic.Text({
                     text: "MMMMMMMMMMMMMMMMMMMM",
-                    fontSize: a.data.fontSize,
-                    fontFamily: a.data.font
+                    fontSize: node.data.fontSize,
+                    fontFamily: node.data.font
                 });
-                const ret = t.getWidth();
-                this.maxTextWidthCache[a.data.fontSize][a.data.font] = ret;
-                return ret;
+                const width = text.getWidth();
+                this.maxTextWidthCache[node.data.fontSize][node.data.font] = width;
+                return width;
             },
-            findParent: function(b, c) {
-                if (0 == b) return -1;
-                for (let a = c[b]; 0 <= b; b--) {
-                    if (c[b] < a) return b;
+            findParent: function(index, depths) {
+                if (0 == index) return -1;
+                for (let depth = depths[index]; 0 <= index; index--) {
+                    if (depths[index] < depth) return index;
                 }
                 return -1;
             },
-            text2mindmap: function(a) {
+            text2mindmap: function(text) {
                 // Helper: Extracts comment text by stripping the \0+ prefix
-                const convert_to_comment = (x) => {
-                    const trimmed = x.trim();
+                const convert_to_comment = (line) => {
+                    const trimmed = line.trim();
                     if (trimmed.substring(0, 2) === "\0+") return trimmed.substring(2);
-                    const plusIdx = x.indexOf("\0+");
-                    if (plusIdx !== -1) return x.substring(plusIdx + 2);
+                    const plusIdx = line.indexOf("\0+");
+                    if (plusIdx !== -1) return line.substring(plusIdx + 2);
                     return "";
                 };
 
                 // --- PASS 1: Split and Filter ---
-                const lines = a.split(/\n/);
+                const lines = text.split(/\n/);
                 const filtered_lines = [];
                 const comments = [];
-                let j = 0;
-                for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].match(/^\s*\0-/)) {
-                        filtered_lines[j] = lines[i];
-                        comments[j] = "";
-                        j++;
-                    } else if (j > 0) {
-                        comments[j - 1] += "\n" + convert_to_comment(lines[i]);
+                let filteredIndex = 0;
+                for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+                    if (lines[lineIndex].match(/^\s*\0-/)) {
+                        filtered_lines[filteredIndex] = lines[lineIndex];
+                        comments[filteredIndex] = "";
+                        filteredIndex++;
+                    } else if (filteredIndex > 0) {
+                        comments[filteredIndex - 1] += "\n" + convert_to_comment(lines[lineIndex]);
                     }
                 }
 
@@ -877,23 +879,23 @@ class Mindmap {
                 if (comments.length == 0) comments[0] = "";
                 const depths = [];
                 const parents = [];
-                self.D = 0;
+                self.maxDepth = 0;
                 new_lines.forEach((line, idx) => {
                     depths[idx] = self.indent_depth(line);
                     parents[idx] = this.findParent(idx, depths);
                 });
                 depths[0] = 0;
-                for (let i = 0; i < depths.length; i++) {
-                    depths[i] = parents[i] < 0 ? 0 : depths[parents[i]] + 1;
-                    if (self.D < depths[i]) self.D = depths[i];
+                for (let index = 0; index < depths.length; index++) {
+                    depths[index] = parents[index] < 0 ? 0 : depths[parents[index]] + 1;
+                    if (self.maxDepth < depths[index]) self.maxDepth = depths[index];
                 }
 
                 // --- PASS 3: Custom Diff and Patch (Independent of difflib) ---
                 // We identify identical prefix and suffix blocks to isolate the changed "middle".
-                const old_text = self.y || "";
+                const old_text = self.lastProcessedText || "";
                 const old_lines = old_text === "" ? [] : old_text.split("\n");
 
-                let addedNodes = 0, removedNodes = 0, modifiedNodes = 0;
+                let addedNodesCount = 0, removedNodesCount = 0, modifiedNodesCount = 0;
 
                 try {
                     // 1. Scan from start to find unchanged lines
@@ -911,14 +913,14 @@ class Mindmap {
                     }
 
                     // 3. Update comments for unchanged prefix nodes
-                    for (let i = 0; i < prefixLen; i++) {
-                        if (this.nodes[i]) {
-                            const rawComment = (comments[i] || "");
+                    for (let index = 0; index < prefixLen; index++) {
+                        if (this.nodes[index]) {
+                            const rawComment = (comments[index] || "");
                             const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
-                            if (this.nodes[i].data.comment != cleanComment.trim()) {
-                                this.nodes[i].data.comment = cleanComment.trim();
-                                this.nodes[i].data.commentImages = commentImages;
-                                modifiedNodes++;
+                            if (this.nodes[index].data.comment != cleanComment.trim()) {
+                                this.nodes[index].data.comment = cleanComment.trim();
+                                this.nodes[index].data.commentImages = commentImages;
+                                modifiedNodesCount++;
                             }
                         }
                     }
@@ -930,16 +932,16 @@ class Mindmap {
                     // Step A: Update overlapping nodes in the middle
                     const commonMidLen = Math.min(oldRegionLen, newRegionLen);
                     for (let i = 0; i < commonMidLen; i++) {
-                        const idx = prefixLen + i;
-                        const t = self.trim_label(new_lines[idx]);
-                        if (t && this.nodes[idx]) {
-                            const rawComment = (comments[idx] || "");
+                        const index = prefixLen + i;
+                        const t = self.trim_label(new_lines[index]);
+                        if (t && this.nodes[index]) {
+                            const rawComment = (comments[index] || "");
                             const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
 
-                            const node = this.nodes[idx];
+                            const node = this.nodes[index];
                             node.data.label = t.label;
                             node.data.images = t.images;
-                            node.fixed = (idx == 0 || t.frozen);
+                            node.fixed = (index == 0 || t.frozen);
                             node.frozen = t.frozen;
                             if (t.frozen) {
                                 node.x = t.x; node.y = t.y;
@@ -948,38 +950,38 @@ class Mindmap {
                             node.data.comment = cleanComment.trim();
                             node.data.commentImages = commentImages;
                             node.data.linkLabel = t.linkLabel;
-                            modifiedNodes++;
+                            modifiedNodesCount++;
                         }
                     }
 
                     // Handle remaining nodes in the middle (Delete then Insert)
                     if (oldRegionLen > newRegionLen) {
-                        const toDelete = oldRegionLen - newRegionLen;
-                        for (let i = 0; i < toDelete; i++) {
+                        const toDeleteCount = oldRegionLen - newRegionLen;
+                        for (let i = 0; i < toDeleteCount; i++) {
                             this.removeNode(prefixLen + commonMidLen);
-                            removedNodes++;
+                            removedNodesCount++;
                         }
                     } else if (newRegionLen > oldRegionLen) {
-                        const toInsert = newRegionLen - oldRegionLen;
-                        for (let i = 0; i < toInsert; i++) {
-                            const idx = prefixLen + commonMidLen + i;
-                            const t = self.trim_label(new_lines[idx]);
+                        const toInsertCount = newRegionLen - oldRegionLen;
+                        for (let i = 0; i < toInsertCount; i++) {
+                            const index = prefixLen + commonMidLen + i;
+                            const t = self.trim_label(new_lines[index]);
                             if (t) {
-                                const rawComment = (comments[idx] || "");
+                                const rawComment = (comments[index] || "");
                                 const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
-                                this.addNode(idx, {
+                                this.addNode(index, {
                                     label: t.label,
                                     images: t.images,
                                     comment: cleanComment.trim(),
                                     commentImages: commentImages,
                                     linkLabel: t.linkLabel,
                                     children: 0,
-                                    fixed: idx == 0 || t.frozen,
+                                    fixed: index == 0 || t.frozen,
                                     frozen: t.frozen,
                                     x: t.x,
                                     y: t.y,
                                 });
-                                addedNodes++;
+                                addedNodesCount++;
                             }
                         }
                     }
@@ -995,7 +997,7 @@ class Mindmap {
                             if (node.data.comment != cleanComment.trim()) {
                                 node.data.comment = cleanComment.trim();
                                 node.data.commentImages = commentImages;
-                                modifiedNodes++;
+                                modifiedNodesCount++;
                             }
                         }
                     }
@@ -1006,7 +1008,7 @@ class Mindmap {
                 }
 
                 // --- PASS 4: Tree Reconstruction ---
-                return this.reconstructTree(new_text, depths, parents, modifiedNodes, addedNodes, removedNodes);
+                return this.reconstructTree(new_text, depths, parents, modifiedNodesCount, addedNodesCount, removedNodesCount);
             },
             /**
              * Final phase of mindmap update: reconstructs parent-child links,
@@ -1014,19 +1016,19 @@ class Mindmap {
              */
             reconstructTree: function(new_text, depths, parents, modifiedNodes, addedNodes, removedNodes) {
                 // Update relationships and visual attributes for all nodes
-                self.y = new_text;
-                self.A = 0;
-                this.nodes.forEach((node, idx) => {
+                self.lastProcessedText = new_text;
+                self.branchCount = 0;
+                this.nodes.forEach((node, index) => {
                     // Update branch and hierarchical level
-                    if (depths[idx] == 0) self.A = 0;
-                    node.data.branch = 1 == depths[idx] ? ++self.A : self.A;
+                    if (depths[index] == 0) self.branchCount = 0;
+                    node.data.branch = 1 == depths[index] ? ++self.branchCount : self.branchCount;
                     
                     // If the node moved to a new level and isn't fixed, reset its physics position
-                    if (node.data.level != depths[idx] && !node.fixed) {
+                    if (node.data.level != depths[index] && !node.fixed) {
                         node.x = undefined; node.y = undefined;
                     }
-                    node.data.level = depths[idx];
-                    node.data.parent = parents[idx] < 0 ? false : this.nodes[parents[idx]];
+                    node.data.level = depths[index];
+                    node.data.parent = parents[index] < 0 ? false : this.nodes[parents[index]];
                     
                     // Apply visual theme and mark for redraw
                     node.data = this.setTheme(node.data);
@@ -1035,10 +1037,10 @@ class Mindmap {
                     // Re-calculate graph links (remove old link, add new parent link)
                     if (node.data.parent && !this.isLinkedTo(node, node.data.parent)) {
                         node.data.parent.data.children++;
-                        this.getLinksFrom(node).forEach((l) => this.removeLink(l));
+                        this.getLinksFrom(node).forEach((link) => this.removeLink(link));
                         this.addLink(node, node.data.parent);
                     } else if (!node.data.parent) {
-                        this.getLinksFrom(node).forEach((l) => this.removeLink(l));
+                        this.getLinksFrom(node).forEach((link) => this.removeLink(link));
                     }
 
                     // Update link labels if they changed
@@ -1047,7 +1049,7 @@ class Mindmap {
                         parentLink.data.label = node.data.linkLabel;
                         parentLink.data.redraw = true;
                     }
-                    window.editorPane.setNodeColor(idx, node.data.color);
+                    window.editorPane.setNodeColor(index, node.data.color);
                 });
 
                 // Trigger layout engine with a starting position if a large change occurred
@@ -1066,83 +1068,83 @@ class Mindmap {
                 this.buildStartingPos(count / (this.nodes.length + 1e-6));
             },
             buildStartingPos: function(updatedRate) {
-                this.nodes.forEach((node, idx) => {
+                this.nodes.forEach((node, index) => {
                     node.fixedtemp = node.fixed;
                     if (typeof node.x === "undefined") {
-                        this.setStartPosition(node, idx, this.nodes.length);
+                        this.setStartPosition(node, index, this.nodes.length);
                     } else {
                         node.fixed = true;
                     }
                 });
-                for (let size_scale = Math.max(0.0625, 1 - updatedRate); size_scale <= 1.0; size_scale *= 2) {
+                for (let sizeScale = Math.max(0.0625, 1 - updatedRate); sizeScale <= 1.0; sizeScale *= 2) {
                     const links = this.links;
                     let no_swap = false;
-                    for (let iter = 0; iter < 10 && !no_swap; iter++) {
+                    for (let iteration = 0; iteration < 10 && !no_swap; iteration++) {
                         no_swap = true;
-                        for (let i = 0; i < links.length; i++) {
-                            for (let j = i + 1; j < links.length; j++) {
-                                if (links[i].source == links[j].source || links[i].source == links[j].target ||
-                                    links[i].target == links[j].source || links[i].target == links[j].target) continue;
+                        for (let linkIndex1 = 0; linkIndex1 < links.length; linkIndex1++) {
+                            for (let linkIndex2 = linkIndex1 + 1; linkIndex2 < links.length; linkIndex2++) {
+                                if (links[linkIndex1].source == links[linkIndex2].source || links[linkIndex1].source == links[linkIndex2].target ||
+                                    links[linkIndex1].target == links[linkIndex2].source || links[linkIndex1].target == links[linkIndex2].target) continue;
 
-                                const links_intersect = (l1, l2) => {
+                                const links_intersect = (link1, link2) => {
                                     const intersect_eq = (x, y, link) => {
                                         return (link.target.y - link.source.y) * x - (link.target.x - link.source.x) * y + link.target.x * link.source.y - link.source.x * link.target.y;
                                     };
-                                    const v1 = intersect_eq(l1.source.x, l1.source.y, l2) * intersect_eq(l1.target.x, l1.target.y, l2) < 0;
-                                    const v2 = intersect_eq(l2.source.x, l2.source.y, l1) * intersect_eq(l2.target.x, l2.target.y, l1) < 0;
+                                    const v1 = intersect_eq(link1.source.x, link1.source.y, link2) * intersect_eq(link1.target.x, link1.target.y, link2) < 0;
+                                    const v2 = intersect_eq(link2.source.x, link2.source.y, link1) * intersect_eq(link2.target.x, link2.target.y, link1) < 0;
                                     return v1 && v2;
                                 };
 
-                                if (links[i].source.fixed && links[j].source.fixed) continue;
-                                if (links_intersect(links[i], links[j])) {
-                                    if (!links[i].source.fixed && !links[j].source.fixed) {
-                                        let tmp = links[i].source.x; links[i].source.x = links[j].source.x; links[j].source.x = tmp;
-                                        tmp = links[i].source.y; links[i].source.y = links[j].source.y; links[j].source.y = tmp;
+                                if (links[linkIndex1].source.fixed && links[linkIndex2].source.fixed) continue;
+                                if (links_intersect(links[linkIndex1], links[linkIndex2])) {
+                                    if (!links[linkIndex1].source.fixed && !links[linkIndex2].source.fixed) {
+                                        let temp = links[linkIndex1].source.x; links[linkIndex1].source.x = links[linkIndex2].source.x; links[linkIndex2].source.x = temp;
+                                        temp = links[linkIndex1].source.y; links[linkIndex1].source.y = links[linkIndex2].source.y; links[linkIndex2].source.y = temp;
                                         no_swap = false;
-                                    } else if (!links[i].source.fixed) {
-                                        links[i].source.x = links[i].target.x;
-                                        links[i].source.y = links[i].target.y;
+                                    } else if (!links[linkIndex1].source.fixed) {
+                                        links[linkIndex1].source.x = links[linkIndex1].target.x;
+                                        links[linkIndex1].source.y = links[linkIndex1].target.y;
                                         no_swap = false;
-                                    } else if (!links[j].source.fixed) {
-                                        links[j].source.x = links[j].target.x;
-                                        links[j].source.y = links[j].target.y;
+                                    } else if (!links[linkIndex2].source.fixed) {
+                                        links[linkIndex2].source.x = links[linkIndex2].target.x;
+                                        links[linkIndex2].source.y = links[linkIndex2].target.y;
                                         no_swap = false;
                                     }
                                 }
                             }
                         }
                     }
-                    this.createSimulation(Math.min(1.0, size_scale)).alpha(0.3).alphaDecay(0).tick(100).stop();
+                    this.createSimulation(Math.min(1.0, sizeScale)).alpha(0.3).alphaDecay(0).tick(100).stop();
                 }
                 this.nodes.forEach((node) => node.fixed = node.fixedtemp);
             },
-            setTheme: function(a) {
-                a.font = this.e.font;
-                a.fontColor = this.e.fontColor ? this.e.fontColor : "#fff";
-                a.fontSize = Math.max(this.e.fontMinSize, Math.round(this.e.fontSize * (1 - 0.17 * a.level)));
-                if (this.e.coloringMode == 1) {
-                    a.color = a.level >= this.e.bgcolors.length ? this.e.bgcolors[this.e.bgcolors.length - 1] : this.e.bgcolors[a.level];
+            setTheme: function(data) {
+                data.font = this.config.font;
+                data.fontColor = this.config.fontColor ? this.config.fontColor : "#fff";
+                data.fontSize = Math.max(this.config.fontMinSize, Math.round(this.config.fontSize * (1 - 0.17 * data.level)));
+                if (this.config.coloringMode == 1) {
+                    data.color = data.level >= this.config.bgcolors.length ? this.config.bgcolors[this.config.bgcolors.length - 1] : this.config.bgcolors[data.level];
                 } else {
-                    a.color = !a.parent ? this.e.bgcolors[0] : (a.branch >= this.e.bgcolors.length ? this.e.bgcolors[this.e.bgcolors.length - 1] : this.e.bgcolors[a.branch]);
+                    data.color = !data.parent ? this.config.bgcolors[0] : (data.branch >= this.config.bgcolors.length ? this.config.bgcolors[this.config.bgcolors.length - 1] : this.config.bgcolors[data.branch]);
                 }
-                if (!a.color) a.color = "#eeeeee";
-                let c = a.color.replace(/^\s*#|\s*$/g, "");
-                if (c.length == 3) c = c.replace(/(.)/g, "$1$1");
-                let r = parseInt(c.substr(0, 2), 16), g = parseInt(c.substr(2, 2), 16), b = parseInt(c.substr(4, 2), 16);
-                a.shadow = "#" + (0 | 256 + r + 10 * (256 - r) / 100).toString(16).substr(1) +
-                    (0 | 256 + g + 10 * (256 - g) / 100).toString(16).substr(1) + (0 | 256 + b + 10 * (256 - b) / 100).toString(16).substr(1);
-                return a;
+                if (!data.color) data.color = "#eeeeee";
+                let hex = data.color.replace(/^\s*#|\s*$/g, "");
+                if (hex.length == 3) hex = hex.replace(/(.)/g, "$1$1");
+                let red = parseInt(hex.substr(0, 2), 16), green = parseInt(hex.substr(2, 2), 16), blue = parseInt(hex.substr(4, 2), 16);
+                data.shadow = "#" + (0 | 256 + red + 10 * (256 - red) / 100).toString(16).substr(1) +
+                    (0 | 256 + green + 10 * (256 - green) / 100).toString(16).substr(1) + (0 | 256 + blue + 10 * (256 - blue) / 100).toString(16).substr(1);
+                return data;
             },
-            getPointerPos: function(ax, ay, c) {
-                const h = this.l.getTransform().m;
-                if (c) return { x: (ax - h[4]) / h[0], y: (ay - h[5]) / h[3] };
-                const offset = $("#" + q).offset();
-                return { x: (ax - offset.left - h[4]) / h[0], y: (ay - offset.top - h[5]) / h[3] };
+            getPointerPos: function(pageX, pageY, isRaw) {
+                const transform = this.layer.getTransform().m;
+                if (isRaw) return { x: (pageX - transform[4]) / transform[0], y: (pageY - transform[5]) / transform[3] };
+                const offset = $("#" + containerId).offset();
+                return { x: (pageX - offset.left - transform[4]) / transform[0], y: (pageY - offset.top - transform[5]) / transform[3] };
             }
         };
 
         // Engine State Initialization
-        engine.e = $.extend({
+        engine.config = $.extend({
             bgcolors: "#3f3a3a #2365ba #16c75e #ff481c #ffa81c #365C8E #31975A #C2583F #C2903F #9d9d9d".split(" "),
             coloringMode: 2,
             fontSize: 26,
@@ -1159,93 +1161,93 @@ class Mindmap {
             width: 400,
             height: 400,
             gravity: -0.001
-        }, r);
+        }, initialSettings);
 
-        engine.w_cnt = 0;
-        engine.p_cnts = {};
-        engine.m_nodes = [];
-        engine.is_dragging_stage = false;
-        engine.drag_start = { x: 0, y: 0 };
+        engine.nextNodeId = 0;
+        engine.parentCounts = {};
+        engine.draggedNodes = [];
+        engine.isDraggingStage = false;
+        engine.dragStart = { x: 0, y: 0 };
         engine.lastXPos = 0;
         engine.lastYPos = 0;
         engine.shiftKey = false;
-        engine.l = new Kinetic.Layer();
-        engine.v = new Kinetic.Stage({ container: q, width: engine.e.width, height: engine.e.height });
-        engine.v.add(engine.l);
-        engine.l.move($("#viewer-container").innerWidth() / 2, $("#viewer-container").innerHeight() / 2);
+        engine.layer = new Kinetic.Layer();
+        engine.stage = new Kinetic.Stage({ container: containerId, width: engine.config.width, height: engine.config.height });
+        engine.stage.add(engine.layer);
+        engine.layer.move($("#viewer-container").innerWidth() / 2, $("#viewer-container").innerHeight() / 2);
 
-        const $stage = $("#" + q);
-        $stage.on("touchstart mousedown", (a) => {
-            engine.shiftKey = a.shiftKey;
-            if (engine.m_nodes.length == 0) {
-                engine.is_dragging_stage = true;
+        const $stage = $("#" + containerId);
+        $stage.on("touchstart mousedown", (event) => {
+            engine.shiftKey = event.shiftKey;
+            if (engine.draggedNodes.length == 0) {
+                engine.isDraggingStage = true;
                 $(window).on("touchmove mousemove", (ev) => {
                     ev.stopPropagation();
                     ev.preventDefault();
-                    if (!engine.drag_start.x && !engine.drag_start.y) {
-                        engine.drag_start.x = ev.pageX || ev.originalEvent.touches[0].pageX;
-                        engine.drag_start.y = ev.pageY || ev.originalEvent.touches[0].pageY;
+                    if (!engine.dragStart.x && !engine.dragStart.y) {
+                        engine.dragStart.x = ev.pageX || ev.originalEvent.touches[0].pageX;
+                        engine.dragStart.y = ev.pageY || ev.originalEvent.touches[0].pageY;
                     }
                     const bx = ev.pageX || ev.originalEvent.touches[0].pageX;
                     const by = ev.pageY || ev.originalEvent.touches[0].pageY;
-                    engine.l.move(bx - engine.drag_start.x, by - engine.drag_start.y);
-                    engine.drag_start.x = bx;
-                    engine.drag_start.y = by;
-                    engine.l.draw();
+                    engine.layer.move(bx - engine.dragStart.x, by - engine.dragStart.y);
+                    engine.dragStart.x = bx;
+                    engine.dragStart.y = by;
+                    engine.layer.draw();
                 });
             }
-            a.stopPropagation();
+            event.stopPropagation();
         });
 
-        $stage.on("touchmove mousemove", (a) => {
-            engine.lastXPos = (a.pageX || a.originalEvent.touches[0].pageX) - $("#viewer-container").offset().left;
-            engine.lastYPos = (a.pageY || a.originalEvent.touches[0].pageY) - $("#viewer-container").offset().top;
-            engine.shiftKey = a.shiftKey;
-            if (a.buttons == 0) {
-                if (engine.is_dragging_stage) {
+        $stage.on("touchmove mousemove", (event) => {
+            engine.lastXPos = (event.pageX || event.originalEvent.touches[0].pageX) - $("#viewer-container").offset().left;
+            engine.lastYPos = (event.pageY || event.originalEvent.touches[0].pageY) - $("#viewer-container").offset().top;
+            engine.shiftKey = event.shiftKey;
+            if (event.buttons == 0) {
+                if (engine.isDraggingStage) {
                     $(window).off("touchmove mousemove");
-                    engine.is_dragging_stage = false;
+                    engine.isDraggingStage = false;
                 }
-                const xx = [];
-                engine.m_nodes.forEach((n) => {
-                    if (!n.data.parent) n.fixed = true;
-                    if (n.fixed) xx.push({ nodenum: engine.nodes.indexOf(n), frozen: true, xp: n.x, yp: n.y });
+                const changes = [];
+                engine.draggedNodes.forEach((node) => {
+                    if (!node.data.parent) node.fixed = true;
+                    if (node.fixed) changes.push({ nodenum: engine.nodes.indexOf(node), frozen: true, xp: node.x, yp: node.y });
                 });
-                window.editorPane.updateTextForCoordinates(xx);
-                engine.drag_start.x = engine.drag_start.y = false;
-                engine.m_nodes = [];
+                window.editorPane.updateTextForCoordinates(changes);
+                engine.dragStart.x = engine.dragStart.y = false;
+                engine.draggedNodes = [];
             }
-            if (engine.m_nodes.length > 0) {
-                const pos = engine.getPointerPos(a.pageX || a.originalEvent.targetTouches[0].pageX, a.pageY || a.originalEvent.targetTouches[0].pageY);
-                engine.m_nodes.forEach((n) => {
-                    n.x += pos.x - engine.C_pos.x;
-                    n.y += pos.y - engine.C_pos.y;
-                    n.px = n.x; n.py = n.y;
+            if (engine.draggedNodes.length > 0) {
+                const pos = engine.getPointerPos(event.pageX || event.originalEvent.targetTouches[0].pageX, event.pageY || event.originalEvent.targetTouches[0].pageY);
+                engine.draggedNodes.forEach((node) => {
+                    node.x += pos.x - engine.dragLastPos.x;
+                    node.y += pos.y - engine.dragLastPos.y;
+                    node.px = node.x; node.py = node.y;
                 });
-                engine.C_pos.x = pos.x; engine.C_pos.y = pos.y;
+                engine.dragLastPos.x = pos.x; engine.dragLastPos.y = pos.y;
                 engine.updateFixedNodeCoordinates();
-                if (engine.f && 0.02 > engine.f.alpha()) {
-                    engine.f.alpha(0.025).restart();
+                if (engine.simulation && 0.02 > engine.simulation.alpha()) {
+                    engine.simulation.alpha(0.025).restart();
                 } else {
                     engine.redraw();
                 }
             }
         });
 
-        $(window).on("mouseup touchend", (a) => {
-            engine.shiftKey = a.shiftKey;
-            if (engine.is_dragging_stage) {
+        $(window).on("mouseup touchend", (event) => {
+            engine.shiftKey = event.shiftKey;
+            if (engine.isDraggingStage) {
                 $(window).off("touchmove mousemove");
-                engine.is_dragging_stage = false;
+                engine.isDraggingStage = false;
             }
-            const xx = [];
-            engine.m_nodes.forEach((n) => {
-                if (!n.data.parent) n.fixed = true;
-                if (n.fixed) xx.push({ nodenum: engine.nodes.indexOf(n), frozen: true, xp: n.x, yp: n.y });
+            const changes = [];
+            engine.draggedNodes.forEach((node) => {
+                if (!node.data.parent) node.fixed = true;
+                if (node.fixed) changes.push({ nodenum: engine.nodes.indexOf(node), frozen: true, xp: node.x, yp: node.y });
             });
-            window.editorPane.updateTextForCoordinates(xx);
-            engine.drag_start.x = engine.drag_start.y = false;
-            engine.m_nodes = [];
+            window.editorPane.updateTextForCoordinates(changes);
+            engine.dragStart.x = engine.dragStart.y = false;
+            engine.draggedNodes = [];
         });
 
         return engine;

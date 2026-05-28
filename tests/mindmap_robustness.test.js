@@ -6,10 +6,10 @@ describe('Mindmap Parser robustnes', () => {
         document.body.innerHTML = '<div id="textedit"></div><div id="textedit_message"></div><div id="stageHolder"></div>';
         
         // Reset the singleton instance to a clean state for every test
-        mindmap.y = "";
-        if (mindmap.d) {
-            mindmap.d.nodes = [];
-            mindmap.d.links = [];
+        mindmap.lastProcessedText = "";
+        if (mindmap.engine) {
+            mindmap.engine.nodes = [];
+            mindmap.engine.links = [];
         }
 
         global.editorPane = {
@@ -26,18 +26,18 @@ describe('Mindmap Parser robustnes', () => {
 
     it('should correctly parse images from label and comments', () => {
         const mockEngine = mindmap.createEngine('stageHolder', {});
-        mindmap.d = mockEngine;
+        mindmap.engine = mockEngine;
         
         // Initial empty state
-        mindmap.y = "";
-        mindmap.d.nodes = [];
+        mindmap.lastProcessedText = "";
+        mindmap.engine.nodes = [];
         
         // Data with images in both label and comment
         const text = "\0-Header Node \0i[data:image/png;base64,header_img]\n\0+Comment text \0i[data:image/png;base64,comment_img]";
         
-        mindmap.d.text2mindmap(text);
+        mindmap.engine.text2mindmap(text);
         
-        const node = mindmap.d.nodes[0];
+        const node = mindmap.engine.nodes[0];
         expect(node).toBeDefined();
         expect(node.data.label).toContain("Header Node");
         expect(node.data.images).toContain("data:image/png;base64,header_img");
@@ -47,18 +47,18 @@ describe('Mindmap Parser robustnes', () => {
 
     it('should correctly handle images in empty comment section', () => {
         const mockEngine = mindmap.createEngine('stageHolder', {});
-        mindmap.d = mockEngine;
+        mindmap.engine = mockEngine;
         
         // Initial empty state
-        mindmap.y = "";
-        mindmap.d.nodes = [];
+        mindmap.lastProcessedText = "";
+        mindmap.engine.nodes = [];
         
         // This simulates a node where Shift+Enter was pressed (\n\0+) followed by an image
         const text = "\0-Header\n\0+\0i[data:image/png;base64,img]";
         
-        mindmap.d.text2mindmap(text);
+        mindmap.engine.text2mindmap(text);
         
-        const node = mindmap.d.nodes[0];
+        const node = mindmap.engine.nodes[0];
         expect(node).toBeDefined();
         expect(node.data.label).toBe("Header");
         expect(node.data.comment).toBe("");
@@ -67,14 +67,14 @@ describe('Mindmap Parser robustnes', () => {
 
     it('should preserve node identities and physics positions during text updates', () => {
         const mockEngine = mindmap.createEngine('stageHolder', {});
-        mindmap.d = mockEngine;
+        mindmap.engine = mockEngine;
 
         // 1. Initial State
         const text1 = "\0-Node 1\n\0-Node 2";
-        mindmap.d.text2mindmap(text1);
+        mindmap.engine.text2mindmap(text1);
         
-        const node1 = mindmap.d.nodes[0];
-        const node2 = mindmap.d.nodes[1];
+        const node1 = mindmap.engine.nodes[0];
+        const node2 = mindmap.engine.nodes[1];
         
         expect(node1).toBeDefined();
         expect(node2).toBeDefined();
@@ -85,11 +85,11 @@ describe('Mindmap Parser robustnes', () => {
 
         // 2. Update text (Node 1 label changes, Node 2 stays same)
         const text2 = "\0-Node 1 Modified\n\0-Node 2";
-        mindmap.d.text2mindmap(text2);
+        mindmap.engine.text2mindmap(text2);
 
         // Verify identities are preserved
-        expect(mindmap.d.nodes[0]).toBe(node1);
-        expect(mindmap.d.nodes[1]).toBe(node2);
+        expect(mindmap.engine.nodes[0]).toBe(node1);
+        expect(mindmap.engine.nodes[1]).toBe(node2);
         
         // Verify label was updated
         expect(node1.data.label).toBe("Node 1 Modified");
@@ -101,21 +101,21 @@ describe('Mindmap Parser robustnes', () => {
 
     it('should handle splitting one node into two while preserving the first node', () => {
         const mockEngine = mindmap.createEngine('stageHolder', {});
-        mindmap.d = mockEngine;
+        mindmap.engine = mockEngine;
 
         // 1. Initial State
-        mindmap.d.text2mindmap("\0-AB");
-        const nodeA = mindmap.d.nodes[0];
+        mindmap.engine.text2mindmap("\0-AB");
+        const nodeA = mindmap.engine.nodes[0];
         expect(nodeA).toBeDefined();
         nodeA.x = 50;
 
         // 2. Split AB into A and B
-        mindmap.d.text2mindmap("\0-A\n\0-B");
+        mindmap.engine.text2mindmap("\0-A\n\0-B");
 
-        expect(mindmap.d.nodes.length).toBe(2);
-        expect(mindmap.d.nodes[0]).toBe(nodeA); // Identity preserved
+        expect(mindmap.engine.nodes.length).toBe(2);
+        expect(mindmap.engine.nodes[0]).toBe(nodeA); // Identity preserved
         expect(nodeA.data.label).toBe("A");
         expect(nodeA.x).toBe(50);
-        expect(mindmap.d.nodes[1].data.label).toBe("B"); // New node
+        expect(mindmap.engine.nodes[1].data.label).toBe("B"); // New node
     });
 });
