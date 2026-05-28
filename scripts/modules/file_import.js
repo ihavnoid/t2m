@@ -15,12 +15,16 @@ class FileImport {
 
     /**
      * Handler function for whenever the user chooses a file from the dialog prompt.
-     * @param {Event} event 
+     * @param {Event} event
      */
     fileInput(event) {
         event.stopPropagation();
         event.preventDefault();
-        if (event.target && event.target.files && event.target.files.length > 0) {
+        if (
+            event.target &&
+            event.target.files &&
+            event.target.files.length > 0
+        ) {
             const selectedFile = event.target.files[0];
             const reader = new FileReader();
             const fileName = selectedFile.name;
@@ -36,8 +40,8 @@ class FileImport {
 
     /**
      * Handler method for when the file has been loaded from the drive.
-     * @param {Event} event 
-     * @param {string} fileName 
+     * @param {Event} event
+     * @param {string} fileName
      */
     handleUpload(event, fileName) {
         if (event.target.readyState !== 2) {
@@ -61,7 +65,9 @@ class FileImport {
      */
     chooseFile() {
         if (!window.FileReader) {
-            alert("Your browser doesn't support opening files, consider upgrading to a newer version of your browser.");
+            alert(
+                "Your browser doesn't support opening files, consider upgrading to a newer version of your browser.",
+            );
             return;
         }
         if (this.$fileInput) {

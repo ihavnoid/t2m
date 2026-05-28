@@ -9,7 +9,7 @@ class Shortcuts {
 
     /**
      * Attach the shortcut handler to a specific window.
-     * @param {Window} win 
+     * @param {Window} win
      */
     bindToWindow(win) {
         win.addEventListener("keydown", this.handleKeypress);
@@ -19,14 +19,14 @@ class Shortcuts {
      * Handler function for all keypress events the user makes.
      * Will convert the key-combination to a string and compare it to existing
      * shortcut bindings. If the binding is found, call the appropriate function.
-     * @param {KeyboardEvent} event 
+     * @param {KeyboardEvent} event
      */
     handleKeypress(event) {
         const keys = [event.key.toLowerCase()];
         if (event.shiftKey) {
             keys.push("shift");
         }
-        if ((event.ctrlKey || event.metaKey)) {
+        if (event.ctrlKey || event.metaKey) {
             keys.push("ctrl");
         }
         if (event.altKey) {
@@ -51,7 +51,7 @@ class Shortcuts {
 
     /**
      * Add an object of bindings to the list.
-     * @param {Object} newBindings 
+     * @param {Object} newBindings
      */
     addBindings(newBindings) {
         for (const binding in newBindings) {
@@ -61,8 +61,8 @@ class Shortcuts {
 
     /**
      * Check if two arrays of keys are equal.
-     * @param {string[]} keys1 
-     * @param {string[]} keys2 
+     * @param {string[]} keys1
+     * @param {string[]} keys2
      * @returns {boolean}
      */
     keysEqual(keys1, keys2) {
@@ -72,8 +72,8 @@ class Shortcuts {
         if (keys1.length !== keys2.length) {
             return false;
         }
-        const s1 = [...keys1].map(k => k.toLowerCase()).sort();
-        const s2 = [...keys2].map(k => k.toLowerCase()).sort();
+        const s1 = [...keys1].map((k) => k.toLowerCase()).sort();
+        const s2 = [...keys2].map((k) => k.toLowerCase()).sort();
         for (let i = 0; i < s1.length; i++) {
             if (s1[i] !== s2[i]) {
                 return false;

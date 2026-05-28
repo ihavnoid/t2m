@@ -5,9 +5,9 @@ class FileExport {
     /**
      * Convert some data to a file and save it to the user's local drive with
      * the specified filename and extension.
-     * @param {string|Blob} data 
-     * @param {string} filename 
-     * @param {string} extension 
+     * @param {string|Blob} data
+     * @param {string} filename
+     * @param {string} extension
      */
     saveFile(data, filename, extension) {
         const file = new Blob([data]);

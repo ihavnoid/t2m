@@ -4,12 +4,12 @@
 export async function uploadImage(base64Data) {
     showUploadOverlay(true);
     try {
-        const response = await fetch('p/image_upload.php', {
-            method: 'POST',
+        const response = await fetch("p/image_upload.php", {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json",
             },
-            body: JSON.stringify({ image: base64Data })
+            body: JSON.stringify({ image: base64Data }),
         });
 
         if (!response.ok) {
@@ -23,7 +23,7 @@ export async function uploadImage(base64Data) {
 
         return result.url;
     } catch (error) {
-        console.error('Error uploading image:', error);
+        console.error("Error uploading image:", error);
         alert(`Failed to upload image: ${error.message}`);
         throw error;
     } finally {
@@ -32,10 +32,10 @@ export async function uploadImage(base64Data) {
 }
 
 function showUploadOverlay(show) {
-    let overlay = document.getElementById('upload-overlay');
+    let overlay = document.getElementById("upload-overlay");
     if (!overlay && show) {
-        overlay = document.createElement('div');
-        overlay.id = 'upload-overlay';
+        overlay = document.createElement("div");
+        overlay.id = "upload-overlay";
         overlay.innerHTML = `
             <div class="upload-overlay-content">
                 <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
@@ -43,11 +43,11 @@ function showUploadOverlay(show) {
             </div>
         `;
         document.body.appendChild(overlay);
-        
+
         // Add styles if not present
-        if (!document.getElementById('upload-overlay-styles')) {
-            const style = document.createElement('style');
-            style.id = 'upload-overlay-styles';
+        if (!document.getElementById("upload-overlay-styles")) {
+            const style = document.createElement("style");
+            style.id = "upload-overlay-styles";
             style.textContent = `
                 #upload-overlay {
                     position: fixed;
@@ -78,8 +78,8 @@ function showUploadOverlay(show) {
             document.head.appendChild(style);
         }
     }
-    
+
     if (overlay) {
-        overlay.style.display = show ? 'flex' : 'none';
+        overlay.style.display = show ? "flex" : "none";
     }
 }

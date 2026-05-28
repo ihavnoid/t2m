@@ -16,8 +16,8 @@ class Navbar {
     /**
      * Set the state of the visibility icon of a dropdown item,
      * signaling whether something is displayed or not.
-     * @param {string} buttonId 
-     * @param {boolean} visibility 
+     * @param {string} buttonId
+     * @param {boolean} visibility
      */
     setVisibilityIcon(buttonId, visibility) {
         const $icon = $(`#${buttonId} > i`);

@@ -43,14 +43,24 @@ class PaneResizer {
 
         this.oldEditorPanePercentage = this.editorPanePercentage;
         this.oldViewerPanePercentage = this.viewerPanePercentage;
-        this.resizePanesToPercentage(this.editorPanePercentage, this.viewerPanePercentage);
+        this.resizePanesToPercentage(
+            this.editorPanePercentage,
+            this.viewerPanePercentage,
+        );
 
         $(window).on("resize", () => {
-            this.resizePanesToPercentage(this.editorPanePercentage, this.viewerPanePercentage);
+            this.resizePanesToPercentage(
+                this.editorPanePercentage,
+                this.viewerPanePercentage,
+            );
         });
 
-        this.$editorCollapseButton.on("click touchstart", () => this.toggleViewer());
-        this.$viewerCollapseButton.on("click touchstart", () => this.toggleEditor());
+        this.$editorCollapseButton.on("click touchstart", () =>
+            this.toggleViewer(),
+        );
+        this.$viewerCollapseButton.on("click touchstart", () =>
+            this.toggleEditor(),
+        );
         this.$floatButton.on("click touchstart", () => this.clickFloatButton());
 
         this.$dragbar.on("mousedown", (mousedownEvent) => {
@@ -63,21 +73,28 @@ class PaneResizer {
                 if (this.dragging) {
                     const deltaPageX = mousemoveEvent.pageX - mouseDownPos;
                     const unit = this.$paneContainer.width() / 100;
-                    const newEditorPanePercentage = (initialLeftPaneWidth + deltaPageX) / unit;
-                    const newViewerPanePercentage = 100 - newEditorPanePercentage;
+                    const newEditorPanePercentage =
+                        (initialLeftPaneWidth + deltaPageX) / unit;
+                    const newViewerPanePercentage =
+                        100 - newEditorPanePercentage;
                     this.editorPanePercentage = newEditorPanePercentage;
                     this.viewerPanePercentage = newViewerPanePercentage;
                     if (this.editorPanePercentage < this.minPaneWidth / unit) {
                         this.editorPanePercentage = this.minPaneWidth / unit;
-                        this.viewerPanePercentage = 100 - this.editorPanePercentage;
+                        this.viewerPanePercentage =
+                            100 - this.editorPanePercentage;
                     }
                     if (this.viewerPanePercentage < this.minPaneWidth / unit) {
                         this.viewerPanePercentage = this.minPaneWidth / unit;
-                        this.editorPanePercentage = 100 - this.viewerPanePercentage;
+                        this.editorPanePercentage =
+                            100 - this.viewerPanePercentage;
                     }
                     this.oldEditorPanePercentage = this.editorPanePercentage;
                     this.oldViewerPanePercentage = this.viewerPanePercentage;
-                    this.resizePanesToPercentage(this.editorPanePercentage, this.viewerPanePercentage);
+                    this.resizePanesToPercentage(
+                        this.editorPanePercentage,
+                        this.viewerPanePercentage,
+                    );
                 }
             });
 
@@ -92,21 +109,37 @@ class PaneResizer {
     }
 
     resizePanesToPercentage(newEditorPanePercentage, newViewerPanePercentage) {
-        if (Math.abs(newEditorPanePercentage + newViewerPanePercentage - 100) > 0.1) {
-            console.warn("Error resizing panes, percentages don't add up. Resetting to 50% split.");
+        if (
+            Math.abs(newEditorPanePercentage + newViewerPanePercentage - 100) >
+            0.1
+        ) {
+            console.warn(
+                "Error resizing panes, percentages don't add up. Resetting to 50% split.",
+            );
             this.editorPanePercentage = 50;
             this.viewerPanePercentage = 50;
-            return this.resizePanesToPercentage(this.editorPanePercentage, this.viewerPanePercentage);
+            return this.resizePanesToPercentage(
+                this.editorPanePercentage,
+                this.viewerPanePercentage,
+            );
         }
-        let newLeftWidth = (this.$paneContainer.width() / 100) * newEditorPanePercentage;
-        let newRightWidth = (this.$paneContainer.width() / 100) * newViewerPanePercentage;
+        let newLeftWidth =
+            (this.$paneContainer.width() / 100) * newEditorPanePercentage;
+        let newRightWidth =
+            (this.$paneContainer.width() / 100) * newViewerPanePercentage;
         this.$dragbar.show();
         if (newEditorPanePercentage === 0 || newViewerPanePercentage === 0) {
-            if (this.shouldSplitPanes && this.$paneContainer.width() >= this.minPaneWidth * 2) {
+            if (
+                this.shouldSplitPanes &&
+                this.$paneContainer.width() >= this.minPaneWidth * 2
+            ) {
                 this.shouldSplitPanes = false;
                 this.editorPanePercentage = this.oldEditorPanePercentage;
                 this.viewerPanePercentage = this.oldViewerPanePercentage;
-                return this.resizePanesToPercentage(this.editorPanePercentage, this.viewerPanePercentage);
+                return this.resizePanesToPercentage(
+                    this.editorPanePercentage,
+                    this.viewerPanePercentage,
+                );
             }
             if (newEditorPanePercentage === 0) {
                 this.$dragbar.hide();
@@ -116,17 +149,26 @@ class PaneResizer {
                 this.shouldSplitPanes = true;
                 this.editorPanePercentage = 100;
                 this.viewerPanePercentage = 0;
-                return this.resizePanesToPercentage(this.editorPanePercentage, this.viewerPanePercentage);
+                return this.resizePanesToPercentage(
+                    this.editorPanePercentage,
+                    this.viewerPanePercentage,
+                );
             }
             if (newLeftWidth < this.minCollapseWidth) {
                 this.editorPanePercentage = 0;
                 this.viewerPanePercentage = 100;
-                return this.resizePanesToPercentage(this.editorPanePercentage, this.viewerPanePercentage);
+                return this.resizePanesToPercentage(
+                    this.editorPanePercentage,
+                    this.viewerPanePercentage,
+                );
             }
             if (newRightWidth < this.minCollapseWidth) {
                 this.editorPanePercentage = 100;
                 this.viewerPanePercentage = 0;
-                return this.resizePanesToPercentage(this.editorPanePercentage, this.viewerPanePercentage);
+                return this.resizePanesToPercentage(
+                    this.editorPanePercentage,
+                    this.viewerPanePercentage,
+                );
             }
             if (newLeftWidth < this.minPaneWidth) {
                 newLeftWidth = this.minPaneWidth;
@@ -184,7 +226,10 @@ class PaneResizer {
             this.editorPanePercentage = 0;
             this.viewerPanePercentage = 100;
         }
-        this.resizePanesToPercentage(this.editorPanePercentage, this.viewerPanePercentage);
+        this.resizePanesToPercentage(
+            this.editorPanePercentage,
+            this.viewerPanePercentage,
+        );
     }
 
     toggleViewer() {
@@ -200,14 +245,20 @@ class PaneResizer {
             this.editorPanePercentage = 100;
             this.viewerPanePercentage = 0;
         }
-        this.resizePanesToPercentage(this.editorPanePercentage, this.viewerPanePercentage);
+        this.resizePanesToPercentage(
+            this.editorPanePercentage,
+            this.viewerPanePercentage,
+        );
     }
 
     editorUnfloat() {
         this.editorPanePercentage = this.oldEditorPanePercentage;
         this.viewerPanePercentage = this.oldViewerPanePercentage;
         this.editFloatMode = false;
-        this.resizePanesToPercentage(this.editorPanePercentage, this.viewerPanePercentage);
+        this.resizePanesToPercentage(
+            this.editorPanePercentage,
+            this.viewerPanePercentage,
+        );
     }
 
     clickFloatButton() {
@@ -216,7 +267,10 @@ class PaneResizer {
         this.editorPanePercentage = 0;
         this.viewerPanePercentage = 100;
         this.editFloatMode = true;
-        this.resizePanesToPercentage(this.editorPanePercentage, this.viewerPanePercentage);
+        this.resizePanesToPercentage(
+            this.editorPanePercentage,
+            this.viewerPanePercentage,
+        );
 
         if (window.editorPane && window.editorPane.startFloatMode) {
             window.editorPane.startFloatMode(() => this.editorUnfloat());

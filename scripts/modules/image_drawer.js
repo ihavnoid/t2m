@@ -1,4 +1,4 @@
-import { uploadImage } from './file_upload.js';
+import { uploadImage } from "./file_upload.js";
 
 // Constants
 const MIN_SIZE = 50;
@@ -15,16 +15,16 @@ class ImageDrawer {
         this.context = null;
         this.isDrawing = false;
         this.isResizing = false;
-        this.currentTool = 'pen'; 
+        this.currentTool = "pen";
         this.history = []; // Array of { dataUrl, width, height }
         this.redoHistory = [];
         this.onSaveCallback = null;
         this.lastPos = { x: 0, y: 0 };
-        
+
         this.activeHandle = null;
         this.startResizeState = null; // { width, height, clientX, clientY, sourceCanvas }
-        
-        this.currentColor = '#000000';
+
+        this.currentColor = "#000000";
         this.currentThickness = 5;
         this.pendingClipart = null; // { unicode, size }
         this.isActive = false;
@@ -35,14 +35,18 @@ class ImageDrawer {
      * Helpers to resolve the correct window/document context
      * (Supports both main window and floating popup)
      */
-    get win() { return this.boundWindow || window; }
-    get doc() { return this.win.document; }
+    get win() {
+        return this.boundWindow || window;
+    }
+    get doc() {
+        return this.win.document;
+    }
 
     init(win = window) {
         this.boundWindow = win;
-        this.canvas = this.doc.getElementById('drawing-canvas');
+        this.canvas = this.doc.getElementById("drawing-canvas");
         if (!this.canvas) return;
-        this.context = this.canvas.getContext('2d');
+        this.context = this.canvas.getContext("2d");
 
         this._initToolbar();
         this._initClipart();
@@ -52,43 +56,51 @@ class ImageDrawer {
 
     _initToolbar() {
         const d = this.doc;
-        const bind = (id, fn) => d.getElementById(id).addEventListener('click', fn);
+        const bind = (id, fn) =>
+            d.getElementById(id).addEventListener("click", fn);
 
-        bind('draw-tool-pen', () => this.setTool('pen'));
-        bind('draw-tool-eraser', () => this.setTool('eraser'));
-        bind('draw-tool-clipart', (e) => {
+        bind("draw-tool-pen", () => this.setTool("pen"));
+        bind("draw-tool-eraser", () => this.setTool("eraser"));
+        bind("draw-tool-clipart", (e) => {
             this._toggleClipartPanel();
             e.stopPropagation();
         });
-        bind('draw-tool-undo', () => this.undo());
-        bind('draw-tool-redo', () => this.redo());
-        bind('draw-tool-clear', () => this.clear());
-        bind('draw-save', () => this.save());
+        bind("draw-tool-undo", () => this.undo());
+        bind("draw-tool-redo", () => this.redo());
+        bind("draw-tool-clear", () => this.clear());
+        bind("draw-save", () => this.save());
 
         // Close/Cancel Events
-        d.querySelectorAll('#drawing-modal .close-modal').forEach(btn => {
-            btn.addEventListener('click', () => this.close());
+        d.querySelectorAll("#drawing-modal .close-modal").forEach((btn) => {
+            btn.addEventListener("click", () => this.close());
         });
 
         // Color Picker
-        d.querySelectorAll('.color-swatch').forEach(swatch => {
-            swatch.addEventListener('click', () => {
+        d.querySelectorAll(".color-swatch").forEach((swatch) => {
+            swatch.addEventListener("click", () => {
                 this.currentColor = swatch.dataset.color;
-                d.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-                swatch.classList.add('active');
-                if (this.currentTool === 'pen' || this.currentTool === 'clipart') {
+                d.querySelectorAll(".color-swatch").forEach((s) =>
+                    s.classList.remove("active"),
+                );
+                swatch.classList.add("active");
+                if (
+                    this.currentTool === "pen" ||
+                    this.currentTool === "clipart"
+                ) {
                     this.context.strokeStyle = this.currentColor;
                 }
             });
         });
 
         // Thickness Picker
-        d.querySelectorAll('.thickness-swatch').forEach(swatch => {
-            swatch.addEventListener('click', () => {
+        d.querySelectorAll(".thickness-swatch").forEach((swatch) => {
+            swatch.addEventListener("click", () => {
                 this.currentThickness = parseInt(swatch.dataset.thickness);
-                d.querySelectorAll('.thickness-swatch').forEach(s => s.classList.remove('active'));
-                swatch.classList.add('active');
-                if (this.currentTool === 'pen') {
+                d.querySelectorAll(".thickness-swatch").forEach((s) =>
+                    s.classList.remove("active"),
+                );
+                swatch.classList.add("active");
+                if (this.currentTool === "pen") {
                     this.context.lineWidth = this.currentThickness;
                 }
             });
@@ -97,98 +109,120 @@ class ImageDrawer {
 
     _initClipart() {
         const d = this.doc;
-        const panel = d.getElementById('clipart-panel');
-        const backdrop = d.getElementById('clipart-backdrop');
+        const panel = d.getElementById("clipart-panel");
+        const backdrop = d.getElementById("clipart-backdrop");
 
         // Isolate panel clicks
-        [panel, backdrop].forEach(el => {
+        [panel, backdrop].forEach((el) => {
             if (!el) return;
-            el.addEventListener('mousedown', (e) => e.stopPropagation());
-            el.addEventListener('click', (e) => e.stopPropagation());
+            el.addEventListener("mousedown", (e) => e.stopPropagation());
+            el.addEventListener("click", (e) => e.stopPropagation());
         });
 
-        d.getElementById('close-clipart').addEventListener('click', () => {
+        d.getElementById("close-clipart").addEventListener("click", () => {
             this._toggleClipartPanel(false);
         });
 
-        d.querySelectorAll('.clipart-item').forEach(item => {
-            item.addEventListener('click', () => {
+        d.querySelectorAll(".clipart-item").forEach((item) => {
+            item.addEventListener("click", () => {
                 const hex = item.dataset.unicode;
                 const unicode = String.fromCodePoint(parseInt(hex, 16));
-                const size = parseInt(d.getElementById('clipart-size').value);
+                const size = parseInt(d.getElementById("clipart-size").value);
                 this.pendingClipart = { unicode, size };
-                this.setTool('clipart');
+                this.setTool("clipart");
                 this._toggleClipartPanel(false);
             });
         });
     }
 
     _toggleClipartPanel(force) {
-        const panel = this.doc.getElementById('clipart-panel');
-        const backdrop = this.doc.getElementById('clipart-backdrop');
+        const panel = this.doc.getElementById("clipart-panel");
+        const backdrop = this.doc.getElementById("clipart-backdrop");
         if (!panel || !backdrop) return;
 
-        const show = (force !== undefined) ? force : (panel.style.display === 'none');
-        panel.style.display = show ? 'flex' : 'none';
-        backdrop.style.display = show ? 'block' : 'none';
+        const show =
+            force !== undefined ? force : panel.style.display === "none";
+        panel.style.display = show ? "flex" : "none";
+        backdrop.style.display = show ? "block" : "none";
     }
 
     _initResizing() {
-        this.doc.querySelectorAll('.resize-handle').forEach(handle => {
-            handle.addEventListener('mousedown', (e) => this.startResizing(e));
-            handle.addEventListener('touchstart', (e) => {
-                const touch = e.touches[0];
-                const mouseEvent = new MouseEvent('mousedown', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY
-                });
-                Object.defineProperty(mouseEvent, 'target', {value: e.target, enumerable: true});
-                this.startResizing(mouseEvent);
-                e.preventDefault();
-            }, { passive: false });
+        this.doc.querySelectorAll(".resize-handle").forEach((handle) => {
+            handle.addEventListener("mousedown", (e) => this.startResizing(e));
+            handle.addEventListener(
+                "touchstart",
+                (e) => {
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent("mousedown", {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY,
+                    });
+                    Object.defineProperty(mouseEvent, "target", {
+                        value: e.target,
+                        enumerable: true,
+                    });
+                    this.startResizing(mouseEvent);
+                    e.preventDefault();
+                },
+                { passive: false },
+            );
         });
     }
 
     _initCanvasEvents() {
         const win = this.win;
-        this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
-        
-        win.addEventListener('mousemove', (e) => {
+        this.canvas.addEventListener("mousedown", (e) => this.startDrawing(e));
+
+        win.addEventListener("mousemove", (e) => {
             if (this.isDrawing) this.draw(e);
             else if (this.isResizing) this.doResize(e);
         });
-        
-        win.addEventListener('mouseup', () => {
+
+        win.addEventListener("mouseup", () => {
             if (this.isDrawing) this.stopDrawing();
             if (this.isResizing) this.stopResizing();
         });
 
-        this.canvas.addEventListener('touchstart', (e) => {
-            const touch = e.touches[0];
-            this.startDrawing(new MouseEvent('mousedown', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            }));
-            e.preventDefault();
-        }, { passive: false });
-
-        win.addEventListener('touchmove', (e) => {
-            if (this.isDrawing || this.isResizing) {
+        this.canvas.addEventListener(
+            "touchstart",
+            (e) => {
                 const touch = e.touches[0];
-                const mouseEvent = new MouseEvent('mousemove', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY
-                });
-                if (this.isDrawing) this.draw(mouseEvent);
-                if (this.isResizing) this.doResize(mouseEvent);
+                this.startDrawing(
+                    new MouseEvent("mousedown", {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY,
+                    }),
+                );
                 e.preventDefault();
-            }
-        }, { passive: false });
+            },
+            { passive: false },
+        );
 
-        win.addEventListener('touchend', () => {
-            if (this.isDrawing) this.stopDrawing();
-            if (this.isResizing) this.stopResizing();
-        }, { passive: false });
+        win.addEventListener(
+            "touchmove",
+            (e) => {
+                if (this.isDrawing || this.isResizing) {
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent("mousemove", {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY,
+                    });
+                    if (this.isDrawing) this.draw(mouseEvent);
+                    if (this.isResizing) this.doResize(mouseEvent);
+                    e.preventDefault();
+                }
+            },
+            { passive: false },
+        );
+
+        win.addEventListener(
+            "touchend",
+            () => {
+                if (this.isDrawing) this.stopDrawing();
+                if (this.isResizing) this.stopResizing();
+            },
+            { passive: false },
+        );
     }
 
     open(base64Image, callback) {
@@ -198,22 +232,25 @@ class ImageDrawer {
 
         // Determine which window to open the editor in
         let targetWin = window;
-        if (window.editorPane?.selfWindow && !window.editorPane.selfWindow.closed) {
+        if (
+            window.editorPane?.selfWindow &&
+            !window.editorPane.selfWindow.closed
+        ) {
             targetWin = window.editorPane.selfWindow;
         }
 
         if (this.boundWindow !== targetWin) {
             this.init(targetWin);
         }
-        
+
         const d = this.doc;
-        const container = d.getElementById('drawing-canvas-container');
-        
+        const container = d.getElementById("drawing-canvas-container");
+
         // Initial reasonable default size
         this.canvas.width = Math.min(container.clientWidth - 100, 500);
         this.canvas.height = 400;
 
-        this.setTool('pen');
+        this.setTool("pen");
 
         // Initialize Image
         if (base64Image) {
@@ -221,20 +258,25 @@ class ImageDrawer {
             img.onload = () => {
                 this.canvas.width = Math.min(img.width, MAX_WIDTH);
                 this.canvas.height = Math.min(img.height, MAX_HEIGHT);
-                this.setTool('pen'); 
-                this.context.fillStyle = 'white';
-                this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.setTool("pen");
+                this.context.fillStyle = "white";
+                this.context.fillRect(
+                    0,
+                    0,
+                    this.canvas.width,
+                    this.canvas.height,
+                );
                 this.context.drawImage(img, 0, 0);
-                this.saveSnapshot(); 
+                this.saveSnapshot();
             };
             img.src = base64Image;
         } else {
-            this.context.fillStyle = 'white';
+            this.context.fillStyle = "white";
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            this.saveSnapshot(); 
+            this.saveSnapshot();
         }
 
-        d.getElementById('drawing-modal').classList.add('active');
+        d.getElementById("drawing-modal").classList.add("active");
         this.isActive = true;
         this.updateUndoRedoButtons();
     }
@@ -242,21 +284,30 @@ class ImageDrawer {
     setTool(tool) {
         const d = this.doc;
         this.currentTool = tool;
-        d.getElementById('draw-tool-pen').classList.toggle('active', tool === 'pen');
-        d.getElementById('draw-tool-eraser').classList.toggle('active', tool === 'eraser');
-        d.getElementById('draw-tool-clipart').classList.toggle('active', tool === 'clipart');
-        
-        this.canvas.classList.toggle('clipart-tool', tool === 'clipart');
+        d.getElementById("draw-tool-pen").classList.toggle(
+            "active",
+            tool === "pen",
+        );
+        d.getElementById("draw-tool-eraser").classList.toggle(
+            "active",
+            tool === "eraser",
+        );
+        d.getElementById("draw-tool-clipart").classList.toggle(
+            "active",
+            tool === "clipart",
+        );
 
-        this.context.lineJoin = 'round';
-        this.context.lineCap = 'round';
-        this.context.globalCompositeOperation = 'source-over';
+        this.canvas.classList.toggle("clipart-tool", tool === "clipart");
 
-        if (tool === 'pen') {
+        this.context.lineJoin = "round";
+        this.context.lineCap = "round";
+        this.context.globalCompositeOperation = "source-over";
+
+        if (tool === "pen") {
             this.context.strokeStyle = this.currentColor;
             this.context.lineWidth = this.currentThickness;
-        } else if (tool === 'eraser') {
-            this.context.strokeStyle = 'white';
+        } else if (tool === "eraser") {
+            this.context.strokeStyle = "white";
             this.context.lineWidth = 20;
         }
     }
@@ -265,14 +316,19 @@ class ImageDrawer {
         const rect = this.canvas.getBoundingClientRect();
         return {
             x: e.clientX - rect.left,
-            y: e.clientY - rect.top
+            y: e.clientY - rect.top,
         };
     }
 
     startDrawing(e) {
         const pos = this.getMousePos(e);
-        if (this.currentTool === 'clipart' && this.pendingClipart) {
-            this.drawClipart(this.pendingClipart.unicode, this.pendingClipart.size, pos.x, pos.y);
+        if (this.currentTool === "clipart" && this.pendingClipart) {
+            this.drawClipart(
+                this.pendingClipart.unicode,
+                this.pendingClipart.size,
+                pos.x,
+                pos.y,
+            );
             return;
         }
 
@@ -301,8 +357,8 @@ class ImageDrawer {
         this.context.save();
         this.context.font = `900 ${size}px "Font Awesome 6 Free"`;
         this.context.fillStyle = this.currentColor;
-        this.context.textAlign = 'center';
-        this.context.textBaseline = 'middle';
+        this.context.textAlign = "center";
+        this.context.textBaseline = "middle";
         this.context.fillText(unicode, x, y);
         this.context.restore();
         this.saveSnapshot();
@@ -312,17 +368,17 @@ class ImageDrawer {
         this.isResizing = true;
         this.activeHandle = e.target.dataset.handle;
 
-        const sourceCanvas = this.doc.createElement('canvas');
+        const sourceCanvas = this.doc.createElement("canvas");
         sourceCanvas.width = this.canvas.width;
         sourceCanvas.height = this.canvas.height;
-        sourceCanvas.getContext('2d').drawImage(this.canvas, 0, 0);
+        sourceCanvas.getContext("2d").drawImage(this.canvas, 0, 0);
 
         this.startResizeState = {
             width: this.canvas.width,
             height: this.canvas.height,
             clientX: e.clientX,
             clientY: e.clientY,
-            sourceCanvas: sourceCanvas
+            sourceCanvas: sourceCanvas,
         };
         e.stopPropagation();
     }
@@ -333,50 +389,69 @@ class ImageDrawer {
         const deltaX = e.clientX - this.startResizeState.clientX;
         const deltaY = e.clientY - this.startResizeState.clientY;
         const handle = this.activeHandle;
-        
+
         let newWidth = this.startResizeState.width;
         let newHeight = this.startResizeState.height;
         let offsetX = 0;
         let offsetY = 0;
 
-        if (handle.includes('l')) {
-            newWidth = Math.max(MIN_SIZE, Math.min(MAX_WIDTH, this.startResizeState.width - deltaX));
+        if (handle.includes("l")) {
+            newWidth = Math.max(
+                MIN_SIZE,
+                Math.min(MAX_WIDTH, this.startResizeState.width - deltaX),
+            );
             offsetX = this.startResizeState.width - newWidth;
-        } else if (handle.includes('r')) {
-            newWidth = Math.max(MIN_SIZE, Math.min(MAX_WIDTH, this.startResizeState.width + deltaX));
+        } else if (handle.includes("r")) {
+            newWidth = Math.max(
+                MIN_SIZE,
+                Math.min(MAX_WIDTH, this.startResizeState.width + deltaX),
+            );
         }
 
-        if (handle.includes('t')) {
-            newHeight = Math.max(MIN_SIZE, Math.min(MAX_HEIGHT, this.startResizeState.height - deltaY));
+        if (handle.includes("t")) {
+            newHeight = Math.max(
+                MIN_SIZE,
+                Math.min(MAX_HEIGHT, this.startResizeState.height - deltaY),
+            );
             offsetY = this.startResizeState.height - newHeight;
-        } else if (handle.includes('b')) {
-            newHeight = Math.max(MIN_SIZE, Math.min(MAX_HEIGHT, this.startResizeState.height + deltaY));
+        } else if (handle.includes("b")) {
+            newHeight = Math.max(
+                MIN_SIZE,
+                Math.min(MAX_HEIGHT, this.startResizeState.height + deltaY),
+            );
         }
 
         this.resizeCanvas(
-            Math.round(newWidth), 
-            Math.round(newHeight), 
-            Math.round(-offsetX) || 0, 
-            Math.round(-offsetY) || 0, 
-            this.startResizeState.sourceCanvas
+            Math.round(newWidth),
+            Math.round(newHeight),
+            Math.round(-offsetX) || 0,
+            Math.round(-offsetY) || 0,
+            this.startResizeState.sourceCanvas,
         );
     }
 
     resizeCanvas(w, h, contentOffsetX, contentOffsetY, source = null) {
-        if (w === this.canvas.width && h === this.canvas.height && contentOffsetX === 0 && contentOffsetY === 0 && !source) return;
+        if (
+            w === this.canvas.width &&
+            h === this.canvas.height &&
+            contentOffsetX === 0 &&
+            contentOffsetY === 0 &&
+            !source
+        )
+            return;
 
         let sourceContent = source;
         if (!sourceContent) {
-            sourceContent = this.doc.createElement('canvas');
+            sourceContent = this.doc.createElement("canvas");
             sourceContent.width = this.canvas.width;
             sourceContent.height = this.canvas.height;
-            sourceContent.getContext('2d').drawImage(this.canvas, 0, 0);
+            sourceContent.getContext("2d").drawImage(this.canvas, 0, 0);
         }
 
         this.canvas.width = w;
         this.canvas.height = h;
         this.setTool(this.currentTool);
-        this.context.fillStyle = 'white';
+        this.context.fillStyle = "white";
         this.context.fillRect(0, 0, w, h);
         this.context.drawImage(sourceContent, contentOffsetX, contentOffsetY);
     }
@@ -393,10 +468,10 @@ class ImageDrawer {
         this.history.push({
             dataUrl: this.canvas.toDataURL(),
             width: this.canvas.width,
-            height: this.canvas.height
+            height: this.canvas.height,
         });
         if (this.history.length > 50) this.history.shift();
-        this.redoHistory = []; 
+        this.redoHistory = [];
         this.updateUndoRedoButtons();
     }
 
@@ -418,8 +493,8 @@ class ImageDrawer {
 
     updateUndoRedoButtons() {
         const d = this.doc;
-        const undoBtn = d.getElementById('draw-tool-undo');
-        const redoBtn = d.getElementById('draw-tool-redo');
+        const undoBtn = d.getElementById("draw-tool-undo");
+        const redoBtn = d.getElementById("draw-tool-redo");
         if (undoBtn) undoBtn.disabled = this.history.length <= 1;
         if (redoBtn) redoBtn.disabled = this.redoHistory.length === 0;
     }
@@ -429,8 +504,8 @@ class ImageDrawer {
         img.onload = () => {
             this.canvas.width = state.width;
             this.canvas.height = state.height;
-            this.setTool(this.currentTool); 
-            this.context.fillStyle = 'white';
+            this.setTool(this.currentTool);
+            this.context.fillStyle = "white";
             this.context.fillRect(0, 0, state.width, state.height);
             this.context.drawImage(img, 0, 0);
         };
@@ -438,8 +513,12 @@ class ImageDrawer {
     }
 
     clear() {
-        if (this.win.confirm("Are you sure you want to clear the entire canvas?")) {
-            this.context.fillStyle = 'white';
+        if (
+            this.win.confirm(
+                "Are you sure you want to clear the entire canvas?",
+            )
+        ) {
+            this.context.fillStyle = "white";
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.saveSnapshot();
         }
@@ -459,7 +538,7 @@ class ImageDrawer {
         try {
             if (this.boundWindow && !this.boundWindow.closed) {
                 const d = this.doc;
-                d.getElementById('drawing-modal').classList.remove('active');
+                d.getElementById("drawing-modal").classList.remove("active");
                 this._toggleClipartPanel(false);
             }
         } catch (e) {}

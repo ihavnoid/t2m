@@ -82,7 +82,7 @@ class AppFunctions {
                     nodenum: i,
                     frozen: true,
                     xp: node.x,
-                    yp: node.y
+                    yp: node.y,
                 });
             }
         }
@@ -108,7 +108,7 @@ class AppFunctions {
                     nodenum: i,
                     frozen: false,
                     xp: 0,
-                    yp: 0
+                    yp: 0,
                 });
             }
         }

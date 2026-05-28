@@ -16,7 +16,9 @@ class UnsavedChanges {
 
     confirmContinue() {
         if (this.hasChanges) {
-            return confirm("You have unsaved changes. Are you sure you want to continue?");
+            return confirm(
+                "You have unsaved changes. Are you sure you want to continue?",
+            );
         }
         return true;
     }
