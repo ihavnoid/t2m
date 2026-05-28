@@ -903,34 +903,59 @@ class Mindmap {
                 }
 
                 // --- PASS 3: Diff and Patch ---
-                // Reconcile the current node array (this.nodes) with the new line list
+                // This phase is the heart of the "surgical update". It compares the old node list
+                // with the new one and applies only the necessary mutations to the live graph.
+                //
+                // STATE VARIABLES:
+                // - addedNodes/removedNodes: These track the NET CHANGE in array length caused
+                //   by previous instructions in THIS run. They are vital for translating an 
+                //   original 'old_lines' index into the current 'this.nodes' index.
                 let addedNodes = 0, removedNodes = 0, modifiedNodes = 0;
                 try {
                     const old_lines = difflib.stringAsLines(self.y);
                     const opcodes = (new difflib.SequenceMatcher(old_lines, new_lines)).get_opcodes();
                     
-                    // Iterate through the diff operations (insert, delete, replace, equal)
+                    // Iterate through each instruction from the diff engine.
+                    // Instruction format: [tag, old_start, old_end, new_start, new_end]
                     for (let l_idx = 0; l_idx < opcodes.length; l_idx++) {
                         const entry = opcodes[l_idx];
                         const tag = entry[0], i1 = entry[1], i2 = entry[2], j1 = entry[3], j2 = entry[4];
+                        
+                        // 'count' is the max lines affected by this instruction.
+                        // We iterate 'count' times to ensure we process every line in both the
+                        // old and new ranges of the instruction.
                         const count = Math.max(i2 - i1, j2 - j1);
+                        
+                        // i_ptr/j_ptr: pointers into old_lines/new_lines respectively.
+                        // They start at the block boundaries provided by difflib.
                         let i_ptr = i1, j_ptr = j1;
 
                         for (let v_idx = 0; v_idx < count; v_idx++) {
-                            // Calculate current index in this.nodes based on previous mutations
+                            // !!! CRITICAL INDEX CALCULATION !!!
+                            // 'pos' is the target index in the LIVE 'this.nodes' array.
+                            // We start with the original index (i_ptr) and adjust for all 
+                            // insertions and deletions that occurred EARLIER in this loop.
+                            // If this math is off by even 1, we will remove or update the wrong node,
+                            // which can lead to a cascading corruption of the graph structure.
                             const pos = i_ptr - removedNodes + addedNodes;
 
                             if (tag == "delete" || (tag == "replace" && j1 == j2)) {
-                                // Node removed from text: delete from graph
+                                // CASE: Deleting nodes.
+                                // Occurs if line was removed, or a replace block has fewer new lines.
                                 this.removeNode(pos);
                                 removedNodes++;
                             } else if (tag == "insert" || (tag == "replace" && i1 == i2) || (tag == "replace" && !old_lines[i_ptr])) {
-                                // New node in text: add to graph
+                                // CASE: Inserting nodes.
+                                // Occurs if new line added, or a replace block has more new lines.
+                                // '!old_lines[i_ptr]' means we've finished the 'old' nodes in this block
+                                // and everything else in the 'new' block must be a fresh insertion.
                                 const t = self.trim_label(j_ptr < j2 ? new_lines[j_ptr] : null);
                                 if (t) {
                                     const rawComment = (comments[j_ptr] || "");
                                     const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
 
+                                    // Insert a brand new node object. 
+                                    // Note: This resets the physics state (x,y) for this node.
                                     this.addNode(pos, {
                                         label: t.label,
                                         images: t.images,
@@ -946,19 +971,27 @@ class Mindmap {
                                     addedNodes++;
                                 }
                             } else if (tag == "replace") {
-                                // Node exists but label/coordinates changed: update properties
+                                // CASE: Updating an existing node.
+                                // We've identified that an old node maps to a new line.
+                                // We update its properties to keep the object identity stable.
                                 const t = self.trim_label(j_ptr < j2 ? new_lines[j_ptr] : null);
                                 if (t == null) {
+                                    // If parsing fails for some reason, we must remove the node
+                                    // to keep the array size in sync with the text.
                                     this.removeNode(pos);
                                     removedNodes++;
                                 } else {
                                     const rawComment = (comments[j_ptr] || "");
                                     const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
 
+                                    // Preserve identity, update data.
                                     this.nodes[pos].data.label = t.label;
                                     this.nodes[pos].data.images = t.images;
                                     this.nodes[pos].fixed = (j_ptr == 0 || t.frozen);
                                     this.nodes[pos].frozen = t.frozen;
+                                    
+                                    // If coordinates were explicitly provided in the text [x y],
+                                    // overwrite the current physics position.
                                     if (t.frozen) {
                                         this.nodes[pos].x = t.x; this.nodes[pos].y = t.y;
                                         this.nodes[pos].px = t.x; this.nodes[pos].py = t.y;
@@ -969,26 +1002,39 @@ class Mindmap {
                                 }
                                 modifiedNodes++;
                             } else if (tag == "equal") {
-                                // Node is structurally identical: just update the comment/images in case they changed
+                                // CASE: Structure is identical. 
+                                // We only update comments/images which are NOT handled by difflib.
                                 if (pos < this.nodes.length && j_ptr < j2) {
                                     const rawComment = (comments[j_ptr] || "");
                                     const { cleanText: cleanComment, images: commentImages } = self.extractImages(rawComment);
+                                    
                                     if (this.nodes[pos].data.comment != cleanComment.trim()) modifiedNodes++;
                                     this.nodes[pos].data.comment = cleanComment.trim();
                                     this.nodes[pos].data.commentImages = commentImages;
                                 }
                             }
+                            
+                            // Increment pointers but stop at block boundaries to ensure stability.
                             if (i_ptr < i2) i_ptr++;
                             if (j_ptr < j2) j_ptr++;
                         }
                     }
                 } catch (err) {
+                    // CATASTROPHIC FALLBACK: If the patching logic throws (e.g. index error),
+                    // we clear the entire graph to avoid showing a corrupted or partially-synced state.
                     console.error("Diff Patching Error:", err);
-                    this.clear();
+                    this.clear(); 
                     return false;
                 }
 
                 // --- PASS 4: Tree Reconstruction ---
+                return this.reconstructTree(new_text, depths, parents, modifiedNodes, addedNodes, removedNodes);
+            },
+            /**
+             * Final phase of mindmap update: reconstructs parent-child links,
+             * applies visual themes, and restarts the layout simulation.
+             */
+            reconstructTree: function(new_text, depths, parents, modifiedNodes, addedNodes, removedNodes) {
                 // Update relationships and visual attributes for all nodes
                 self.y = new_text;
                 self.A = 0;
