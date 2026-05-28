@@ -489,42 +489,47 @@ class EditorPane {
             for (let i = 0; i < nodenum + 1; i++) [lipos, len] = this.indexOfRegex(t, /<li[^>]*>/i, lipos + 1);
             if (lipos < 0) return t;
 
-            // Extract the content of this <li>
-            const clipos = t.indexOf("</li>", lipos);
-            let tp = t.substring(lipos + len, clipos);
-
-            // Temporarily tokenize images to avoid interfering with text manipulation
-            const imgs = [];
-            tp = tp.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (m, src) => { imgs.push(src); return `\0i${imgs.length - 1}\0`; });
-
-            // Flatten HTML to get a clean text representation for caret/header calculations
-            tp = tp.replaceAll("\n", "").replaceAll("<br>", "\n").replaceAll(/<[^>]*>/g, "");
+            // Extract the content of this <li>, but STOP before any child <ul>
+            const nextUl = t.toLowerCase().indexOf("<ul>", lipos + len);
+            const nextLiEnd = t.toLowerCase().indexOf("</li>", lipos + len);
             
-            // Identify where the selection/caret markers are within this flattened text
+            // The 'header' ends at either the start of children (UL) or the end of the node (LI)
+            let endOfHeader = nextLiEnd;
+            if (nextUl !== -1 && nextUl < nextLiEnd) {
+                endOfHeader = nextUl;
+            }
+
+            let tp = t.substring(lipos + len, endOfHeader);
+
+            // Tokenize ALL HTML tags to preserve them (bold, italic, images, etc.)
+            const tags = [];
+            tp = tp.replace(/<[^>]+>/g, (tag) => { tags.push(tag); return `\0t${tags.length - 1}\0`; });
+
+            // Flatten for text manipulation
+            tp = tp.replaceAll("\n", "").replaceAll("<br>", "\n");
+            
+            // Identify selection markers
             let p1 = tp.indexOf("\0n"); if (p1 >= 0) tp = tp.substring(0, p1) + tp.substring(p1 + 2);
             let p2 = tp.indexOf("\0r"); if (p2 >= 0) tp = tp.substring(0, p2) + tp.substring(p2 + 2);
             
-            // Remove any existing coordinate header [x y]
+            // Remove existing coordinates
             let lp = tp.length; tp = tp.replace(/^ *\[[0-9\- ]*\] */, ""); let ln = tp.length;
-            
-            // Shift caret positions back if they were after the removed header
             if (p1 >= 0) p1 = Math.max(0, p1 - (lp - ln)); if (p2 >= 0) p2 = Math.max(0, p2 - (lp - ln));
             
-            // Add the new coordinate header if freezing the node
             if (frozen) {
                 const header = `[${Math.round(xp)} ${Math.round(yp)}] `; tp = header + tp;
                 if (p1 >= 0) p1 += header.length; if (p2 >= 0) p2 += header.length;
             }
 
-            // Re-insert caret markers into the updated text
+            // Re-insert markers
             if (p1 >= 0) tp = tp.substring(0, p1) + "\0n" + tp.substring(p1);
             if (p2 >= 0) { if (p1 >= 0 && p2 >= p1) p2 += 2; tp = tp.substring(0, p2) + "\0r" + tp.substring(p2); }
 
-            // Restore image tokens back to actual <img> tags
-            tp = tp.replace(/\0i(\d+)\0/g, (m, idx) => imgs[idx] ? `<img src="${imgs[idx]}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">` : "");
+            // Restore ALL tags
+            tp = tp.replace(/\0t(\d+)\0/g, (m, idx) => tags[idx] || "");
             
-            // Reconstruct the <li> and return the full HTML
-            return t.substring(0, lipos + len) + tp.replaceAll("\n", "<br>") + t.substring(clipos);
+            // Reconstruct the <li> by swapping the old header with the new one
+            return t.substring(0, lipos + len) + tp.replaceAll("\n", "<br>") + t.substring(endOfHeader);
         };
 
         // Capture current caret/selection state using markers \0n and \0r
