@@ -29,6 +29,7 @@ class ImageDrawer {
         this.pendingClipart = null; // { unicode, size }
         this.isActive = false;
         this.boundWindow = null;
+        this.initializedDocs = new WeakSet();
     }
 
     /**
@@ -48,10 +49,13 @@ class ImageDrawer {
         if (!this.canvas) return;
         this.context = this.canvas.getContext("2d");
 
-        this._initToolbar();
-        this._initClipart();
-        this._initResizing();
-        this._initCanvasEvents();
+        if (!this.initializedDocs.has(this.doc)) {
+            this._initToolbar();
+            this._initClipart();
+            this._initResizing();
+            this._initCanvasEvents();
+            this.initializedDocs.add(this.doc);
+        }
     }
 
     _initToolbar() {
@@ -138,12 +142,14 @@ class ImageDrawer {
     _toggleClipartPanel(force) {
         const panel = this.doc.getElementById("clipart-panel");
         const backdrop = this.doc.getElementById("clipart-backdrop");
+        console.log("DEBUG _toggleClipartPanel called", {force, panel: !!panel, backdrop: !!backdrop, boundWindow: this.boundWindow === window ? 'main' : 'popup', doc: this.doc === document ? 'main' : 'popup'});
         if (!panel || !backdrop) return;
 
         const show =
             force !== undefined ? force : panel.style.display === "none";
         panel.style.display = show ? "flex" : "none";
         backdrop.style.display = show ? "block" : "none";
+        console.log("DEBUG _toggleClipartPanel finished", {show, panelDisplay: panel.style.display, backdropDisplay: backdrop.style.display});
     }
 
     _initResizing() {
