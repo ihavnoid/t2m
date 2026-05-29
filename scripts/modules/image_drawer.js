@@ -27,6 +27,7 @@ class ImageDrawer {
         this.currentColor = "#000000";
         this.currentThickness = 5;
         this.pendingClipart = null; // { unicode, size }
+        this.pendingPaste = null; // Image object
         this.isActive = false;
         this.boundWindow = null;
         this.initializedDocs = new WeakSet();
@@ -179,6 +180,30 @@ class ImageDrawer {
         const win = this.win;
         this.canvas.addEventListener("mousedown", (e) => this.startDrawing(e));
 
+        win.addEventListener("paste", (e) => {
+            if (!this.isActive) return;
+            const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+            if (!items) return;
+            
+            for (const item of items) {
+                if (item.type.includes("image")) {
+                    const blob = item.getAsFile();
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const img = new this.win.Image();
+                        img.onload = () => {
+                            this.pendingPaste = img;
+                            this.setTool("paste");
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(blob);
+                    e.preventDefault();
+                    break;
+                }
+            }
+        });
+
         win.addEventListener("mousemove", (e) => {
             if (this.isDrawing) this.draw(e);
             else if (this.isResizing) this.doResize(e);
@@ -303,7 +328,7 @@ class ImageDrawer {
             tool === "clipart",
         );
 
-        this.canvas.classList.toggle("clipart-tool", tool === "clipart");
+        this.canvas.classList.toggle("clipart-tool", tool === "clipart" || tool === "paste");
 
         this.context.lineJoin = "round";
         this.context.lineCap = "round";
@@ -335,6 +360,14 @@ class ImageDrawer {
                 pos.x,
                 pos.y,
             );
+            return;
+        }
+        if (this.currentTool === "paste" && this.pendingPaste) {
+            const img = this.pendingPaste;
+            this.context.drawImage(img, pos.x - img.width / 2, pos.y - img.height / 2);
+            this.saveSnapshot();
+            this.setTool("pen");
+            this.pendingPaste = null;
             return;
         }
 
