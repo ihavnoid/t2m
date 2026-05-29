@@ -237,8 +237,11 @@ class ImageDrawer {
 
         this.canvas.addEventListener("mouseleave", () => this.clearPreview());
 
-        win.addEventListener("mouseup", () => {
-            if (this.isDrawing) this.stopDrawing();
+        win.addEventListener("mouseup", (e) => {
+            if (this.isDrawing) {
+                this.draw(e);
+                this.stopDrawing();
+            }
             if (this.isResizing) this.stopResizing();
         });
 
@@ -276,8 +279,16 @@ class ImageDrawer {
 
         win.addEventListener(
             "touchend",
-            () => {
-                if (this.isDrawing) this.stopDrawing();
+            (e) => {
+                if (this.isDrawing) {
+                    const touch = e.changedTouches[0];
+                    const mouseEvent = new MouseEvent("mouseup", {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY,
+                    });
+                    this.draw(mouseEvent);
+                    this.stopDrawing();
+                }
                 if (this.isResizing) this.stopResizing();
             },
             { passive: false },
