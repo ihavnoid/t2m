@@ -140,12 +140,6 @@ class EditorPane {
                         } catch (e) {}
                     };
                     reader.readAsDataURL(blob);
-                } else if (item.type === "text/plain") {
-                    item.getAsString((text) => {
-                        this.insertAtCursor(document.createTextNode(text));
-                        this.refresh();
-                        if (this.observerFunc) this.observerFunc();
-                    });
                 }
             }
         }
