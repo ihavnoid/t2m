@@ -187,29 +187,38 @@ class ImageDrawer {
         const win = this.win;
         this.canvas.addEventListener("mousedown", (e) => this.startDrawing(e));
 
-        win.addEventListener("paste", (e) => {
-            if (!this.isActive) return;
-            const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
-            if (!items) return;
-            
-            for (const item of items) {
-                if (item.type.includes("image")) {
-                    const blob = item.getAsFile();
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        const img = new this.win.Image();
-                        img.onload = () => {
-                            this.pendingPaste = img;
-                            this.setTool("paste");
+        win.addEventListener(
+            "paste",
+            (e) => {
+                if (!this.isActive) return;
+                
+                // Stop propagation immediately to prevent background listeners from firing
+                e.stopImmediatePropagation();
+
+                const items = (e.clipboardData || e.originalEvent?.clipboardData)
+                    ?.items;
+                if (!items) return;
+
+                for (const item of items) {
+                    if (item.type.includes("image")) {
+                        const blob = item.getAsFile();
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const img = new this.win.Image();
+                            img.onload = () => {
+                                this.pendingPaste = img;
+                                this.setTool("paste");
+                            };
+                            img.src = event.target.result;
                         };
-                        img.src = event.target.result;
-                    };
-                    reader.readAsDataURL(blob);
-                    e.preventDefault();
-                    break;
+                        reader.readAsDataURL(blob);
+                        e.preventDefault();
+                        break;
+                    }
                 }
-            }
-        });
+            },
+            true,
+        );
 
         win.addEventListener("mousemove", (e) => {
             if (this.isDrawing) this.draw(e);
@@ -315,6 +324,10 @@ class ImageDrawer {
             this.context.fillStyle = "white";
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.saveSnapshot();
+        }
+
+        if (d.activeElement) {
+            d.activeElement.blur();
         }
 
         d.getElementById("drawing-modal").classList.add("active");

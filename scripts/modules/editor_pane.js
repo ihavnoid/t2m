@@ -50,6 +50,10 @@ class EditorPane {
     }
 
     _handleKeyDown(ev) {
+        if (imageDrawer.isActive) {
+            ev.preventDefault();
+            return;
+        }
         this.lastPressedKey = ev.key;
         if (this.lastPressedKey === "Enter" && ev.ctrlKey) {
             this.lastPressedKey = "";
@@ -118,6 +122,10 @@ class EditorPane {
     }
 
     async _handlePaste(ev) {
+        if (imageDrawer.isActive) {
+            ev.preventDefault();
+            return;
+        }
         const clipboardData =
             ev.clipboardData || ev.originalEvent.clipboardData;
         const items = clipboardData.items;
