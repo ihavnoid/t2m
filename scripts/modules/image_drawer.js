@@ -13,6 +13,8 @@ class ImageDrawer {
     constructor() {
         this.canvas = null;
         this.context = null;
+        this.previewCanvas = null;
+        this.previewContext = null;
         this.isDrawing = false;
         this.isResizing = false;
         this.currentTool = "pen";
@@ -49,6 +51,11 @@ class ImageDrawer {
         this.canvas = this.doc.getElementById("drawing-canvas");
         if (!this.canvas) return;
         this.context = this.canvas.getContext("2d");
+
+        this.previewCanvas = this.doc.getElementById("drawing-preview-canvas");
+        if (this.previewCanvas) {
+            this.previewContext = this.previewCanvas.getContext("2d");
+        }
 
         if (!this.initializedDocs.has(this.doc)) {
             this._initToolbar();
@@ -207,7 +214,10 @@ class ImageDrawer {
         win.addEventListener("mousemove", (e) => {
             if (this.isDrawing) this.draw(e);
             else if (this.isResizing) this.doResize(e);
+            else this.drawPreview(e);
         });
+
+        this.canvas.addEventListener("mouseleave", () => this.clearPreview());
 
         win.addEventListener("mouseup", () => {
             if (this.isDrawing) this.stopDrawing();
@@ -360,14 +370,20 @@ class ImageDrawer {
                 pos.x,
                 pos.y,
             );
+            this.clearPreview();
             return;
         }
         if (this.currentTool === "paste" && this.pendingPaste) {
             const img = this.pendingPaste;
-            this.context.drawImage(img, pos.x - img.width / 2, pos.y - img.height / 2);
+            this.context.drawImage(
+                img,
+                pos.x - img.width / 2,
+                pos.y - img.height / 2,
+            );
             this.saveSnapshot();
             this.setTool("pen");
             this.pendingPaste = null;
+            this.clearPreview();
             return;
         }
 
@@ -401,6 +417,46 @@ class ImageDrawer {
         this.context.fillText(unicode, x, y);
         this.context.restore();
         this.saveSnapshot();
+    }
+
+    clearPreview() {
+        if (this.previewContext) {
+            this.previewContext.clearRect(
+                0,
+                0,
+                this.previewCanvas.width,
+                this.previewCanvas.height,
+            );
+        }
+    }
+
+    drawPreview(e) {
+        if (!this.previewContext) return;
+        this.clearPreview();
+
+        const pos = this.getMousePos(e);
+
+        if (this.currentTool === "paste" && this.pendingPaste) {
+            const img = this.pendingPaste;
+            this.previewContext.save();
+            this.previewContext.globalAlpha = 0.5;
+            this.previewContext.drawImage(
+                img,
+                pos.x - img.width / 2,
+                pos.y - img.height / 2,
+            );
+            this.previewContext.restore();
+        } else if (this.currentTool === "clipart" && this.pendingClipart) {
+            const { unicode, size } = this.pendingClipart;
+            this.previewContext.save();
+            this.previewContext.globalAlpha = 0.5;
+            this.previewContext.font = `900 ${size}px "Font Awesome 6 Free"`;
+            this.previewContext.fillStyle = this.currentColor;
+            this.previewContext.textAlign = "center";
+            this.previewContext.textBaseline = "middle";
+            this.previewContext.fillText(unicode, pos.x, pos.y);
+            this.previewContext.restore();
+        }
     }
 
     startResizing(e) {
@@ -489,6 +545,10 @@ class ImageDrawer {
 
         this.canvas.width = w;
         this.canvas.height = h;
+        if (this.previewCanvas) {
+            this.previewCanvas.width = w;
+            this.previewCanvas.height = h;
+        }
         this.setTool(this.currentTool);
         this.context.fillStyle = "white";
         this.context.fillRect(0, 0, w, h);
@@ -579,6 +639,7 @@ class ImageDrawer {
                 const d = this.doc;
                 d.getElementById("drawing-modal").classList.remove("active");
                 this._toggleClipartPanel(false);
+                this.clearPreview();
             }
         } catch (e) {}
         this.onSaveCallback = null;

@@ -82,8 +82,9 @@
 						</div>
 
 						<div id="drawing-canvas-container">
-							<div id="drawing-canvas-wrapper">
+							<div id="drawing-canvas-wrapper" style="position: relative;">
 								<canvas id="drawing-canvas"></canvas>
+								<canvas id="drawing-preview-canvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
 								<div class="resize-handle tl" data-handle="tl"></div>
 								<div class="resize-handle t" data-handle="t"></div>
 								<div class="resize-handle tr" data-handle="tr"></div>
