@@ -66,6 +66,15 @@ class ImageDrawer {
         }
     }
 
+    _setCanvasSize(w, h) {
+        this.canvas.width = w;
+        this.canvas.height = h;
+        if (this.previewCanvas) {
+            this.previewCanvas.width = w;
+            this.previewCanvas.height = h;
+        }
+    }
+
     _initToolbar() {
         const d = this.doc;
         const bind = (id, fn) =>
@@ -297,8 +306,7 @@ class ImageDrawer {
         const container = d.getElementById("drawing-canvas-container");
 
         // Initial reasonable default size
-        this.canvas.width = Math.min(container.clientWidth - 100, 500);
-        this.canvas.height = 400;
+        this._setCanvasSize(Math.min(container.clientWidth - 100, 500), 400);
 
         this.setTool("pen");
 
@@ -306,8 +314,10 @@ class ImageDrawer {
         if (base64Image) {
             const img = new this.win.Image();
             img.onload = () => {
-                this.canvas.width = Math.min(img.width, MAX_WIDTH);
-                this.canvas.height = Math.min(img.height, MAX_HEIGHT);
+                this._setCanvasSize(
+                    Math.min(img.width, MAX_WIDTH),
+                    Math.min(img.height, MAX_HEIGHT),
+                );
                 this.setTool("pen");
                 this.context.fillStyle = "white";
                 this.context.fillRect(
@@ -556,12 +566,7 @@ class ImageDrawer {
             sourceContent.getContext("2d").drawImage(this.canvas, 0, 0);
         }
 
-        this.canvas.width = w;
-        this.canvas.height = h;
-        if (this.previewCanvas) {
-            this.previewCanvas.width = w;
-            this.previewCanvas.height = h;
-        }
+        this._setCanvasSize(w, h);
         this.setTool(this.currentTool);
         this.context.fillStyle = "white";
         this.context.fillRect(0, 0, w, h);
@@ -614,8 +619,7 @@ class ImageDrawer {
     restoreState(state) {
         const img = new this.win.Image();
         img.onload = () => {
-            this.canvas.width = state.width;
-            this.canvas.height = state.height;
+            this._setCanvasSize(state.width, state.height);
             this.setTool(this.currentTool);
             this.context.fillStyle = "white";
             this.context.fillRect(0, 0, state.width, state.height);
