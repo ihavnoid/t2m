@@ -43,9 +43,13 @@ describe('ImageDrawer Module', () => {
                     <button id="close-help"></button>
                 </div>
                 <div id="drawing-canvas-container">
-                    <div id="drawing-canvas-wrapper">
-                        <canvas id="drawing-canvas"></canvas>
-                        <canvas id="drawing-preview-canvas"></canvas>
+                    <div id="drawing-canvas-scroller">
+                        <div id="drawing-canvas-spacer">
+                            <div id="drawing-canvas-wrapper">
+                                <canvas id="drawing-canvas"></canvas>
+                                <canvas id="drawing-preview-canvas"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

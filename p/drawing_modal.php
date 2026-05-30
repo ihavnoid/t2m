@@ -109,17 +109,21 @@
 						</div>
 
 						<div id="drawing-canvas-container">
-							<div id="drawing-canvas-wrapper">
-								<canvas id="drawing-canvas"></canvas>
-								<canvas id="drawing-preview-canvas" style="position: absolute; top: 0; left: 0;"></canvas>
-								<div class="resize-handle tl" data-handle="tl"></div>
-								<div class="resize-handle t" data-handle="t"></div>
-								<div class="resize-handle tr" data-handle="tr"></div>
-								<div class="resize-handle l" data-handle="l"></div>
-								<div class="resize-handle r" data-handle="r"></div>
-								<div class="resize-handle bl" data-handle="bl"></div>
-								<div class="resize-handle b" data-handle="b"></div>
-								<div class="resize-handle br" data-handle="br"></div>
+							<div id="drawing-canvas-scroller" style="display: flex; justify-content: center; align-items: center; min-width: 100%; min-height: 100%;">
+								<div id="drawing-canvas-spacer" style="position: relative; transition: width 0.1s, height 0.1s;">
+									<div id="drawing-canvas-wrapper">
+										<canvas id="drawing-canvas"></canvas>
+										<canvas id="drawing-preview-canvas" style="position: absolute; top: 0; left: 0;"></canvas>
+										<div class="resize-handle tl" data-handle="tl"></div>
+										<div class="resize-handle t" data-handle="t"></div>
+										<div class="resize-handle tr" data-handle="tr"></div>
+										<div class="resize-handle l" data-handle="l"></div>
+										<div class="resize-handle r" data-handle="r"></div>
+										<div class="resize-handle bl" data-handle="bl"></div>
+										<div class="resize-handle b" data-handle="b"></div>
+										<div class="resize-handle br" data-handle="br"></div>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>

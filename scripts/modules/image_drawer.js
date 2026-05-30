@@ -74,6 +74,7 @@ class ImageDrawer {
             this.previewCanvas.width = w;
             this.previewCanvas.height = h;
         }
+        this.applyZoom();
     }
 
     zoom(delta) {
@@ -83,10 +84,18 @@ class ImageDrawer {
 
     applyZoom() {
         const wrapper = this.doc.getElementById("drawing-canvas-wrapper");
+        const spacer = this.doc.getElementById("drawing-canvas-spacer");
         const levelDisplay = this.doc.getElementById("draw-zoom-level");
+
         if (wrapper) {
             wrapper.style.transform = `scale(${this.zoomLevel})`;
         }
+
+        if (spacer) {
+            spacer.style.width = `${this.canvas.width * this.zoomLevel}px`;
+            spacer.style.height = `${this.canvas.height * this.zoomLevel}px`;
+        }
+
         if (levelDisplay) {
             levelDisplay.innerText = `${Math.round(this.zoomLevel * 100)}%`;
         }

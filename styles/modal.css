@@ -492,20 +492,19 @@
     min-height: 400px;
     max-height: 70vh;
     overflow: auto;
-    padding: 40px; /* More padding to allow scrolling room */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    padding: 20px;
+    display: block; /* Remove flex centering */
+    position: relative;
 }
 
 #drawing-canvas-wrapper {
     position: relative;
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
     line-height: 0;
-    margin: auto;
+    margin: 0; /* Let scroller handle spacing if needed, or use JS to center */
     width: fit-content;
     height: fit-content;
-    transform-origin: center center;
+    transform-origin: 0 0; /* Crucial for scroll bars to match scaled size */
     transition: transform 0.1s ease-out;
 }
 
