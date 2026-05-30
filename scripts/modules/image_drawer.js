@@ -220,39 +220,37 @@ class ImageDrawer {
             (e) => {
                 if (!this.isActive) return;
 
-                const step = 20 / this.zoomLevel;
+                const step = 40 / this.zoomLevel;
                 const container = this.doc.getElementById(
                     "drawing-canvas-container",
                 );
+                const key = e.key.toLowerCase();
 
                 // Zoom Shortcuts
-                if (e.ctrlKey || e.metaKey) {
-                    if (e.key === "+" || e.key === "=") {
-                        e.preventDefault();
-                        this.zoom(0.1);
-                    } else if (e.key === "-") {
-                        e.preventDefault();
-                        this.zoom(-0.1);
-                    } else if (e.key === "0") {
-                        e.preventDefault();
-                        this.zoomLevel = 1.0;
-                        this.applyZoom();
-                    }
-                } else {
-                    // Scroll Shortcuts (Arrow Keys)
-                    if (e.key === "ArrowUp") {
-                        container.scrollTop -= step;
-                        e.preventDefault();
-                    } else if (e.key === "ArrowDown") {
-                        container.scrollTop += step;
-                        e.preventDefault();
-                    } else if (e.key === "ArrowLeft") {
-                        container.scrollLeft -= step;
-                        e.preventDefault();
-                    } else if (e.key === "ArrowRight") {
-                        container.scrollLeft += step;
-                        e.preventDefault();
-                    }
+                if ((e.ctrlKey || e.metaKey) && key === "0") {
+                    e.preventDefault();
+                    this.zoomLevel = 1.0;
+                    this.applyZoom();
+                } else if (key === "e") {
+                    this.zoom(0.1);
+                    e.preventDefault();
+                } else if (key === "q") {
+                    this.zoom(-0.1);
+                    e.preventDefault();
+                }
+                // Scroll Shortcuts (WASD + Arrows)
+                else if (key === "w" || e.key === "ArrowUp") {
+                    container.scrollTop -= step;
+                    e.preventDefault();
+                } else if (key === "s" || e.key === "ArrowDown") {
+                    container.scrollTop += step;
+                    e.preventDefault();
+                } else if (key === "a" || e.key === "ArrowLeft") {
+                    container.scrollLeft -= step;
+                    e.preventDefault();
+                } else if (key === "d" || e.key === "ArrowRight") {
+                    container.scrollLeft += step;
+                    e.preventDefault();
                 }
             },
             true,
