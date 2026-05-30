@@ -31,8 +31,9 @@
 							<button id="draw-tool-undo" title="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
 							<button id="draw-tool-redo" title="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
 							<button id="draw-tool-clear" title="Clear Canvas"><i class="fa-solid fa-trash"></i></button>
+							<button id="draw-tool-help" title="Keyboard Shortcuts (H or ?)"><i class="fa-solid fa-circle-question"></i></button>
 							<span class="divider"></span>
-							<button id="draw-zoom-out" title="Zoom Out (Ctrl -)"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+							<button id="draw-zoom-out" title="Zoom Out (Q)"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
 							<span id="draw-zoom-level" style="min-width: 45px; text-align: center; font-family: monospace; font-weight: bold;">100%</span>
 							<button id="draw-zoom-in" title="Zoom In (Ctrl +)"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
 							<span class="divider"></span>
@@ -82,6 +83,28 @@
 								<button class="clipart-item" data-unicode="f06c" title="Leaf"><i class="fa-solid fa-leaf"></i></button>
 								<button class="clipart-item" data-unicode="f06d" title="Fire"><i class="fa-solid fa-fire"></i></button>
 								<button class="clipart-item" data-unicode="f002" title="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+							</div>
+						</div>
+
+						<div id="draw-help-panel" class="help-panel" style="display: none;">
+							<div class="help-header">
+								<span>Keyboard Shortcuts</span>
+								<button id="close-help">&times;</button>
+							</div>
+							<div class="help-content">
+								<table class="shortcuts-table">
+									<tr><td><kbd>W</kbd> / <kbd>&uarr;</kbd></td><td>Scroll Up</td></tr>
+									<tr><td><kbd>S</kbd> / <kbd>&darr;</kbd></td><td>Scroll Down</td></tr>
+									<tr><td><kbd>A</kbd> / <kbd>&larr;</kbd></td><td>Scroll Left</td></tr>
+									<tr><td><kbd>D</kbd> / <kbd>&rarr;</kbd></td><td>Scroll Right</td></tr>
+									<tr><td><kbd>E</kbd></td><td>Zoom In</td></tr>
+									<tr><td><kbd>Q</kbd></td><td>Zoom Out</td></tr>
+									<tr><td><kbd>Ctrl</kbd> + <kbd>0</kbd></td><td>Reset Zoom</td></tr>
+									<tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd></td><td>Undo</td></tr>
+									<tr><td><kbd>Ctrl</kbd> + <kbd>Y</kbd></td><td>Redo</td></tr>
+									<tr><td><kbd>Ctrl</kbd> + <kbd>V</kbd></td><td>Paste Image</td></tr>
+									<tr><td><kbd>H</kbd> / <kbd>?</kbd></td><td>Toggle Help</td></tr>
+								</table>
 							</div>
 						</div>
 

@@ -354,6 +354,75 @@
     transform: translateY(-2px);
 }
 
+/* Help Panel Styles */
+.help-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    z-index: 1000; /* High z-index to show over clipart */
+    width: 300px;
+    display: none;
+    flex-direction: column;
+}
+
+.help-header {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: bold;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+}
+
+.help-header #close-help {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+}
+
+.help-content {
+    padding: 15px;
+}
+
+.shortcuts-table {
+    width: 100%;
+    border-spacing: 0 8px;
+}
+
+.shortcuts-table td {
+    vertical-align: middle;
+}
+
+.shortcuts-table td:first-child {
+    width: 100px;
+    text-align: right;
+    padding-right: 15px;
+}
+
+.shortcuts-table kbd {
+    background-color: #eee;
+    border-radius: 3px;
+    border: 1px solid #b4b4b4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .2), 0 2px 0 0 rgba(255, 255, 255, .7) inset;
+    color: #333;
+    display: inline-block;
+    font-family: monospace;
+    font-size: 0.85em;
+    font-weight: 700;
+    line-height: 1;
+    padding: 2px 4px;
+    white-space: nowrap;
+}
+
 /* History Modal Styles */
 .history-table {
     width: 100%;

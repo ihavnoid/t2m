@@ -11,6 +11,7 @@ describe('ImageDrawer Module', () => {
                 <button id="draw-tool-undo"></button>
                 <button id="draw-tool-redo"></button>
                 <button id="draw-tool-clear"></button>
+                <button id="draw-tool-help"></button>
                 <button id="draw-zoom-in"></button>
                 <button id="draw-zoom-out"></button>
                 <span id="draw-zoom-level">100%</span>
@@ -37,6 +38,9 @@ describe('ImageDrawer Module', () => {
                     <div class="clipart-grid">
                         <button class="clipart-item" data-unicode="\uf118"></button>
                     </div>
+                </div>
+                <div id="draw-help-panel" style="display: none;">
+                    <button id="close-help"></button>
                 </div>
                 <div id="drawing-canvas-container">
                     <div id="drawing-canvas-wrapper">

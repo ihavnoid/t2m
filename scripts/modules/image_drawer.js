@@ -106,6 +106,7 @@ class ImageDrawer {
         bind("draw-tool-undo", () => this.undo());
         bind("draw-tool-redo", () => this.redo());
         bind("draw-tool-clear", () => this.clear());
+        bind("draw-tool-help", () => this._toggleHelpPanel());
         bind("draw-zoom-in", () => this.zoom(0.1));
         bind("draw-zoom-out", () => this.zoom(-0.1));
         bind("draw-save", () => this.save());
@@ -113,6 +114,10 @@ class ImageDrawer {
         // Close/Cancel Events
         d.querySelectorAll("#drawing-modal .close-modal").forEach((btn) => {
             btn.addEventListener("click", () => this.close());
+        });
+
+        d.getElementById("close-help").addEventListener("click", () => {
+            this._toggleHelpPanel(false);
         });
 
         // Color Picker
@@ -175,17 +180,24 @@ class ImageDrawer {
         });
     }
 
+    _toggleHelpPanel(force) {
+        const panel = this.doc.getElementById("draw-help-panel");
+        if (!panel) return;
+
+        const show =
+            force !== undefined ? force : panel.style.display === "none";
+        panel.style.display = show ? "flex" : "none";
+    }
+
     _toggleClipartPanel(force) {
         const panel = this.doc.getElementById("clipart-panel");
         const backdrop = this.doc.getElementById("clipart-backdrop");
-        console.log("DEBUG _toggleClipartPanel called", {force, panel: !!panel, backdrop: !!backdrop, boundWindow: this.boundWindow === window ? 'main' : 'popup', doc: this.doc === document ? 'main' : 'popup'});
         if (!panel || !backdrop) return;
 
         const show =
             force !== undefined ? force : panel.style.display === "none";
         panel.style.display = show ? "flex" : "none";
         backdrop.style.display = show ? "block" : "none";
-        console.log("DEBUG _toggleClipartPanel finished", {show, panelDisplay: panel.style.display, backdropDisplay: backdrop.style.display});
     }
 
     _initResizing() {
@@ -250,6 +262,9 @@ class ImageDrawer {
                     e.preventDefault();
                 } else if (key === "d" || e.key === "ArrowRight") {
                     container.scrollLeft += step;
+                    e.preventDefault();
+                } else if (key === "h" || e.key === "?") {
+                    this._toggleHelpPanel();
                     e.preventDefault();
                 }
             },
@@ -728,6 +743,7 @@ class ImageDrawer {
                 const d = this.doc;
                 d.getElementById("drawing-modal").classList.remove("active");
                 this._toggleClipartPanel(false);
+                this._toggleHelpPanel(false);
                 this.clearPreview();
             }
         } catch (e) {}
