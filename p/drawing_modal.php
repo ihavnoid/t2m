@@ -32,6 +32,10 @@
 							<button id="draw-tool-redo" title="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
 							<button id="draw-tool-clear" title="Clear Canvas"><i class="fa-solid fa-trash"></i></button>
 							<span class="divider"></span>
+							<button id="draw-zoom-out" title="Zoom Out (Ctrl -)"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+							<span id="draw-zoom-level" style="min-width: 45px; text-align: center; font-family: monospace; font-weight: bold;">100%</span>
+							<button id="draw-zoom-in" title="Zoom In (Ctrl +)"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+							<span class="divider"></span>
 							<button id="draw-save" class="button-save" title="Save Image"><i class="fa-solid fa-check"></i> Save</button>
 							<button class="button-cancel close-modal" title="Cancel"><i class="fa-solid fa-xmark"></i> Cancel</button>
 						</div>
@@ -82,9 +86,9 @@
 						</div>
 
 						<div id="drawing-canvas-container">
-							<div id="drawing-canvas-wrapper" style="position: relative;">
+							<div id="drawing-canvas-wrapper">
 								<canvas id="drawing-canvas"></canvas>
-								<canvas id="drawing-preview-canvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+								<canvas id="drawing-preview-canvas" style="position: absolute; top: 0; left: 0;"></canvas>
 								<div class="resize-handle tl" data-handle="tl"></div>
 								<div class="resize-handle t" data-handle="t"></div>
 								<div class="resize-handle tr" data-handle="tr"></div>

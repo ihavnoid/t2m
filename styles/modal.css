@@ -419,25 +419,38 @@
 
 #drawing-canvas-container {
     border: 1px solid #999;
-    background: #ccc; /* Darker background to see canvas edges */
+    background: #bbb; /* Darker background to see canvas edges */
     min-height: 400px;
     max-height: 70vh;
     overflow: auto;
-    padding: 20px;
+    padding: 40px; /* More padding to allow scrolling room */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #drawing-canvas-wrapper {
     position: relative;
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
     line-height: 0;
-    margin: 20px auto; /* Center horizontally and provide space for top/bottom handles */
+    margin: auto;
     width: fit-content;
+    height: fit-content;
+    transform-origin: center center;
+    transition: transform 0.1s ease-out;
 }
 
 #drawing-canvas {
     background: white;
     cursor: crosshair;
     touch-action: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+#drawing-preview-canvas {
+    background: transparent;
+    pointer-events: none;
     user-select: none;
     -webkit-user-drag: none;
 }

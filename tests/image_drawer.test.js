@@ -11,6 +11,9 @@ describe('ImageDrawer Module', () => {
                 <button id="draw-tool-undo"></button>
                 <button id="draw-tool-redo"></button>
                 <button id="draw-tool-clear"></button>
+                <button id="draw-zoom-in"></button>
+                <button id="draw-zoom-out"></button>
+                <span id="draw-zoom-level">100%</span>
                 <div id="drawing-modal-footer">
                    <button id="draw-save"></button>
                 </div>
@@ -36,7 +39,10 @@ describe('ImageDrawer Module', () => {
                     </div>
                 </div>
                 <div id="drawing-canvas-container">
-                    <canvas id="drawing-canvas"></canvas>
+                    <div id="drawing-canvas-wrapper">
+                        <canvas id="drawing-canvas"></canvas>
+                        <canvas id="drawing-preview-canvas"></canvas>
+                    </div>
                 </div>
             </div>
         `;

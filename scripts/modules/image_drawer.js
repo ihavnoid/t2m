@@ -28,6 +28,7 @@ class ImageDrawer {
 
         this.currentColor = "#000000";
         this.currentThickness = 5;
+        this.zoomLevel = 1.0;
         this.pendingClipart = null; // { unicode, size }
         this.pendingPaste = null; // Image object
         this.isActive = false;
@@ -75,6 +76,22 @@ class ImageDrawer {
         }
     }
 
+    zoom(delta) {
+        this.zoomLevel = Math.max(1.0, Math.min(8.0, this.zoomLevel + delta));
+        this.applyZoom();
+    }
+
+    applyZoom() {
+        const wrapper = this.doc.getElementById("drawing-canvas-wrapper");
+        const levelDisplay = this.doc.getElementById("draw-zoom-level");
+        if (wrapper) {
+            wrapper.style.transform = `scale(${this.zoomLevel})`;
+        }
+        if (levelDisplay) {
+            levelDisplay.innerText = `${Math.round(this.zoomLevel * 100)}%`;
+        }
+    }
+
     _initToolbar() {
         const d = this.doc;
         const bind = (id, fn) =>
@@ -89,6 +106,8 @@ class ImageDrawer {
         bind("draw-tool-undo", () => this.undo());
         bind("draw-tool-redo", () => this.redo());
         bind("draw-tool-clear", () => this.clear());
+        bind("draw-zoom-in", () => this.zoom(0.1));
+        bind("draw-zoom-out", () => this.zoom(-0.1));
         bind("draw-save", () => this.save());
 
         // Close/Cancel Events
@@ -197,6 +216,49 @@ class ImageDrawer {
         this.canvas.addEventListener("mousedown", (e) => this.startDrawing(e));
 
         win.addEventListener(
+            "keydown",
+            (e) => {
+                if (!this.isActive) return;
+
+                const step = 20 / this.zoomLevel;
+                const container = this.doc.getElementById(
+                    "drawing-canvas-container",
+                );
+
+                // Zoom Shortcuts
+                if (e.ctrlKey || e.metaKey) {
+                    if (e.key === "+" || e.key === "=") {
+                        e.preventDefault();
+                        this.zoom(0.1);
+                    } else if (e.key === "-") {
+                        e.preventDefault();
+                        this.zoom(-0.1);
+                    } else if (e.key === "0") {
+                        e.preventDefault();
+                        this.zoomLevel = 1.0;
+                        this.applyZoom();
+                    }
+                } else {
+                    // Scroll Shortcuts (Arrow Keys)
+                    if (e.key === "ArrowUp") {
+                        container.scrollTop -= step;
+                        e.preventDefault();
+                    } else if (e.key === "ArrowDown") {
+                        container.scrollTop += step;
+                        e.preventDefault();
+                    } else if (e.key === "ArrowLeft") {
+                        container.scrollLeft -= step;
+                        e.preventDefault();
+                    } else if (e.key === "ArrowRight") {
+                        container.scrollLeft += step;
+                        e.preventDefault();
+                    }
+                }
+            },
+            true,
+        );
+
+        win.addEventListener(
             "paste",
             (e) => {
                 if (!this.isActive) return;
@@ -299,6 +361,7 @@ class ImageDrawer {
         this.onSaveCallback = callback;
         this.history = [];
         this.redoHistory = [];
+        this.zoomLevel = 1.0;
 
         // Determine which window to open the editor in
         let targetWin = window;
@@ -390,8 +453,8 @@ class ImageDrawer {
     getMousePos(e) {
         const rect = this.canvas.getBoundingClientRect();
         return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
+            x: (e.clientX - rect.left) / this.zoomLevel,
+            y: (e.clientY - rect.top) / this.zoomLevel,
         };
     }
 
