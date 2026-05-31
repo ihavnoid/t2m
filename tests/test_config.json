@@ -1,0 +1,6 @@
+{
+    "db_path": "tests/test_backend.db",
+    "base_url": "http://localhost:8000/",
+    "gc_mindmap_ttl_days": 730,
+    "gc_image_ttl_days": 14
+}
