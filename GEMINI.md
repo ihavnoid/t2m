@@ -32,8 +32,11 @@ Foundational mandates and architectural patterns for the t2m project.
     - During coordinate updates in `EditorPane`, tokenize `<img>` tags to preserve them, but strip all other HTML formatting tags (which are reconstructed via `cleanupHTML`).
 - **Text Reorganization**:
     - Standard plaintext pasting (`Ctrl+V`) automatically applies a **deterministic heuristic** to assign hierarchy based on indentation, bullets, colons, and capitalization.
+    - **HTML Pasting**: 
+        - If the pasted HTML contains structural list tags (`<li>`), the hierarchy is preserved as-is.
+        - If the HTML is unstructured (e.g., div/p tags), it is flattened to text and processed via the heuristic.
+        - **Image Migration**: All external `<img>` tags found in pasted HTML are automatically fetched, uploaded to the local server, and replaced with migration-safe relative links (`images/[hash].png`).
     - **Cleaning Phase**: Before processing, the algorithm strips "noise" like redundant bullets, symbol-only separator lines, and empty lines.
-    - **Comments**: Lines starting with `//`, `#`, `(`, or `note:` are treated as comments for the previous node (`-1` depth).
 - **Event Isolation**: Use the **capture phase** and `stopImmediatePropagation()` in the Image Editor to prevent keyboard/paste events from leaking to the background text editor.
 
 ### Development Workflow

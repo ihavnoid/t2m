@@ -152,24 +152,99 @@ class EditorPane {
                 }
             }
         } else {
-            // Handle plaintext reorganization
+            const html = clipboardData.getData("text/html");
             const text = clipboardData.getData("text/plain");
-            if (text) {
+
+            if (html || text) {
                 ev.preventDefault();
-                const html = reformatText(text);
-                if (html) {
-                    const tempDiv = document.createElement("div");
-                    tempDiv.innerHTML = html;
-                    const fragment = document.createDocumentFragment();
-                    while (tempDiv.firstChild) {
-                        fragment.appendChild(tempDiv.firstChild);
-                    }
-                    this.insertAtCursor(fragment);
-                    this.refresh();
-                    if (this.observerFunc) this.observerFunc();
+                this._processPasteContent(html, text);
+            }
+        }
+    }
+
+    async _processPasteContent(html, text) {
+        let fragment;
+
+        if (html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+            const container = doc.body;
+
+            // Step 1: Upload any external images
+            await this._migrateExternalImages(container);
+
+            // Step 2: Determine if we use HTML as-is or reorganize from text
+            // Heuristic: If it contains <li>, it's structured.
+            if (container.querySelector("li")) {
+                this._cleanHTMLForEditor(container);
+                fragment = document.createDocumentFragment();
+                while (container.firstChild) {
+                    fragment.appendChild(container.firstChild);
+                }
+            } else if (text) {
+                const reformatted = reformatText(text);
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = reformatted;
+                fragment = document.createDocumentFragment();
+                while (tempDiv.firstChild) {
+                    fragment.appendChild(tempDiv.firstChild);
+                }
+            }
+        } else if (text) {
+            const reformatted = reformatText(text);
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = reformatted;
+            fragment = document.createDocumentFragment();
+            while (tempDiv.firstChild) {
+                fragment.appendChild(tempDiv.firstChild);
+            }
+        }
+
+        if (fragment) {
+            this.insertAtCursor(fragment);
+            this.refresh();
+            if (this.observerFunc) this.observerFunc();
+        }
+    }
+
+    async _migrateExternalImages(container) {
+        const imgs = Array.from(container.querySelectorAll("img"));
+        for (const img of imgs) {
+            const src = img.getAttribute("src");
+            if (src && !src.startsWith("images/")) {
+                try {
+                    // Try to fetch the image and upload it
+                    const response = await fetch(src);
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    const dataUrl = await new Promise((resolve) => {
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(blob);
+                    });
+                    const localUrl = await uploadImage(dataUrl);
+                    img.setAttribute("src", localUrl);
+                } catch (e) {
+                    console.warn("Failed to migrate external image:", src, e);
+                    // Leave original src as fallback
                 }
             }
         }
+    }
+
+    _cleanHTMLForEditor(container) {
+        // Strip all attributes except src on images
+        const all = container.querySelectorAll("*");
+        all.forEach((el) => {
+            const attrs = Array.from(el.attributes);
+            attrs.forEach((attr) => {
+                if (el.tagName === "IMG" && attr.name === "src") return;
+                el.removeAttribute(attr.name);
+            });
+        });
+        
+        // Remove styling tags but keep structure and images
+        const forbidden = container.querySelectorAll("style, script, meta, link");
+        forbidden.forEach(el => el.remove());
     }
 
     _createEditorImage(src) {
