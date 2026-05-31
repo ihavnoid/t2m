@@ -114,11 +114,9 @@ class App {
                 "file-rename": () => appFunctions.fileRename(),
                 "file-preferences": () => appFunctions.filePreferences(),
                 "navbar-history": () => historyModule.open(),
-                "text-paste-text": () => textReorganizer.open(),
             });
             // Initialize Modal
             modal.init();
-            textReorganizer.init();
 
             // Initialize Pane Resizer
             paneResizer.init();

@@ -80,8 +80,6 @@
 						<li><a href="#" id="file-new"><i class="fa-solid fa-file fa-fw"></i>New<span class="dropdown-shortcut">Ctrl+N</span></a></li>
 						<li><a href="#" id="file-open"><i class="fa-solid fa-upload fa-fw"></i>Open...<span class="dropdown-shortcut">Ctrl+O</span></a></li>
 						<li><a href="#" id="file-save"><i class="fa-solid fa-save fa-fw"></i>Save...<span class="dropdown-shortcut">Ctrl+S</span></a></li>
-						<li class="dropdown-divider"></li>
-						<li><a href="#" id="text-paste-text"><i class="fa-solid fa-wand-magic-sparkles fa-fw"></i>Paste Raw Text...</a></li>
 					</ul>
 				</li>
 				<li class="navbar-item navbar-button navbar-dropdown">
@@ -180,7 +178,6 @@
 
 <?php include "p/drawing_modal.php"; ?>
 <?php include "p/history_modal.php"; ?>
-<?php include "p/text_paste_modal.php"; ?>
 	</div>
 	<input id="file-input" type="file" accept=".mindtxt">
 </body>

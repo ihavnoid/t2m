@@ -1,5 +1,6 @@
 import { uploadImage } from "./file_upload.js";
 import { imageDrawer } from "./image_drawer.js";
+import { reformatText } from "./text_reorganizer.js";
 
 /**
  * Editor pane encapsulation.
@@ -148,6 +149,24 @@ class EditorPane {
                         } catch (e) {}
                     };
                     reader.readAsDataURL(blob);
+                }
+            }
+        } else {
+            // Handle plaintext reorganization
+            const text = clipboardData.getData("text/plain");
+            if (text) {
+                ev.preventDefault();
+                const html = reformatText(text);
+                if (html) {
+                    const tempDiv = document.createElement("div");
+                    tempDiv.innerHTML = html;
+                    const fragment = document.createDocumentFragment();
+                    while (tempDiv.firstChild) {
+                        fragment.appendChild(tempDiv.firstChild);
+                    }
+                    this.insertAtCursor(fragment);
+                    this.refresh();
+                    if (this.observerFunc) this.observerFunc();
                 }
             }
         }

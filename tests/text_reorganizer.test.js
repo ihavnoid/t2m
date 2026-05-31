@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { textReorganizer } from "../scripts/modules/text_reorganizer.js";
+import * as textReorganizer from "../scripts/modules/text_reorganizer.js";
 
 describe("TextReorganizer Heuristic (Dynamic Stack)", () => {
     let context;
@@ -78,7 +78,7 @@ describe("TextReorganizer Heuristic (Dynamic Stack)", () => {
     it("21-25: Punctuation Stripping (HTML Gen Check)", () => {
         const lines = ["Item 1.", "Item 2,", "Item 3;", "Keep..."];
         const depths = [0, 0, 0, 0];
-        const html = textReorganizer._buildHierarchyHTML(lines, depths);
+        const html = textReorganizer.buildHierarchyHTML(lines, depths);
         expect(html).toContain("<li>Item 1</li>");
         expect(html).toContain("<li>Item 2</li>");
         expect(html).toContain("<li>Item 3</li>");
@@ -120,3 +120,4 @@ describe("TextReorganizer Heuristic (Dynamic Stack)", () => {
         }
     });
 });
+

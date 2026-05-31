@@ -31,7 +31,7 @@ Foundational mandates and architectural patterns for the t2m project.
     - Use the custom linear diff algorithm in `mindmap.js` for node reconciliation.
     - During coordinate updates in `EditorPane`, tokenize `<img>` tags to preserve them, but strip all other HTML formatting tags (which are reconstructed via `cleanupHTML`).
 - **Text Reorganization**:
-    - The "Paste Raw Text" feature uses a **deterministic heuristic** (not an LLM) to assign hierarchy based on indentation, bullets, colons, and capitalization.
+    - Standard plaintext pasting (`Ctrl+V`) automatically applies a **deterministic heuristic** to assign hierarchy based on indentation, bullets, colons, and capitalization.
     - **Cleaning Phase**: Before processing, the algorithm strips "noise" like redundant bullets, symbol-only separator lines, and empty lines.
     - **Comments**: Lines starting with `//`, `#`, `(`, or `note:` are treated as comments for the previous node (`-1` depth).
 - **Event Isolation**: Use the **capture phase** and `stopImmediatePropagation()` in the Image Editor to prevent keyboard/paste events from leaking to the background text editor.
