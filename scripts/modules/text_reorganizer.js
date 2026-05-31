@@ -75,31 +75,41 @@ class TextReorganizer {
         }
 
         // 2. INDENTATION CALCULATION
-        // First, we extract all leading whitespace (spaces and tabs).
+        // We use a "Stack-based" indentation tracker similar to Python/YAML.
+        if (!context.indentStack) {
+            context.indentStack = [0]; // Index 0 is always 0 spaces
+        }
+
         const leadingMatch = line.match(/^[\s\t]*/);
         const leadingText = leadingMatch ? leadingMatch[0] : "";
+        
+        // Tab = 4 space equivalent for stack calculation
+        const tabEquivalent = 4;
+        const currentIndent = (leadingText.match(/ /g) || []).length + 
+                            (leadingText.match(/\t/g) || []).length * tabEquivalent;
 
-        // We count tabs as 1 full indent unit each.
-        const tabCount = (leadingText.match(/\t/g) || []).length;
-        // We count spaces separately.
-        const spaceCount = (leadingText.match(/ /g) || []).length;
+        // Determine raw indentation level based on stack
+        let indentLevel = 0;
+        const lastIndent = context.indentStack[context.indentStack.length - 1];
 
-        // AUTO-DETECT INDENT SIZE:
-        // If we haven't determined the space-per-level yet (e.g., 4),
-        // we use the first indented line we find as the template.
-        if (!context.indentSize && spaceCount > 0) {
-            context.indentSize = spaceCount;
+        if (currentIndent > lastIndent) {
+            // Indent: New level
+            context.indentStack.push(currentIndent);
+        } else if (currentIndent < lastIndent) {
+            // Dedent: Pop levels until we find a match or smaller
+            while (context.indentStack.length > 1 && 
+                   context.indentStack[context.indentStack.length - 1] > currentIndent) {
+                context.indentStack.pop();
+            }
+            // "Forgiving Snap": If it doesn't match a previous level exactly, 
+            // treat it as a new level relative to where we landed.
+            if (context.indentStack[context.indentStack.length - 1] < currentIndent) {
+                context.indentStack.push(currentIndent);
+            }
         }
-        const defaultIndentSize = 4;
-        const indentSize = context.indentSize || defaultIndentSize;
-
-        // indentLevel is the sum of tabs and standardized space blocks.
-        const indentLevel = tabCount + Math.floor(spaceCount / indentSize);
+        indentLevel = context.indentStack.length - 1;
 
         // 3. SEMANTIC CUES
-        // - Bullets: -, *, +, •, >
-        // - Numbering: 1. , 1), (1)
-        // - Suffix Colon: "Topic:" usually implies the next line is a child.
         const isBullet = /^[\-\*\+\•\>]\s/.test(trimmed);
         const isNumeric = /^\d+[\.\)\s]/.test(trimmed);
         const hasPrefix = isBullet || isNumeric;
@@ -108,30 +118,27 @@ class TextReorganizer {
         // 4. DEPTH RESOLUTION
         let depth = indentLevel;
 
-        // CASE A: The line has NO physical indentation (starts at column 0).
-        if (leadingText.length === 0) {
+        // Special case: "Virtual" indentation via colons (for scribbles without indentation)
+        if (currentIndent === 0) {
             if (parentRequested) {
-                // Previous line ended with ':', so we force this line to be a child.
                 depth = prevDepth + 1;
             } else {
-                // No physical indent and no colon-request -> Reset to Root (0).
                 depth = 0;
+                context.indentStack = [0]; // Reset stack if we explicitly return to root column
             }
-        }
-        // CASE B: Explicit indentation was used.
-        else {
-            // If the previous line had a colon (requesting a child), but the user
-            // also indented manually, we ensure the depth is at least one level deeper
-            // than the previous line.
-            if (parentRequested && depth <= prevDepth) {
-                depth = prevDepth + 1;
+        } else if (parentRequested && depth <= prevDepth) {
+            // If previous line asked for a child and we indented but not enough, force +1
+            depth = prevDepth + 1;
+            // Align the stack to this forced depth
+            if (currentIndent > context.indentStack[context.indentStack.length - 1]) {
+                // Already handled above
+            } else {
+                // This is a complex edge case, keep it simple for now.
             }
         }
 
-        // SANITY GUARD:
-        // If the user didn't use any physical indentation, don't let the depth jump
-        // forward by more than 1 level at a time (e.g. from 0 to 5) via colons.
-        if (leadingText.length === 0 && depth > prevDepth + 1) {
+        // Sanity guard: prevent massive jumps without physical indentation
+        if (currentIndent === 0 && depth > prevDepth + 1) {
             depth = prevDepth + 1;
         }
 
@@ -200,21 +207,21 @@ class TextReorganizer {
                 .replace(/^[\s\-\*\+\•\>]+\s?/, "")
                 .replace(/^\d+[\.\)\s]+\s?/, "");
 
+            // Heuristic: Remove trailing punctuations that don't make sense in a mindmap node
+            // (Periods, commas, semicolons). Keep colons if they look like labels.
+            if (!lineText.endsWith("...")) {
+                lineText = lineText.replace(/[\.\,\;]$/, "");
+            }
+
             const depth = depths[i];
 
             if (depth === -1) {
                 // Comment: Append to the previous node if possible.
-                // In our format, comments are <span class="comment"> inside the <li> or after it.
-                // We'll use the ' [comment]' syntax or just append as text if it's simpler.
-                // The most robust way for this editor is to use the double space or bracketed style.
-                // Let's use " (comment)" at the end of the previous line's text.
                 const comment = lines[i]
                     .trim()
                     .replace(/^\/\/\s?|^note:\s?|^remark:\s?/i, "");
                 const commentToken = ` <span class="comment">${this._escapeHTML(comment)}</span>`;
 
-                // This is tricky because we already closed or are about to close the LI.
-                // We need to surgically insert into the last LI.
                 const lastLiIdx = html.lastIndexOf("</li>");
                 if (lastLiIdx !== -1) {
                     html =

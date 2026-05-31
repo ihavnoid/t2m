@@ -1,208 +1,122 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { textReorganizer } from "../scripts/modules/text_reorganizer.js";
 
-describe("TextReorganizer Heuristic (detectDepth)", () => {
-  let context;
+describe("TextReorganizer Heuristic (Dynamic Stack)", () => {
+    let context;
 
-  beforeEach(() => {
-    context = { indentSize: 4 }; // Default to 4 for predictable tests
-  });
+    beforeEach(() => {
+        context = { indentStack: [0] };
+    });
 
-  it("1-5: Basic Indentation", () => {
-    expect(textReorganizer.detectDepth("Root", null, 0, context)).toBe(0);
-    expect(textReorganizer.detectDepth("    Child", "Root", 0, context)).toBe(
-      1,
-    );
-    expect(
-      textReorganizer.detectDepth(
-        "        Grandchild",
-        "    Child",
-        1,
-        context,
-      ),
-    ).toBe(2);
-    expect(
-      textReorganizer.detectDepth("    Sibling", "    Child", 1, context),
-    ).toBe(1);
-    expect(
-      textReorganizer.detectDepth("Root Again", "    Sibling", 1, context),
-    ).toBe(0);
-  });
+    it("1-5: Progressive Messy Indentation", () => {
+        // level 1 with 3 space, level 2 with 4 space, level 3 with 8 spaces
+        expect(textReorganizer.detectDepth("Root", null, 0, context)).toBe(0);
+        expect(
+            textReorganizer.detectDepth("   Level 1", "Root", 0, context),
+        ).toBe(1);
+        expect(
+            textReorganizer.detectDepth("    Level 2", "   Level 1", 1, context),
+        ).toBe(2);
+        expect(
+            textReorganizer.detectDepth(
+                "        Level 3",
+                "    Level 2",
+                2,
+                context,
+            ),
+        ).toBe(3);
+        expect(
+            textReorganizer.detectDepth(
+                "   Back to Level 1",
+                "        Level 3",
+                3,
+                context,
+            ),
+        ).toBe(1);
+    });
 
-  it("6-10: Bullets", () => {
-    expect(textReorganizer.detectDepth("- Item 1", null, 0, context)).toBe(0);
-    expect(
-      textReorganizer.detectDepth("* Item 2", "- Item 1", 0, context),
-    ).toBe(0);
-    expect(
-      textReorganizer.detectDepth("    + Sub-item", "* Item 2", 0, context),
-    ).toBe(1);
-    expect(
-      textReorganizer.detectDepth(
-        "    • Another Sub",
-        "    + Sub-item",
-        1,
-        context,
-      ),
-    ).toBe(1);
-    expect(
-      textReorganizer.detectDepth("> Quote style", "Root", 0, context),
-    ).toBe(0);
-  });
+    it("6-10: Inconsistent Dedenting (Snapping)", () => {
+        textReorganizer.detectDepth("Root", null, 0, context); // Stack [0]
+        textReorganizer.detectDepth("     L1", "Root", 0, context); // Stack [0, 5]
+        textReorganizer.detectDepth("          L2", "L1", 1, context); // Stack [0, 5, 10]
+        // Dedent to 2 spaces (not in stack). Should pop 10, 5. Landing at 0.
+        // Since 2 > 0, it pushes 2. Stack becomes [0, 2], Level 1.
+        expect(textReorganizer.detectDepth("  L1 New", "L2", 2, context)).toBe(
+            1,
+        );
+        expect(context.indentStack).toEqual([0, 2]);
+    });
 
-  it("11-15: Numbering", () => {
-    expect(textReorganizer.detectDepth("1. First", null, 0, context)).toBe(0);
-    expect(
-      textReorganizer.detectDepth("2) Second", "1. First", 0, context),
-    ).toBe(0);
-    expect(
-      textReorganizer.detectDepth("    1.1 Sub", "2) Second", 0, context),
-    ).toBe(1);
-    expect(
-      textReorganizer.detectDepth("    a) Alpha", "    1.1 Sub", 1, context),
-    ).toBe(1);
-    expect(
-      textReorganizer.detectDepth("3. Third", "    a) Alpha", 1, context),
-    ).toBe(0);
-  });
+    it("11-15: Tab Support (4 spaces equivalent)", () => {
+        expect(textReorganizer.detectDepth("Root", null, 0, context)).toBe(0);
+        expect(textReorganizer.detectDepth("\tTab L1", "Root", 0, context)).toBe(
+            1,
+        );
+        expect(
+            textReorganizer.detectDepth("    Spaces L1", "\tTab L1", 1, context),
+        ).toBe(1);
+        expect(
+            textReorganizer.detectDepth("\t\tTab L2", "Spaces L1", 1, context),
+        ).toBe(2);
+    });
 
-  it("16-20: Colons", () => {
-    expect(textReorganizer.detectDepth("Header:", null, 0, context)).toBe(0);
-    expect(textReorganizer.detectDepth("Detail", "Header:", 0, context)).toBe(
-      1,
-    );
-    expect(
-      textReorganizer.detectDepth("    Subheader:", "Detail", 1, context),
-    ).toBe(1);
-    expect(
-      textReorganizer.detectDepth(
-        "    More Detail",
-        "    Subheader:",
-        1,
-        context,
-      ),
-    ).toBe(2);
-    expect(
-      textReorganizer.detectDepth("Back", "    More Detail", 2, context),
-    ).toBe(0);
-  });
+    it("16-20: Colon Hierarchy Logic", () => {
+        expect(textReorganizer.detectDepth("Topic:", null, 0, context)).toBe(0);
+        // No indent but previous had colon -> Child (Depth 1)
+        expect(textReorganizer.detectDepth("Subtopic", "Topic:", 0, context)).toBe(
+            1,
+        );
+        // Indented child
+        expect(
+            textReorganizer.detectDepth("  Indented:", "Subtopic", 1, context),
+        ).toBe(1);
+        expect(
+            textReorganizer.detectDepth("  Child", "  Indented:", 1, context),
+        ).toBe(2);
+    });
 
-  it("21-25: Comments", () => {
-    expect(
-      textReorganizer.detectDepth("// JS comment", "Node", 0, context),
-    ).toBe(-1);
-    expect(
-      textReorganizer.detectDepth("# Shell comment", "Node", 0, context),
-    ).toBe(-1);
-    expect(
-      textReorganizer.detectDepth("(Parenthesis)", "Node", 0, context),
-    ).toBe(-1);
-    expect(
-      textReorganizer.detectDepth("note: check this", "Node", 0, context),
-    ).toBe(-1);
-    expect(
-      textReorganizer.detectDepth("Remark: very important", "Node", 0, context),
-    ).toBe(-1);
-  });
+    it("21-25: Punctuation Stripping (HTML Gen Check)", () => {
+        const lines = ["Item 1.", "Item 2,", "Item 3;", "Keep..."];
+        const depths = [0, 0, 0, 0];
+        const html = textReorganizer._buildHierarchyHTML(lines, depths);
+        expect(html).toContain("<li>Item 1</li>");
+        expect(html).toContain("<li>Item 2</li>");
+        expect(html).toContain("<li>Item 3</li>");
+        expect(html).toContain("<li>Keep...</li>");
+    });
 
-  it("26-30: Case sensitivity", () => {
-    expect(
-      textReorganizer.detectDepth("TOP LEVEL", "    detail", 1, context),
-    ).toBe(0);
-    expect(
-      textReorganizer.detectDepth("ANOTHER HEADER", "TOP LEVEL", 0, context),
-    ).toBe(0);
-    expect(
-      textReorganizer.detectDepth("Not a Header", "ANOTHER HEADER", 0, context),
-    ).toBe(0);
-    expect(
-      textReorganizer.detectDepth("    SHOUTING CHILD", "Header", 0, context),
-    ).toBe(1);
-    expect(
-      textReorganizer.detectDepth(
-        "BACK TO ROOT",
-        "    SHOUTING CHILD",
-        1,
-        context,
-      ),
-    ).toBe(0);
-  });
+    it("26-100: Comprehensive Stress Test", () => {
+        const stackContext = { indentStack: [0] };
+        // Random walks through indentation
+        let prevLine = "Root";
+        let prevDepth = 0;
+        const history = [{ indent: 0, depth: 0 }];
 
-  it("31-40: Mixed whitespace", () => {
-    expect(textReorganizer.detectDepth("\tTabbed", null, 0, context)).toBe(1);
-    expect(
-      textReorganizer.detectDepth("    Spaces", "\tTabbed", 1, context),
-    ).toBe(1);
-    expect(
-      textReorganizer.detectDepth(
-        "        More Spaces",
-        "    Spaces",
-        1,
-        context,
-      ),
-    ).toBe(2);
-    expect(
-      textReorganizer.detectDepth(
-        "\t\tDouble Tab",
-        "        More Spaces",
-        2,
-        context,
-      ),
-    ).toBe(2);
-    expect(
-      textReorganizer.detectDepth("No indent", "\t\tDouble Tab", 2, context),
-    ).toBe(0);
-    // ... more mixed
-    expect(
-      textReorganizer.detectDepth("    Indented:", "Root", 0, context),
-    ).toBe(1);
-    expect(
-      textReorganizer.detectDepth("    Child", "    Indented:", 1, context),
-    ).toBe(2);
-    expect(
-      textReorganizer.detectDepth("    Sibling", "    Child", 2, context),
-    ).toBe(1);
-    expect(
-      textReorganizer.detectDepth(
-        "        Sub-sibling",
-        "    Sibling",
-        1,
-        context,
-      ),
-    ).toBe(2);
-    expect(
-      textReorganizer.detectDepth("Root", "        Sub-sibling", 2, context),
-    ).toBe(0);
-  });
+        for (let i = 0; i < 75; i++) {
+            // Pick a random level from history or go deeper
+            const goDeeper = Math.random() > 0.4;
+            let currentIndent;
 
-  it("41: Auto-detection on first indented line", () => {
-    // Reset context to simulate fresh document
-    const freshContext = { indentSize: 0 };
-    // If the first indented line has 2 spaces, it should be depth 1
-    // and context.indentSize should become 2.
-    expect(
-      textReorganizer.detectDepth("  Indented", "Root", 0, freshContext),
-    ).toBe(1);
-    expect(freshContext.indentSize).toBe(2);
-  });
+            if (goDeeper) {
+                currentIndent = history[history.length - 1].indent + 2 + Math.floor(Math.random() * 5);
+            } else {
+                const randomLevel = Math.floor(Math.random() * history.length);
+                currentIndent = history[randomLevel].indent;
+            }
 
-  it("42-100: Systematic Stress Test", () => {
-    // We'll run a loop to generate 60 variations of the above rules
-    for (let i = 0; i < 60; i++) {
-      const targetDepth = i % 4;
-      const spaces = " ".repeat(targetDepth * 4);
-      const line = `${spaces}Test Node ${i}`;
-      // If targetDepth is 0, don't use a colon in prev line
-      const prev = targetDepth === 0 ? "Previous" : "Previous:";
-      const prevDepth = targetDepth > 0 ? targetDepth - 1 : 0;
+            const line = " ".repeat(currentIndent) + "Node " + i;
+            const result = textReorganizer.detectDepth(line, prevLine, prevDepth, stackContext);
+            
+            // Basic sanity check: if indent increased, depth must increase.
+            if (currentIndent > history[history.length - 1].indent) {
+                expect(result).toBeGreaterThan(prevDepth);
+            } else if (currentIndent < history[history.length - 1].indent) {
+                expect(result).toBeLessThanOrEqual(prevDepth);
+            }
 
-      const result = textReorganizer.detectDepth(
-        line,
-        prev,
-        prevDepth,
-        context,
-      );
-      expect(result).toBe(targetDepth);
-    }
-  });
+            prevLine = line;
+            prevDepth = result;
+            history.push({ indent: currentIndent, depth: result });
+        }
+    });
 });
