@@ -18,13 +18,13 @@ export default [
                 globals: "readonly",
                 confirm: "readonly",
                 alert: "readonly",
-                EventSource: "readonly"
-            }
+                EventSource: "readonly",
+            },
         },
         rules: {
             "no-unused-vars": "warn",
             "no-undef": "error",
-            "no-constant-condition": "warn"
-        }
-    }
+            "no-constant-condition": "warn",
+        },
+    },
 ];

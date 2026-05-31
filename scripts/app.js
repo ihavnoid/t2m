@@ -1,21 +1,21 @@
 /**
  * Main application entry point.
  */
-import { unsavedChanges } from './modules/unsaved_changes.js';
-import { navbar } from './modules/navbar.js';
-import { shortcuts } from './modules/shortcuts.js';
-import { modal } from './modules/modal.js';
-import { paneResizer } from './modules/pane_resizer.js';
-import { editorPane } from './modules/editor_pane.js';
-import { settings } from './modules/settings.js';
-import { fileImport } from './modules/file_import.js';
-import { fileExport } from './modules/file_export.js';
-import { appFunctions } from './modules/app_functions.js';
-import { mindmap } from './modules/mindmap.js';
-import { imageDrawer } from './modules/image_drawer.js';
-import { uploadImage } from './modules/file_upload.js';
-import { historyModule } from './modules/history.js';
-import { textReorganizer } from './modules/text_reorganizer.js';
+import { unsavedChanges } from "./modules/unsaved_changes.js";
+import { navbar } from "./modules/navbar.js";
+import { shortcuts } from "./modules/shortcuts.js";
+import { modal } from "./modules/modal.js";
+import { paneResizer } from "./modules/pane_resizer.js";
+import { editorPane } from "./modules/editor_pane.js";
+import { settings } from "./modules/settings.js";
+import { fileImport } from "./modules/file_import.js";
+import { fileExport } from "./modules/file_export.js";
+import { appFunctions } from "./modules/app_functions.js";
+import { mindmap } from "./modules/mindmap.js";
+import { imageDrawer } from "./modules/image_drawer.js";
+import { uploadImage } from "./modules/file_upload.js";
+import { historyModule } from "./modules/history.js";
+import { textReorganizer } from "./modules/text_reorganizer.js";
 
 class App {
     constructor() {
@@ -25,7 +25,9 @@ class App {
 
     init() {
         if (/Mobi/.test(navigator.userAgent)) {
-            alert("The website doesn't currently work very well in mobile browsers, so it's recommended that you use a computer. Sorry about that!");
+            alert(
+                "The website doesn't currently work very well in mobile browsers, so it's recommended that you use a computer. Sorry about that!",
+            );
         }
 
         $(document).ready(() => {
@@ -35,8 +37,10 @@ class App {
 
             // Before the user closes the window, warn them if they have unsaved changes.
             $(window).on("beforeunload", (event) => {
-                if (unsavedChanges.getHasChanges() && false) { //TODO:
-                    const message = "You have unsaved changes. Are you sure you want to leave without saving?";
+                if (unsavedChanges.getHasChanges() && false) {
+                    //TODO:
+                    const message =
+                        "You have unsaved changes. Are you sure you want to leave without saving?";
                     if (event) {
                         event.returnValue = message;
                     }
@@ -79,18 +83,23 @@ class App {
                         const selection = window.getSelection();
                         if (selection.rangeCount > 0) {
                             let node = selection.anchorNode;
-                            while (node && node.nodeName !== "LI" && node !== editorPane.el) {
+                            while (
+                                node &&
+                                node.nodeName !== "LI" &&
+                                node !== editorPane.el
+                            ) {
                                 node = node.parentNode;
                             }
                             if (node && node.nodeName === "LI") {
                                 node.insertBefore(img, node.firstChild);
                                 if (editorPane.refresh()) {
-                                    if (editorPane.observerFunc) editorPane.observerFunc();
+                                    if (editorPane.observerFunc)
+                                        editorPane.observerFunc();
                                 }
                             }
                         }
                     });
-                }
+                },
             };
             shortcuts.addBindings(bindings);
 
@@ -135,7 +144,8 @@ class App {
                 setTimeout(() => {
                     settings.setText();
                     if (window.mindmap) {
-                        if (window.mindmap.moveViewToCurrentSelection) window.mindmap.moveViewToCurrentSelection();
+                        if (window.mindmap.moveViewToCurrentSelection)
+                            window.mindmap.moveViewToCurrentSelection();
                         if (window.mindmap.redraw) window.mindmap.redraw();
                     }
                 }, 1);
@@ -146,7 +156,8 @@ class App {
                 setTimeout(() => {
                     settings.setText();
                     if (window.mindmap) {
-                        if (window.mindmap.moveViewToCurrentSelection) window.mindmap.moveViewToCurrentSelection();
+                        if (window.mindmap.moveViewToCurrentSelection)
+                            window.mindmap.moveViewToCurrentSelection();
                         if (window.mindmap.redraw) window.mindmap.redraw();
                     }
                 }, 1);
@@ -173,7 +184,10 @@ class App {
         settings.setText();
         setTimeout(() => {
             this.updateStack--;
-            if (this.updateStack > 0 || this.lastUpdateTime > Date.now() - 200) {
+            if (
+                this.updateStack > 0 ||
+                this.lastUpdateTime > Date.now() - 200
+            ) {
                 return;
             }
             this.lastUpdateTime = Date.now();

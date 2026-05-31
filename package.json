@@ -1,32 +1,32 @@
 {
-  "name": "t2m",
-  "version": "1.0.0",
-  "description": "This is my own variant of the popular text2mindmap, cloned from http://github.com/tobloef/text2mindmap, with a lot of changes: - Syntax highlighting - instead of editing plain text, you can edit proper lists! - A simple sqlite-based php server for keeping mindmaps on the server - Read-only mode - you can see somebody else editing the mindmap and get live updates.  Just share the read-only link and get going!",
-  "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ihavnoid/t2m.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/ihavnoid/t2m/issues"
-  },
-  "homepage": "https://github.com/ihavnoid/t2m#readme",
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "eslint": "^10.4.0",
-    "globals": "^17.6.0",
-    "jquery": "^4.0.0",
-    "jsdom": "^29.1.1",
-    "vitest": "^4.1.7"
-  }
+    "name": "t2m",
+    "version": "1.0.0",
+    "description": "This is my own variant of the popular text2mindmap, cloned from http://github.com/tobloef/text2mindmap, with a lot of changes: - Syntax highlighting - instead of editing plain text, you can edit proper lists! - A simple sqlite-based php server for keeping mindmaps on the server - Read-only mode - you can see somebody else editing the mindmap and get live updates.  Just share the read-only link and get going!",
+    "main": "index.js",
+    "directories": {
+        "test": "tests"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ihavnoid/t2m.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "bugs": {
+        "url": "https://github.com/ihavnoid/t2m/issues"
+    },
+    "homepage": "https://github.com/ihavnoid/t2m#readme",
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.4.0",
+        "globals": "^17.6.0",
+        "jquery": "^4.0.0",
+        "jsdom": "^29.1.1",
+        "vitest": "^4.1.7"
+    }
 }

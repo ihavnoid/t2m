@@ -1,15 +1,15 @@
-import { vi } from 'vitest';
-import $ from 'jquery';
+import { vi } from "vitest";
+import $ from "jquery";
 
 global.$ = global.jQuery = $;
 
 // Mock global variables expected by some modules
-global.__serverBase__ = 'http://localhost:8080';
+global.__serverBase__ = "http://localhost:8080";
 global.globals = {
-  query_retry_period: 500,
-  lock_poll_period: 2000,
-  write_poll_period: 2000,
-  write_min_sync: 10000
+    query_retry_period: 500,
+    lock_poll_period: 2000,
+    write_poll_period: 2000,
+    write_min_sync: 10000,
 };
 
 // Mock browser features that JSDOM might not fully support or we want to control
@@ -37,7 +37,9 @@ global.Kinetic = {
             this.getX = vi.fn().mockReturnValue(0);
             this.getY = vi.fn().mockReturnValue(0);
             this.setPosition = vi.fn();
-            this.getTransform = vi.fn().mockReturnValue({ m: [1, 0, 0, 1, 0, 0] });
+            this.getTransform = vi
+                .fn()
+                .mockReturnValue({ m: [1, 0, 0, 1, 0, 0] });
             this.removeChildren = vi.fn();
             this.clone = vi.fn().mockReturnThis();
         }
@@ -69,19 +71,21 @@ global.Kinetic = {
     },
     Rect: class {
         constructor() {}
-    }
+    },
 };
 
 // Mock Image
 global.Image = class {
     constructor() {
         this.onload = null;
-        this.src = '';
+        this.src = "";
         setTimeout(() => {
             if (this.onload) this.onload();
         }, 0);
     }
-    get complete() { return true; }
+    get complete() {
+        return true;
+    }
 };
 
 // Mock Canvas and Context
@@ -101,15 +105,17 @@ HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
     measureText: vi.fn().mockReturnValue({ width: 100 }),
     fillText: vi.fn(),
     strokeText: vi.fn(),
-    setTransform: vi.fn()
+    setTransform: vi.fn(),
 });
 
-HTMLCanvasElement.prototype.toDataURL = vi.fn().mockReturnValue('data:image/png;base64,mock');
+HTMLCanvasElement.prototype.toDataURL = vi
+    .fn()
+    .mockReturnValue("data:image/png;base64,mock");
 HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn().mockReturnValue({
     left: 0,
     top: 0,
     width: 500,
-    height: 500
+    height: 500,
 });
 
 global.d3 = {
@@ -127,13 +133,13 @@ global.d3 = {
     iterations: vi.fn().mockReturnThis(),
     strength: vi.fn().mockReturnThis(),
     distance: vi.fn().mockReturnThis(),
-    distanceMax: vi.fn().mockReturnThis()
+    distanceMax: vi.fn().mockReturnThis(),
 };
 
 // Mock difflib
 global.difflib = {
-    stringAsLines: vi.fn((s) => s.split('\n')),
+    stringAsLines: vi.fn((s) => s.split("\n")),
     SequenceMatcher: vi.fn().mockImplementation(() => ({
-        get_opcodes: vi.fn().mockReturnValue([])
-    }))
+        get_opcodes: vi.fn().mockReturnValue([]),
+    })),
 };

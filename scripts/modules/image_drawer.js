@@ -284,12 +284,13 @@ class ImageDrawer {
             "paste",
             (e) => {
                 if (!this.isActive) return;
-                
+
                 // Stop propagation immediately to prevent background listeners from firing
                 e.stopImmediatePropagation();
 
-                const items = (e.clipboardData || e.originalEvent?.clipboardData)
-                    ?.items;
+                const items = (
+                    e.clipboardData || e.originalEvent?.clipboardData
+                )?.items;
                 if (!items) return;
 
                 for (const item of items) {
@@ -457,7 +458,10 @@ class ImageDrawer {
             tool === "clipart",
         );
 
-        this.canvas.classList.toggle("clipart-tool", tool === "clipart" || tool === "paste");
+        this.canvas.classList.toggle(
+            "clipart-tool",
+            tool === "clipart" || tool === "paste",
+        );
 
         this.context.lineJoin = "round";
         this.context.lineCap = "round";
