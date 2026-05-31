@@ -130,12 +130,19 @@ export function buildHierarchyHTML(lines, depths) {
 
     for (let i = 0; i < lines.length; i++) {
         let lineText = lines[i].trim();
-        // Remove leading bullet/numbering for the mindmap node text
-        lineText = lineText
-            .replace(/^[\s\-\*\+\•\>]+\s?/, "")
-            .replace(/^\d+[\.\)\s]+\s?/, "");
 
-        // Heuristic: Remove trailing punctuations (Periods, commas, semicolons).
+        // 1. Strip mindmap control tokens
+        lineText = lineText.replace(/\0[\-\+\nr]/g, "");
+
+        // 2. Remove leading bullet/numbering for the mindmap node text
+        // We carefully avoid matching \0i tokens here.
+        if (!lineText.startsWith("\0i")) {
+            lineText = lineText
+                .replace(/^[\s\-\*\+\•\>]+\s?/, "")
+                .replace(/^\d+[\.\)\s]+\s?/, "");
+        }
+
+        // 3. Heuristic: Remove trailing punctuations (Periods, commas, semicolons).
         if (!lineText.endsWith("...")) {
             lineText = lineText.replace(/[\.\,\;]$/, "");
         }

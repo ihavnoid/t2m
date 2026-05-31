@@ -164,6 +164,7 @@ class EditorPane {
 
     async _processPasteContent(html, text) {
         let fragment;
+        const imgs = [];
 
         if (html) {
             const parser = new DOMParser();
@@ -174,36 +175,35 @@ class EditorPane {
             await this._migrateExternalImages(container);
 
             // Step 2: Build hierarchy from HTML structure
-            const {
-                lines: rawLines,
-                depths: structureDepths,
-                imgs,
-            } = this._htmlToHierarchy(container);
+            const hierarchy = this._htmlToHierarchy(container);
+            
+            // Collect images from HTML traversal
+            hierarchy.imgs.forEach(imgTag => imgs.push(imgTag));
 
-            if (rawLines.length > 0) {
+            if (hierarchy.lines.length > 0) {
                 // Step 3: Refine depths using the heuristic (combining tags + physical spaces)
                 const finalizedDepths = [];
                 const context = { indentStack: [0] };
                 let prevLine = null;
                 let prevDepth = 0;
 
-                for (let i = 0; i < rawLines.length; i++) {
+                for (let i = 0; i < hierarchy.lines.length; i++) {
                     const hDepth = detectDepth(
-                        rawLines[i],
+                        hierarchy.lines[i],
                         prevLine,
                         prevDepth,
                         context,
                     );
                     // Use the deeper of structural vs heuristic depth
-                    const finalDepth = Math.max(structureDepths[i], hDepth);
+                    const finalDepth = Math.max(hierarchy.depths[i], hDepth);
 
                     finalizedDepths.push(finalDepth);
-                    prevLine = rawLines[i];
+                    prevLine = hierarchy.lines[i];
                     prevDepth = finalDepth;
                 }
 
                 let reformattedHTML = buildHierarchyHTML(
-                    rawLines,
+                    hierarchy.lines,
                     finalizedDepths,
                 );
 
@@ -221,12 +221,53 @@ class EditorPane {
                 }
             }
         } else if (text) {
-            const reformatted = reformatText(text);
-            const tempDiv = document.createElement("div");
-            tempDiv.innerHTML = reformatted;
-            fragment = document.createDocumentFragment();
-            while (tempDiv.firstChild) {
-                fragment.appendChild(tempDiv.firstChild);
+            // Handle plain text paste (which might contain \0i[...] tokens if copied from our editor)
+            let processedText = text;
+            
+            // 1. Identify and migrate image tokens
+            const storageTokens = Array.from(text.matchAll(/\0i\[([^\]]*)\]/g));
+            for (const match of storageTokens) {
+                const fullToken = match[0];
+                const src = match[1];
+                
+                // Migrate if external
+                let finalSrc = src;
+                const localPrefix = "images/";
+                const absoluteLocalPrefix = (window.__serverBase__ || "") + localPrefix;
+                
+                if (src && !src.startsWith(localPrefix) && !(absoluteLocalPrefix && src.startsWith(absoluteLocalPrefix))) {
+                    try {
+                        const response = await fetch(src);
+                        const blob = await response.blob();
+                        const reader = new FileReader();
+                        const dataUrl = await new Promise((resolve) => {
+                            reader.onload = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        });
+                        finalSrc = await uploadImage(dataUrl);
+                    } catch (e) {
+                        console.warn("Failed to migrate text-token image:", src, e);
+                    }
+                }
+                
+                imgs.push(`<img src="${finalSrc}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`);
+                processedText = processedText.replace(fullToken, `\0i${imgs.length - 1}\0`);
+            }
+
+            const html = reformatText(processedText);
+            if (html) {
+                // Restore images
+                const reformattedHTML = html.replace(
+                    /\0i(\d+)\0/g,
+                    (m, idx) => imgs[idx] || "",
+                );
+
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = reformattedHTML;
+                fragment = document.createDocumentFragment();
+                while (tempDiv.firstChild) {
+                    fragment.appendChild(tempDiv.firstChild);
+                }
             }
         }
 
@@ -244,8 +285,8 @@ class EditorPane {
 
         const walk = (node, depth) => {
             if (node.nodeType === Node.TEXT_NODE) {
-                const content = node.textContent.trim();
-                if (content) {
+                const content = node.textContent.replace(/\r\n/g, "\n");
+                if (content.trim()) {
                     lines.push(content);
                     depths.push(depth);
                 }
@@ -253,7 +294,11 @@ class EditorPane {
                 const tag = node.tagName;
                 if (tag === "UL" || tag === "OL") {
                     for (const child of node.childNodes) {
-                        walk(child, depth);
+                        const isNestedList =
+                            node.parentElement &&
+                            (node.parentElement.tagName === "UL" ||
+                                node.parentElement.tagName === "OL");
+                        walk(child, isNestedList ? depth + 1 : depth);
                     }
                 } else if (tag === "LI") {
                     let textParts = "";
@@ -284,9 +329,8 @@ class EditorPane {
 
                     collectContent(node);
 
-                    const lineText = textParts.trim();
-                    if (lineText) {
-                        lines.push(lineText);
+                    if (textParts.trim()) {
+                        lines.push(textParts.replace(/\r\n/g, "\n"));
                         depths.push(depth);
                     }
 
@@ -308,9 +352,9 @@ class EditorPane {
                             walk(child, depth);
                         }
                     } else {
-                        const content = node.textContent.trim();
-                        if (content) {
-                            lines.push(content);
+                        const content = node.textContent;
+                        if (content.trim()) {
+                            lines.push(content.replace(/\r\n/g, "\n"));
                             depths.push(depth);
                         }
                     }
