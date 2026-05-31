@@ -209,24 +209,37 @@ class EditorPane {
 
     async _migrateExternalImages(container) {
         const imgs = Array.from(container.querySelectorAll("img"));
+        const localPrefix = "images/";
+        const absoluteLocalPrefix = (window.__serverBase__ || "") + localPrefix;
+
         for (const img of imgs) {
-            const src = img.getAttribute("src");
-            if (src && !src.startsWith("images/")) {
-                try {
-                    // Try to fetch the image and upload it
-                    const response = await fetch(src);
-                    const blob = await response.blob();
-                    const reader = new FileReader();
-                    const dataUrl = await new Promise((resolve) => {
-                        reader.onload = () => resolve(reader.result);
-                        reader.readAsDataURL(blob);
-                    });
-                    const localUrl = await uploadImage(dataUrl);
-                    img.setAttribute("src", localUrl);
-                } catch (e) {
-                    console.warn("Failed to migrate external image:", src, e);
-                    // Leave original src as fallback
-                }
+            let src = img.getAttribute("src");
+            if (!src) continue;
+
+            // Case 1: Already a relative path to our images folder
+            if (src.startsWith(localPrefix)) continue;
+
+            // Case 2: Absolute path pointing to OUR server
+            if (absoluteLocalPrefix && src.startsWith(absoluteLocalPrefix)) {
+                const relativeSrc = src.substring(src.indexOf(localPrefix));
+                img.setAttribute("src", relativeSrc);
+                continue;
+            }
+
+            // Case 3: Truly external image. Fetch and upload to our server.
+            try {
+                const response = await fetch(src);
+                const blob = await response.blob();
+                const reader = new FileReader();
+                const dataUrl = await new Promise((resolve) => {
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+                const localUrl = await uploadImage(dataUrl);
+                img.setAttribute("src", localUrl);
+            } catch (e) {
+                console.warn("Failed to migrate external image:", src, e);
+                // Leave original src as fallback
             }
         }
     }
