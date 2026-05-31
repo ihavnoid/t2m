@@ -15,7 +15,7 @@ import { mindmap } from './modules/mindmap.js';
 import { imageDrawer } from './modules/image_drawer.js';
 import { uploadImage } from './modules/file_upload.js';
 import { historyModule } from './modules/history.js';
-import { aiReorganizer } from './modules/ai_reorganizer.js';
+import { textReorganizer } from './modules/text_reorganizer.js';
 
 class App {
     constructor() {
@@ -105,11 +105,11 @@ class App {
                 "file-rename": () => appFunctions.fileRename(),
                 "file-preferences": () => appFunctions.filePreferences(),
                 "navbar-history": () => historyModule.open(),
-                "ai-paste-text": () => aiReorganizer.open(),
+                "text-paste-text": () => textReorganizer.open(),
             });
             // Initialize Modal
             modal.init();
-            aiReorganizer.init();
+            textReorganizer.init();
 
             // Initialize Pane Resizer
             paneResizer.init();
