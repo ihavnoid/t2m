@@ -18,6 +18,12 @@
     "write_poll_period" : 2000,
 
     "_write_min_sync_": "The inactivity timer for writes.  Writes will be synced immediately (ignoring write_poll_period) if there was no sync for at least write_min_sync milliseconds.  Default is 10000ms",
-    "write_min_sync" : 10000
+    "write_min_sync" : 10000,
+
+    "_gc_mindmap_ttl_days_": "Number of days of inactivity before a mindmap is deleted by the garbage collector. Default is 730 (2 years).",
+    "gc_mindmap_ttl_days": 730,
+
+    "_gc_image_ttl_days_": "Number of days an orphaned image is kept before being deleted by the garbage collector. Default is 14.",
+    "gc_image_ttl_days": 14
 
 }

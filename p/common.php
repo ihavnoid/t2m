@@ -1,5 +1,6 @@
 <?php
-    $config = json_decode(file_get_contents(__DIR__."/../config.json"));
+    $config_path = getenv('T2M_CONFIG') ?: __DIR__."/../config.json";
+    $config = json_decode(file_get_contents($config_path));
     function key2val($key) {
         list($v1h, $v1l, $v2h, $v2l) = sscanf($key, "%08x%08x%08x%08x");
         if($v1h >= 0x80000000) {

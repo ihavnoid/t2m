@@ -7,8 +7,12 @@ if (!file_exists($targetDir)) {
     mkdir($targetDir, 0777, true);
 }
 
-// Get the raw POST data
-$json = file_get_contents('php://input');
+// Get the raw POST data or STDIN if CLI
+if (php_sapi_name() == "cli") {
+    $json = file_get_contents('php://stdin');
+} else {
+    $json = file_get_contents('php://input');
+}
 $data = json_decode($json, true);
 
 if (!isset($data['image'])) {
@@ -33,22 +37,42 @@ if ($binaryData === false) {
     exit;
 }
 
-// Create an image resource from the binary data
-$src = imagecreatefromstring($binaryData);
-if ($src === false) {
-    echo json_encode(['error' => 'Failed to create image from data']);
-    exit;
-}
-
 // Calculate the SHA-256 hash of the binary data
 $hash = hash('sha256', $binaryData);
 $filename = $hash . '.png';
 $targetFile = $targetDir . $filename;
 
-// Convert/Save as PNG
-if (imagepng($src, $targetFile)) {
-    imagedestroy($src);
-    
+$saved = false;
+if (function_exists('imagecreatefromstring')) {
+    // Create an image resource from the binary data
+    $src = imagecreatefromstring($binaryData);
+    if ($src !== false) {
+        // Convert/Save as PNG
+        if (imagepng($src, $targetFile)) {
+            imagedestroy($src);
+            $saved = true;
+        } else {
+            imagedestroy($src);
+        }
+    }
+}
+
+// Fallback: just save the raw binary data if GD failed or is missing
+if (!$saved) {
+    if (file_put_contents($targetFile, $binaryData)) {
+        $saved = true;
+    }
+}
+
+if ($saved) {
+    // Register image in DB for GC tracking
+    include_once "common.php";
+    $stmt = $db->prepare("INSERT OR IGNORE INTO images(hash, created_at) VALUES(?, ?)");
+    $stmt->bindValue(1, $hash);
+    $stmt->bindValue(2, timestamp());
+    $stmt->execute();
+    $db->close();
+
     // Always return a relative path for migration safety
     $relativeUrl = "images/" . $filename;
     
@@ -58,7 +82,6 @@ if (imagepng($src, $targetFile)) {
         'hash' => $hash
     ]);
 } else {
-    imagedestroy($src);
     echo json_encode(['error' => 'Failed to save image file']);
 }
 ?>

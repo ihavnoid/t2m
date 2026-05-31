@@ -24,6 +24,9 @@
     	$stmt->bindValue(5, $v4, SQLITE3_INTEGER);
     	$row = $stmt->execute();
     	while($result = $row->fetchArray(SQLITE3_ASSOC)) {
+            // Update last_accessed
+            $db->exec("UPDATE contents SET last_accessed = " . timestamp() . " WHERE id = " . $result["id"]);
+            
             $v = array(
                     "id" => $result["id"],
                     "title" => $result["title"],
@@ -47,6 +50,9 @@
     	$stmt->bindValue(3, $v2, SQLITE3_INTEGER);
     	$row = $stmt->execute();
     	while($result = $row->fetchArray(SQLITE3_ASSOC)) {
+            // Update last_accessed
+            $db->exec("UPDATE contents SET last_accessed = " . timestamp() . " WHERE id = " . $result["id"]);
+
             $v = array(
                     "id" => $result["id"],
                     "title" => $result["title"],
