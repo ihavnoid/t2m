@@ -40,12 +40,21 @@ class History {
 
             let html = '<table class="history-table">';
             html +=
-                "<thead><tr><th>Title</th><th>Links</th><th>Action</th></tr></thead><tbody>";
+                "<thead><tr><th>Title</th><th>Last Visited</th><th>Links</th><th>Action</th></tr></thead><tbody>";
 
-            // Sort by title or just use keys? For now just keys
-            for (const key of keys) {
+            // Sort by lastVisited descending
+            const sortedKeys = keys.sort((a, b) => {
+                const timeA = history[a].lastVisited || 0;
+                const timeB = history[b].lastVisited || 0;
+                return timeB - timeA;
+            });
+
+            for (const key of sortedKeys) {
                 const entry = history[key];
                 let title = entry.title || "(Untitled)";
+                const lastVisitedStr = entry.lastVisited
+                    ? new Date(entry.lastVisited).toLocaleString()
+                    : "(Unknown)";
 
                 // Parse image tokens
                 title = title.replace(/\0i\[([^\]]*)\]/g, (match, src) => {
@@ -60,6 +69,7 @@ class History {
 
                 html += "<tr>";
                 html += `<td class="history-title-cell">${title}</td>`;
+                html += `<td class="history-time-cell">${lastVisitedStr}</td>`;
                 html += '<td class="history-links-cell">';
                 html += `<a href="${roLink}" class="history-link" target="_blank">Read-only</a>`;
                 if (rwLink) {

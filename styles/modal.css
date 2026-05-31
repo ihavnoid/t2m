@@ -458,6 +458,11 @@
     font-weight: 500;
 }
 
+.history-time-cell {
+    font-size: 0.9em;
+    color: #666;
+}
+
 .history-link {
     color: #2365ba;
     text-decoration: none;

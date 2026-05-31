@@ -372,6 +372,7 @@ class Settings {
                 d["rwkey"] = this.rwkey;
             }
             d["title"] = this.findTitle();
+            d["lastVisited"] = Date.now();
             setting[this.rokey] = d;
         }
         localStorage.setItem(
