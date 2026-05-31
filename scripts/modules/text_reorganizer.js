@@ -125,72 +125,90 @@ export function detectDepth(line, prevLine, prevDepth, context = {}) {
 export function buildHierarchyHTML(lines, depths) {
     if (lines.length === 0) return "";
 
-    let html = "<ul>";
-    const stack = [0]; // Tracks open ULs
+    let html = "";
+    const stack = []; // Tracks open tags (UL or LI)
+
+    const closeTagsUntil = (targetDepth) => {
+        // We calculate current depth based on how many 'UL's are open.
+        let currentDepth = stack.filter((t) => t === "UL").length - 1;
+        while (currentDepth > targetDepth) {
+            if (stack[stack.length - 1] === "LI") {
+                html += "</li>";
+                stack.pop();
+            }
+            if (stack[stack.length - 1] === "UL") {
+                html += "</ul>";
+                stack.pop();
+                currentDepth--;
+            }
+        }
+    };
+
+    const closeCurrentLI = () => {
+        if (stack.length > 0 && stack[stack.length - 1] === "LI") {
+            html += "</li>";
+            stack.pop();
+        }
+    };
 
     for (let i = 0; i < lines.length; i++) {
         let lineText = lines[i].trim();
+        const depth = depths[i];
+
+        if (depth === -1) {
+            // Comment: Append to the CURRENT open LI if it exists.
+            const comment = lines[i]
+                .trim()
+                .replace(/^\/\/\s?|^note:\s?|^remark:\s?/i, "");
+            
+            if (stack.length > 0 && stack[stack.length - 1] === "LI") {
+                html += `<br>${escapeHTML(comment)}`;
+            }
+            continue;
+        }
 
         // 1. Strip mindmap control tokens
         lineText = lineText.replace(/\0[\-\+\nr]/g, "");
 
-        // 2. Remove leading bullet/numbering for the mindmap node text
-        // We carefully avoid matching \0i tokens here.
+        // 2. Remove leading bullet/numbering
         if (!lineText.startsWith("\0i")) {
             lineText = lineText
                 .replace(/^[\s\-\*\+\•\>]+\s?/, "")
                 .replace(/^\d+[\.\)\s]+\s?/, "");
         }
 
-        // 3. Heuristic: Remove trailing punctuations (Periods, commas, semicolons).
+        // 3. Clean punctuation
         if (!lineText.endsWith("...")) {
             lineText = lineText.replace(/[\.\,\;]$/, "");
         }
 
-        const depth = depths[i];
-
-        if (depth === -1) {
-            // Comment: Append to the previous node
-            const comment = lines[i]
-                .trim()
-                .replace(/^\/\/\s?|^note:\s?|^remark:\s?/i, "");
-            const commentToken = ` <span class="comment">${escapeHTML(comment)}</span>`;
-
-            const lastLiIdx = html.lastIndexOf("</li>");
-            if (lastLiIdx !== -1) {
-                html =
-                    html.substring(0, lastLiIdx) +
-                    commentToken +
-                    html.substring(lastLiIdx);
-            }
-            continue;
-        }
-
         const targetDepth = depth;
-        let currentDepth = stack.length - 1;
+        let currentDepth = stack.filter((t) => t === "UL").length - 1;
 
         if (targetDepth > currentDepth) {
+            // Move deeper: Open ULs
+            // (Note: we don't close the current LI yet because the new UL belongs INSIDE it)
             for (let d = currentDepth; d < targetDepth; d++) {
                 html += "<ul>";
-                stack.push(0);
+                stack.push("UL");
             }
         } else if (targetDepth < currentDepth) {
-            for (let d = currentDepth; d > targetDepth; d--) {
-                html += "</li></ul>";
-                stack.pop();
-            }
-            html += "</li>";
-        } else if (i > 0) {
-            html += "</li>";
+            // Move shallower: Close ULs and LIs
+            closeTagsUntil(targetDepth);
+            closeCurrentLI();
+        } else {
+            // Same depth: Close the previous sibling
+            closeCurrentLI();
         }
 
         html += `<li>${escapeHTML(lineText)}`;
+        stack.push("LI");
     }
 
-    // Close remaining
+    // Close everything
     while (stack.length > 0) {
-        html += "</li></ul>";
-        stack.pop();
+        const tag = stack.pop();
+        html += tag === "UL" ? "</ul>" : "</li>";
     }
 
     return html;
