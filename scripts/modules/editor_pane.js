@@ -215,27 +215,43 @@ class EditorPane {
 
                 const tempDiv = document.createElement("div");
                 tempDiv.innerHTML = reformattedHTML;
+
+                const topList = tempDiv.querySelector("ul, ol");
                 fragment = document.createDocumentFragment();
-                while (tempDiv.firstChild) {
-                    fragment.appendChild(tempDiv.firstChild);
+                if (topList) {
+                    while (topList.firstChild) {
+                        fragment.appendChild(topList.firstChild);
+                    }
+                } else {
+                    while (tempDiv.firstChild) {
+                        fragment.appendChild(tempDiv.firstChild);
+                    }
                 }
             }
         } else if (text) {
             // Handle plain text paste (which might contain \0i[...] tokens if copied from our editor)
             let processedText = text;
-            
+
             // 1. Identify and migrate image tokens
             const storageTokens = Array.from(text.matchAll(/\0i\[([^\]]*)\]/g));
             for (const match of storageTokens) {
                 const fullToken = match[0];
                 const src = match[1];
-                
+
                 // Migrate if external
                 let finalSrc = src;
                 const localPrefix = "images/";
-                const absoluteLocalPrefix = (window.__serverBase__ || "") + localPrefix;
-                
-                if (src && !src.startsWith(localPrefix) && !(absoluteLocalPrefix && src.startsWith(absoluteLocalPrefix))) {
+                const absoluteLocalPrefix =
+                    (window.__serverBase__ || "") + localPrefix;
+
+                if (
+                    src &&
+                    !src.startsWith(localPrefix) &&
+                    !(
+                        absoluteLocalPrefix &&
+                        src.startsWith(absoluteLocalPrefix)
+                    )
+                ) {
                     try {
                         const response = await fetch(src);
                         const blob = await response.blob();
@@ -246,27 +262,44 @@ class EditorPane {
                         });
                         finalSrc = await uploadImage(dataUrl);
                     } catch (e) {
-                        console.warn("Failed to migrate text-token image:", src, e);
+                        console.warn(
+                            "Failed to migrate text-token image:",
+                            src,
+                            e,
+                        );
                     }
                 }
-                
-                imgs.push(`<img src="${finalSrc}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`);
-                processedText = processedText.replace(fullToken, `\0i${imgs.length - 1}\0`);
+
+                imgs.push(
+                    `<img src="${finalSrc}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`,
+                );
+                processedText = processedText.replace(
+                    fullToken,
+                    `\0i${imgs.length - 1}\0`,
+                );
             }
 
             const html = reformatText(processedText);
             if (html) {
                 // Restore images
-                const reformattedHTML = html.replace(
+                let reformattedHTML = html.replace(
                     /\0i(\d+)\0/g,
                     (m, idx) => imgs[idx] || "",
                 );
 
                 const tempDiv = document.createElement("div");
                 tempDiv.innerHTML = reformattedHTML;
+
+                const topList = tempDiv.querySelector("ul, ol");
                 fragment = document.createDocumentFragment();
-                while (tempDiv.firstChild) {
-                    fragment.appendChild(tempDiv.firstChild);
+                if (topList) {
+                    while (topList.firstChild) {
+                        fragment.appendChild(topList.firstChild);
+                    }
+                } else {
+                    while (tempDiv.firstChild) {
+                        fragment.appendChild(tempDiv.firstChild);
+                    }
                 }
             }
         }
