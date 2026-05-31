@@ -1,6 +1,6 @@
 import { uploadImage } from "./file_upload.js";
 import { imageDrawer } from "./image_drawer.js";
-import { reformatText } from "./text_reorganizer.js";
+import { reformatText, buildHierarchyHTML } from "./text_reorganizer.js";
 
 /**
  * Editor pane encapsulation.
@@ -173,18 +173,20 @@ class EditorPane {
             // Step 1: Upload any external images
             await this._migrateExternalImages(container);
 
-            // Step 2: Determine if we use HTML as-is or reorganize from text
-            // Heuristic: If it contains <li>, it's structured.
-            if (container.querySelector("li")) {
-                this._cleanHTMLForEditor(container);
-                fragment = document.createDocumentFragment();
-                while (container.firstChild) {
-                    fragment.appendChild(container.firstChild);
-                }
-            } else if (text) {
-                const reformatted = reformatText(text);
+            // Step 2: Build hierarchy from HTML
+            const { lines, depths, imgs } = this._htmlToHierarchy(container);
+
+            if (lines.length > 0) {
+                let reformattedHTML = buildHierarchyHTML(lines, depths);
+
+                // Restore images
+                reformattedHTML = reformattedHTML.replace(
+                    /\0i(\d+)\0/g,
+                    (m, idx) => imgs[idx] || "",
+                );
+
                 const tempDiv = document.createElement("div");
-                tempDiv.innerHTML = reformatted;
+                tempDiv.innerHTML = reformattedHTML;
                 fragment = document.createDocumentFragment();
                 while (tempDiv.firstChild) {
                     fragment.appendChild(tempDiv.firstChild);
@@ -205,6 +207,85 @@ class EditorPane {
             this.refresh();
             if (this.observerFunc) this.observerFunc();
         }
+    }
+
+    _htmlToHierarchy(container) {
+        const lines = [];
+        const depths = [];
+        const imgs = [];
+
+        const walk = (node, depth) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                const content = node.textContent.trim();
+                if (content) {
+                    lines.push(content);
+                    depths.push(depth);
+                }
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                const tag = node.tagName;
+                if (tag === "UL" || tag === "OL") {
+                    for (const child of node.childNodes) {
+                        walk(child, depth);
+                    }
+                } else if (tag === "LI") {
+                    let textParts = "";
+                    const childrenToWalk = [];
+                    for (const child of node.childNodes) {
+                        if (
+                            child.nodeType === Node.ELEMENT_NODE &&
+                            (child.tagName === "UL" || child.tagName === "OL")
+                        ) {
+                            childrenToWalk.push(child);
+                        } else if (
+                            child.nodeType === Node.ELEMENT_NODE &&
+                            child.tagName === "IMG"
+                        ) {
+                            const src = child.getAttribute("src") || "";
+                            imgs.push(
+                                `<img src="${src}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`,
+                            );
+                            textParts += `\0i${imgs.length - 1}\0`;
+                        } else {
+                            textParts += child.textContent;
+                        }
+                    }
+
+                    const lineText = textParts.trim();
+                    if (lineText) {
+                        lines.push(lineText);
+                        depths.push(depth);
+                    }
+
+                    for (const subList of childrenToWalk) {
+                        walk(subList, depth + 1);
+                    }
+                } else if (tag === "IMG") {
+                    const src = node.getAttribute("src") || "";
+                    imgs.push(
+                        `<img src="${src}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`,
+                    );
+                    lines.push(`\0i${imgs.length - 1}\0`);
+                    depths.push(depth);
+                } else if (tag === "BR") {
+                    // Skip
+                } else {
+                    if (node.hasChildNodes()) {
+                        for (const child of node.childNodes) {
+                            walk(child, depth);
+                        }
+                    } else {
+                        const content = node.textContent.trim();
+                        if (content) {
+                            lines.push(content);
+                            depths.push(depth);
+                        }
+                    }
+                }
+            }
+        };
+
+        walk(container, 0);
+        return { lines, depths, imgs };
     }
 
     async _migrateExternalImages(container) {
