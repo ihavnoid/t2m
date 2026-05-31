@@ -351,24 +351,26 @@ class EditorPane {
                     }
                 } else if (tag === "LI") {
                     const childrenToWalk = [];
+                    let mainTextParts = "";
 
                     const collectContent = (el) => {
                         for (const child of el.childNodes) {
                             if (child.nodeType === Node.TEXT_NODE) {
-                                const content = child.textContent.replace(
-                                    /\r\n/g,
-                                    "\n",
-                                );
-                                if (content.trim()) {
-                                    lines.push(content);
-                                    depths.push(depth);
-                                }
+                                mainTextParts += child.textContent;
                             } else if (child.nodeType === Node.ELEMENT_NODE) {
                                 const ctag = child.tagName;
                                 const cisComment =
                                     child.classList.contains("comment");
 
                                 if (cisComment) {
+                                    // Flush any pending main text before the comment
+                                    if (mainTextParts.trim()) {
+                                        lines.push(
+                                            mainTextParts.replace(/\r\n/g, "\n"),
+                                        );
+                                        depths.push(depth);
+                                        mainTextParts = "";
+                                    }
                                     const content = child.textContent.trim();
                                     if (content) {
                                         lines.push(content);
@@ -382,10 +384,9 @@ class EditorPane {
                                     imgs.push(
                                         `<img src="${src}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`,
                                     );
-                                    lines.push(`\0i${imgs.length - 1}\0`);
-                                    depths.push(depth);
+                                    mainTextParts += `\0i${imgs.length - 1}\0`;
                                 } else if (ctag === "BR") {
-                                    // Ignore
+                                    mainTextParts += "\n";
                                 } else {
                                     collectContent(child);
                                 }
@@ -394,6 +395,12 @@ class EditorPane {
                     };
 
                     collectContent(node);
+
+                    // Flush any remaining main text
+                    if (mainTextParts.trim()) {
+                        lines.push(mainTextParts.replace(/\r\n/g, "\n"));
+                        depths.push(depth);
+                    }
 
                     for (const subList of childrenToWalk) {
                         walk(subList, depth + 1);
