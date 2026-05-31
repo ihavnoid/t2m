@@ -13,11 +13,13 @@ export function cleanLines(text) {
 
     return text
         .split("\n")
+        // Filter out empty lines or lines with only symbols/bullets
         .filter((line) => {
             const trimmed = line.trim();
-            // Only drop truly empty lines. 
-            // We want to keep symbol lines like "---" as they might be intended as nodes.
-            return trimmed.length > 0;
+            if (trimmed.length === 0) return false;
+            // Drop lines that are just separators (---, ===, ***)
+            if (/^[ \-\*\=_]+$/.test(trimmed)) return false;
+            return true;
         });
 }
 
@@ -157,15 +159,12 @@ export function buildHierarchyHTML(lines, depths) {
             // Comment: Append to the CURRENT open LI if it exists.
             const comment = lines[i]
                 .trim()
-                .replace(/^\/\/\s?|^note:\s?|^remark:\s?|^#\s?/i, "");
+                .replace(/^\/\/\s?|^note:\s?|^remark:\s?/i, "");
             
             if (stack.length > 0 && stack[stack.length - 1] === "LI") {
                 html += `<br>${escapeHTML(comment)}`;
-                continue;
             }
-            // If no parent node exists, treat the comment as a normal node
-            // to avoid losing the information.
-            lineText = comment;
+            continue;
         }
 
         // 1. Strip mindmap control tokens
