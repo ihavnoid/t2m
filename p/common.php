@@ -25,26 +25,44 @@
 	$db->exec('PRAGMA journal_mode = wal;');
 
     // Migration and Schema Initialization
-    $db->exec("CREATE TABLE if not exists contents(id integer primary key, title text, contents text, roid0 integer unique, roid1 integer, rwid0 integer, rwid1 integer, ts integer, seq integer)");
-   	$db->exec("CREATE index if not exists roid_index on contents(roid0)");
+    // We use user_version to avoid running these checks on every request.
+    $version = $db->querySingle("PRAGMA user_version");
+    
+    if ($version < 1) {
+        // Attempt migration
+        // We use @ to suppress warnings because SQLite3 might emit them even if we catch errors
+        if (@$db->exec("BEGIN IMMEDIATE TRANSACTION;")) {
+            try {
+                $db->exec("CREATE TABLE if not exists contents(id integer primary key, title text, contents text, roid0 integer unique, roid1 integer, rwid0 integer, rwid1 integer, ts integer, seq integer)");
+                $db->exec("CREATE index if not exists roid_index on contents(roid0)");
 
-    // Add last_accessed column if not exists
-    $result = $db->query("PRAGMA table_info(contents)");
-    $has_last_accessed = false;
-    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-        if ($row['name'] === 'last_accessed') {
-            $has_last_accessed = true;
-            break;
+                // Check for last_accessed column
+                $result = $db->query("PRAGMA table_info(contents)");
+                $has_last_accessed = false;
+                while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+                    if ($row['name'] === 'last_accessed') {
+                        $has_last_accessed = true;
+                        break;
+                    }
+                }
+                
+                if (!$has_last_accessed) {
+                    $db->exec("ALTER TABLE contents ADD COLUMN last_accessed INTEGER");
+                    // Backfill last_accessed with ts for existing rows
+                    $db->exec("UPDATE contents SET last_accessed = ts");
+                }
+                
+                // Create images tracking table
+                $db->exec("CREATE TABLE if not exists images(hash text primary key, created_at integer)");
+                
+                // Set version to 1 so we skip this block next time
+                $db->exec("PRAGMA user_version = 1");
+                
+                $db->exec("COMMIT;");
+            } catch (Exception $e) {
+                try { $db->exec("ROLLBACK;"); } catch (Exception $e2) {}
+                error_log("T2M Database Migration Error: " . $e->getMessage());
+            }
         }
     }
-    if (!$has_last_accessed) {
-        $db->exec("BEGIN TRANSACTION;");
-        $db->exec("ALTER TABLE contents ADD COLUMN last_accessed INTEGER");
-        // Backfill last_accessed with ts for existing rows
-        $db->exec("UPDATE contents SET last_accessed = ts");
-        $db->exec("COMMIT;");
-    }
-    
-    // Create images tracking table
-    $db->exec("CREATE TABLE if not exists images(hash text primary key, created_at integer)");
 ?>
