@@ -15,7 +15,6 @@ import { mindmap } from "./modules/mindmap.js";
 import { imageDrawer } from "./modules/image_drawer.js";
 import { uploadImage } from "./modules/file_upload.js";
 import { historyModule } from "./modules/history.js";
-import { textReorganizer } from "./modules/text_reorganizer.js";
 
 class App {
     constructor() {
