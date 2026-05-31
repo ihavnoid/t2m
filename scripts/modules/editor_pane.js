@@ -188,14 +188,19 @@ class EditorPane {
                 let prevDepth = 0;
 
                 for (let i = 0; i < hierarchy.lines.length; i++) {
-                    const hDepth = detectDepth(
-                        hierarchy.lines[i],
-                        prevLine,
-                        prevDepth,
-                        context,
-                    );
-                    // Use the deeper of structural vs heuristic depth
-                    const finalDepth = Math.max(hierarchy.depths[i], hDepth);
+                    let finalDepth;
+                    if (hierarchy.depths[i] === -1) {
+                        finalDepth = -1;
+                    } else {
+                        const hDepth = detectDepth(
+                            hierarchy.lines[i],
+                            prevLine,
+                            prevDepth,
+                            context,
+                        );
+                        // Use the deeper of structural vs heuristic depth
+                        finalDepth = Math.max(hierarchy.depths[i], hDepth);
+                    }
 
                     finalizedDepths.push(finalDepth);
                     prevLine = hierarchy.lines[i];
@@ -325,6 +330,17 @@ class EditorPane {
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
                 const tag = node.tagName;
+                const isComment = node.classList.contains("comment");
+
+                if (isComment) {
+                    const content = node.textContent.trim();
+                    if (content) {
+                        lines.push(content);
+                        depths.push(-1);
+                    }
+                    return;
+                }
+
                 if (tag === "UL" || tag === "OL") {
                     for (const child of node.childNodes) {
                         const isNestedList =
@@ -334,25 +350,42 @@ class EditorPane {
                         walk(child, isNestedList ? depth + 1 : depth);
                     }
                 } else if (tag === "LI") {
-                    let textParts = "";
                     const childrenToWalk = [];
 
                     const collectContent = (el) => {
                         for (const child of el.childNodes) {
                             if (child.nodeType === Node.TEXT_NODE) {
-                                textParts += child.textContent;
+                                const content = child.textContent.replace(
+                                    /\r\n/g,
+                                    "\n",
+                                );
+                                if (content.trim()) {
+                                    lines.push(content);
+                                    depths.push(depth);
+                                }
                             } else if (child.nodeType === Node.ELEMENT_NODE) {
                                 const ctag = child.tagName;
-                                if (ctag === "UL" || ctag === "OL") {
+                                const cisComment =
+                                    child.classList.contains("comment");
+
+                                if (cisComment) {
+                                    const content = child.textContent.trim();
+                                    if (content) {
+                                        lines.push(content);
+                                        depths.push(-1);
+                                    }
+                                } else if (ctag === "UL" || ctag === "OL") {
                                     childrenToWalk.push(child);
                                 } else if (ctag === "IMG") {
-                                    const src = child.getAttribute("src") || "";
+                                    const src =
+                                        child.getAttribute("src") || "";
                                     imgs.push(
                                         `<img src="${src}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`,
                                     );
-                                    textParts += `\0i${imgs.length - 1}\0`;
+                                    lines.push(`\0i${imgs.length - 1}\0`);
+                                    depths.push(depth);
                                 } else if (ctag === "BR") {
-                                    textParts += "\n";
+                                    // Ignore
                                 } else {
                                     collectContent(child);
                                 }
@@ -361,11 +394,6 @@ class EditorPane {
                     };
 
                     collectContent(node);
-
-                    if (textParts.trim()) {
-                        lines.push(textParts.replace(/\r\n/g, "\n"));
-                        depths.push(depth);
-                    }
 
                     for (const subList of childrenToWalk) {
                         walk(subList, depth + 1);
