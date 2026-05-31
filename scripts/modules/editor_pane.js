@@ -289,8 +289,18 @@ class EditorPane {
             const topList = tempDiv.querySelector("ul, ol");
             fragment = document.createDocumentFragment();
             if (topList) {
-                while (topList.firstChild) {
-                    fragment.appendChild(topList.firstChild);
+                const lis = Array.from(topList.children).filter(
+                    (c) => c.tagName === "LI",
+                );
+                if (lis.length === 1 && !lis[0].querySelector("ul, ol")) {
+                    // Single node, no children. Insert its contents only to avoid nested LI.
+                    while (lis[0].firstChild) {
+                        fragment.appendChild(lis[0].firstChild);
+                    }
+                } else {
+                    while (topList.firstChild) {
+                        fragment.appendChild(topList.firstChild);
+                    }
                 }
             } else {
                 while (tempDiv.firstChild) {
