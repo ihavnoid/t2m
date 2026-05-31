@@ -1,6 +1,6 @@
 import { uploadImage } from "./file_upload.js";
 import { imageDrawer } from "./image_drawer.js";
-import { reformatText, buildHierarchyHTML } from "./text_reorganizer.js";
+import { reformatText, buildHierarchyHTML, detectDepth } from "./text_reorganizer.js";
 
 /**
  * Editor pane encapsulation.
@@ -173,11 +173,39 @@ class EditorPane {
             // Step 1: Upload any external images
             await this._migrateExternalImages(container);
 
-            // Step 2: Build hierarchy from HTML
-            const { lines, depths, imgs } = this._htmlToHierarchy(container);
+            // Step 2: Build hierarchy from HTML structure
+            const {
+                lines: rawLines,
+                depths: structureDepths,
+                imgs,
+            } = this._htmlToHierarchy(container);
 
-            if (lines.length > 0) {
-                let reformattedHTML = buildHierarchyHTML(lines, depths);
+            if (rawLines.length > 0) {
+                // Step 3: Refine depths using the heuristic (combining tags + physical spaces)
+                const finalizedDepths = [];
+                const context = { indentStack: [0] };
+                let prevLine = null;
+                let prevDepth = 0;
+
+                for (let i = 0; i < rawLines.length; i++) {
+                    const hDepth = detectDepth(
+                        rawLines[i],
+                        prevLine,
+                        prevDepth,
+                        context,
+                    );
+                    // Use the deeper of structural vs heuristic depth
+                    const finalDepth = Math.max(structureDepths[i], hDepth);
+
+                    finalizedDepths.push(finalDepth);
+                    prevLine = rawLines[i];
+                    prevDepth = finalDepth;
+                }
+
+                let reformattedHTML = buildHierarchyHTML(
+                    rawLines,
+                    finalizedDepths,
+                );
 
                 // Restore images
                 reformattedHTML = reformattedHTML.replace(
@@ -230,25 +258,31 @@ class EditorPane {
                 } else if (tag === "LI") {
                     let textParts = "";
                     const childrenToWalk = [];
-                    for (const child of node.childNodes) {
-                        if (
-                            child.nodeType === Node.ELEMENT_NODE &&
-                            (child.tagName === "UL" || child.tagName === "OL")
-                        ) {
-                            childrenToWalk.push(child);
-                        } else if (
-                            child.nodeType === Node.ELEMENT_NODE &&
-                            child.tagName === "IMG"
-                        ) {
-                            const src = child.getAttribute("src") || "";
-                            imgs.push(
-                                `<img src="${src}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`,
-                            );
-                            textParts += `\0i${imgs.length - 1}\0`;
-                        } else {
-                            textParts += child.textContent;
+
+                    const collectContent = (el) => {
+                        for (const child of el.childNodes) {
+                            if (child.nodeType === Node.TEXT_NODE) {
+                                textParts += child.textContent;
+                            } else if (child.nodeType === Node.ELEMENT_NODE) {
+                                const ctag = child.tagName;
+                                if (ctag === "UL" || ctag === "OL") {
+                                    childrenToWalk.push(child);
+                                } else if (ctag === "IMG") {
+                                    const src = child.getAttribute("src") || "";
+                                    imgs.push(
+                                        `<img src="${src}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`,
+                                    );
+                                    textParts += `\0i${imgs.length - 1}\0`;
+                                } else if (ctag === "BR") {
+                                    textParts += "\n";
+                                } else {
+                                    collectContent(child);
+                                }
+                            }
                         }
-                    }
+                    };
+
+                    collectContent(node);
 
                     const lineText = textParts.trim();
                     if (lineText) {
