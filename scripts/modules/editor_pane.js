@@ -157,7 +157,7 @@ class EditorPane {
 
             if (html || text) {
                 ev.preventDefault();
-                this._processPasteContent(html, text);
+                await this._processPasteContent(html, text);
             }
         }
     }
@@ -490,8 +490,20 @@ class EditorPane {
         if (selection.rangeCount > 0) {
             const range = selection.getRangeAt(0);
             range.deleteContents();
-            range.insertNode(node);
-            range.setStartAfter(node);
+
+            if (node.nodeType === 11) {
+                // DocumentFragment (nodeType 11) children are moved to the DOM,
+                // but the fragment itself is not. We use the last child as a reference.
+                const lastChild = node.lastChild;
+                range.insertNode(node);
+                if (lastChild) {
+                    range.setStartAfter(lastChild);
+                }
+            } else {
+                range.insertNode(node);
+                range.setStartAfter(node);
+            }
+
             range.collapse(true);
             selection.removeAllRanges();
             selection.addRange(range);
