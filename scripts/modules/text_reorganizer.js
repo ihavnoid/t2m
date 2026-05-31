@@ -87,11 +87,11 @@ class TextReorganizer {
         // AUTO-DETECT INDENT SIZE:
         // If we haven't determined the space-per-level yet (e.g., 4),
         // we use the first indented line we find as the template.
-        const defaultIndentSize = 4;
-        const indentSize = context.indentSize || defaultIndentSize;
         if (!context.indentSize && spaceCount > 0) {
             context.indentSize = spaceCount;
         }
+        const defaultIndentSize = 4;
+        const indentSize = context.indentSize || defaultIndentSize;
 
         // indentLevel is the sum of tabs and standardized space blocks.
         const indentLevel = tabCount + Math.floor(spaceCount / indentSize);
