@@ -165,7 +165,10 @@ class EditorPane {
     async _processPasteContent(html, text) {
         let fragment;
         const imgs = [];
+        let finalHTML = "";
 
+        // Strategy: Try to extract hierarchy from HTML first. 
+        // If that fails (zero lines), fallback to reformatting the plaintext.
         if (html) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, "text/html");
@@ -177,10 +180,10 @@ class EditorPane {
             // Step 2: Build hierarchy from HTML structure
             const hierarchy = this._htmlToHierarchy(container);
             
-            // Collect images from HTML traversal
-            hierarchy.imgs.forEach(imgTag => imgs.push(imgTag));
-
             if (hierarchy.lines.length > 0) {
+                // Collect images from HTML traversal
+                hierarchy.imgs.forEach(imgTag => imgs.push(imgTag));
+
                 // Step 3: Refine depths using the heuristic (combining tags + physical spaces)
                 const finalizedDepths = [];
                 const context = { indentStack: [0] };
@@ -198,7 +201,6 @@ class EditorPane {
                             prevDepth,
                             context,
                         );
-                        // Use the deeper of structural vs heuristic depth
                         finalDepth = Math.max(hierarchy.depths[i], hDepth);
                     }
 
@@ -207,43 +209,29 @@ class EditorPane {
                     prevDepth = finalDepth;
                 }
 
-                let reformattedHTML = buildHierarchyHTML(
+                finalHTML = buildHierarchyHTML(
                     hierarchy.lines,
                     finalizedDepths,
                 );
 
                 // Restore images
-                reformattedHTML = reformattedHTML.replace(
+                finalHTML = finalHTML.replace(
                     /\0i(\d+)\0/g,
                     (m, idx) => imgs[idx] || "",
                 );
-
-                const tempDiv = document.createElement("div");
-                tempDiv.innerHTML = reformattedHTML;
-
-                const topList = tempDiv.querySelector("ul, ol");
-                fragment = document.createDocumentFragment();
-                if (topList) {
-                    while (topList.firstChild) {
-                        fragment.appendChild(topList.firstChild);
-                    }
-                } else {
-                    while (tempDiv.firstChild) {
-                        fragment.appendChild(tempDiv.firstChild);
-                    }
-                }
             }
-        } else if (text) {
-            // Handle plain text paste (which might contain \0i[...] tokens if copied from our editor)
+        }
+
+        // Fallback to plaintext if HTML path yielded nothing
+        if (!finalHTML && text) {
             let processedText = text;
 
-            // 1. Identify and migrate image tokens
+            // Identify and migrate image tokens (\0i[...])
             const storageTokens = Array.from(text.matchAll(/\0i\[([^\]]*)\]/g));
             for (const match of storageTokens) {
                 const fullToken = match[0];
                 const src = match[1];
 
-                // Migrate if external
                 let finalSrc = src;
                 const localPrefix = "images/";
                 const absoluteLocalPrefix =
@@ -284,32 +272,32 @@ class EditorPane {
                 );
             }
 
-            const html = reformatText(processedText);
-            if (html) {
+            const reformatted = reformatText(processedText);
+            if (reformatted) {
                 // Restore images
-                let reformattedHTML = html.replace(
+                finalHTML = reformatted.replace(
                     /\0i(\d+)\0/g,
                     (m, idx) => imgs[idx] || "",
                 );
-
-                const tempDiv = document.createElement("div");
-                tempDiv.innerHTML = reformattedHTML;
-
-                const topList = tempDiv.querySelector("ul, ol");
-                fragment = document.createDocumentFragment();
-                if (topList) {
-                    while (topList.firstChild) {
-                        fragment.appendChild(topList.firstChild);
-                    }
-                } else {
-                    while (tempDiv.firstChild) {
-                        fragment.appendChild(tempDiv.firstChild);
-                    }
-                }
             }
         }
 
-        if (fragment) {
+        if (finalHTML) {
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = finalHTML;
+
+            const topList = tempDiv.querySelector("ul, ol");
+            fragment = document.createDocumentFragment();
+            if (topList) {
+                while (topList.firstChild) {
+                    fragment.appendChild(topList.firstChild);
+                }
+            } else {
+                while (tempDiv.firstChild) {
+                    fragment.appendChild(tempDiv.firstChild);
+                }
+            }
+
             this.insertAtCursor(fragment);
             this.refresh();
             if (this.observerFunc) this.observerFunc();
