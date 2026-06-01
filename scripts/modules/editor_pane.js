@@ -260,6 +260,11 @@ class EditorPane {
                         .map((l) => escapeHTML(l))
                         .join("<br>");
                 } else {
+                    const finalizedDepths = [];
+                    const context = { indentStack: [0] };
+                    let prevLine = null;
+                    let prevDepth = 0;
+
                     for (let i = 0; i < hierarchy.lines.length; i++) {
                         let finalDepth;
                         const structuralDepth = hierarchy.depths[i];
@@ -377,16 +382,23 @@ class EditorPane {
 
             const topList = tempDiv.querySelector("ul, ol");
             fragment = document.createDocumentFragment();
+            let isBlockPaste = false;
+
             if (topList) {
                 const lis = Array.from(topList.children).filter(
                     (c) => c.tagName === "LI",
                 );
-                if (lis.length === 1 && !lis[0].querySelector("ul, ol")) {
+                if (
+                    lis.length === 1 &&
+                    !lis[0].querySelector("ul, ol") &&
+                    !isCommentMode
+                ) {
                     // Single node, no children. Insert its contents only to avoid nested LI.
                     while (lis[0].firstChild) {
                         fragment.appendChild(lis[0].firstChild);
                     }
                 } else {
+                    isBlockPaste = true;
                     while (topList.firstChild) {
                         fragment.appendChild(topList.firstChild);
                     }
@@ -397,9 +409,39 @@ class EditorPane {
                 }
             }
 
+            if (isBlockPaste) {
+                // For hierarchical pastes, move insertion point to AFTER the current node
+                // to prevent destroying internal structures like comments.
+                this._moveToEndOfNode();
+            }
+
             this.insertAtCursor(fragment);
             this.refresh();
             if (this.observerFunc) this.observerFunc();
+        }
+    }
+
+    /**
+     * Moves the selection caret to the very end of the current mindmap node (LI).
+     * This prepares the editor for inserting siblings or new branches.
+     */
+    _moveToEndOfNode() {
+        const sel = this.getWindow().getSelection();
+        if (sel.rangeCount > 0) {
+            const range = sel.getRangeAt(0);
+            const node = range.startContainer;
+            const li =
+                node.nodeType === Node.ELEMENT_NODE
+                    ? node.closest("li")
+                    : node.parentElement?.closest("li");
+
+            if (li) {
+                const newRange = document.createRange();
+                newRange.setStartAfter(li);
+                newRange.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+            }
         }
     }
 
