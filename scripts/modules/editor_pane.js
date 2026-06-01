@@ -253,48 +253,47 @@ class EditorPane {
                 hierarchy.imgs.forEach((imgTag) => imgs.push(imgTag));
                 hierarchy.links.forEach((linkTag) => links.push(linkTag));
 
-                // Step 3: Refine depths using the heuristic (combining tags + physical spaces)
-                const finalizedDepths = [];
-                const context = { indentStack: [0] };
-                let prevLine = null;
-                let prevDepth = 0;
+                if (isCommentMode) {
+                    // In comment mode, treat all lines as comments of the same node.
+                    // Bypass buildHierarchyHTML to avoid the leading <br> on hollow nodes.
+                    finalHTML = hierarchy.lines
+                        .map((l) => escapeHTML(l))
+                        .join("<br>");
+                } else {
+                    for (let i = 0; i < hierarchy.lines.length; i++) {
+                        let finalDepth;
+                        const structuralDepth = hierarchy.depths[i];
 
-                for (let i = 0; i < hierarchy.lines.length; i++) {
-                    let finalDepth;
-                    const structuralDepth = hierarchy.depths[i];
-
-                    if (isCommentMode) {
-                        // If we are already in a comment section, force everything to be a comment
-                        finalDepth = -1;
-                    } else if (structuralDepth < 0) {
-                        // Priority 1: Structural comment (already -2)
-                        finalDepth = structuralDepth;
-                    } else {
-                        const hDepth = detectDepth(
-                            hierarchy.lines[i],
-                            prevLine,
-                            prevDepth,
-                            context,
-                        );
-
-                        if (hDepth < 0) {
-                            // Priority 2: Heuristic comment from text content
-                            finalDepth = hDepth;
+                        if (structuralDepth < 0) {
+                            // Priority 1: Structural comment (already -2)
+                            finalDepth = structuralDepth;
                         } else {
-                            // Priority 3: Deepest of structural level vs heuristic level
-                            finalDepth = Math.max(structuralDepth, hDepth);
+                            const hDepth = detectDepth(
+                                hierarchy.lines[i],
+                                prevLine,
+                                prevDepth,
+                                context,
+                            );
+
+                            if (hDepth < 0) {
+                                // Priority 2: Heuristic comment from text content
+                                finalDepth = hDepth;
+                            } else {
+                                // Priority 3: Deepest of structural level vs heuristic level
+                                finalDepth = Math.max(structuralDepth, hDepth);
+                            }
                         }
+
+                        finalizedDepths.push(finalDepth);
+                        prevLine = hierarchy.lines[i];
+                        prevDepth = finalDepth;
                     }
 
-                    finalizedDepths.push(finalDepth);
-                    prevLine = hierarchy.lines[i];
-                    prevDepth = finalDepth;
+                    finalHTML = buildHierarchyHTML(
+                        hierarchy.lines,
+                        finalizedDepths,
+                    );
                 }
-
-                finalHTML = buildHierarchyHTML(
-                    hierarchy.lines,
-                    finalizedDepths,
-                );
 
                 // Restore images and links
                 finalHTML = finalHTML
@@ -355,10 +354,11 @@ class EditorPane {
 
             let reformatted;
             if (isCommentMode) {
-                // In comment mode, treat all lines as comments of the same node
+                // In comment mode, treat all lines as comments of the same node.
+                // We join with <br> directly to avoid the leading <br> that buildHierarchyHTML 
+                // adds for parentless comments.
                 const lines = cleanLines(processedText);
-                const depths = lines.map(() => -1);
-                reformatted = buildHierarchyHTML(lines, depths);
+                reformatted = lines.map(l => escapeHTML(l)).join("<br>");
             } else {
                 reformatted = reformatText(processedText);
             }
