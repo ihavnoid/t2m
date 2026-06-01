@@ -152,10 +152,27 @@ class EditorPane {
                 }
             }
         } else {
+            const linkPreview = clipboardData.getData("text/link-preview");
             const html = clipboardData.getData("text/html");
             const text = clipboardData.getData("text/plain");
 
-            if (html || text) {
+            if (linkPreview) {
+                ev.preventDefault();
+                try {
+                    const data = JSON.parse(linkPreview);
+                    if (data.url) {
+                        const a = document.createElement("a");
+                        a.href = data.url;
+                        a.textContent = data.title || data.url;
+                        a.target = "_blank";
+                        this.insertAtCursor(a);
+                        this.refresh();
+                        if (this.observerFunc) this.observerFunc();
+                    }
+                } catch (e) {
+                    console.warn("Failed to parse text/link-preview:", e);
+                }
+            } else if (html || text) {
                 ev.preventDefault();
                 await this._processPasteContent(html, text);
             }
@@ -165,6 +182,7 @@ class EditorPane {
     async _processPasteContent(html, text) {
         let fragment;
         const imgs = [];
+        const links = [];
         let finalHTML = "";
 
         // Strategy: Try to extract hierarchy from HTML first. 
@@ -181,8 +199,9 @@ class EditorPane {
             const hierarchy = this._htmlToHierarchy(container);
             
             if (hierarchy.lines.length > 0) {
-                // Collect images from HTML traversal
-                hierarchy.imgs.forEach(imgTag => imgs.push(imgTag));
+                // Collect images and links from HTML traversal
+                hierarchy.imgs.forEach((imgTag) => imgs.push(imgTag));
+                hierarchy.links.forEach((linkTag) => links.push(linkTag));
 
                 // Step 3: Refine depths using the heuristic (combining tags + physical spaces)
                 const finalizedDepths = [];
@@ -214,11 +233,10 @@ class EditorPane {
                     finalizedDepths,
                 );
 
-                // Restore images
-                finalHTML = finalHTML.replace(
-                    /\0i(\d+)\0/g,
-                    (m, idx) => imgs[idx] || "",
-                );
+                // Restore images and links
+                finalHTML = finalHTML
+                    .replace(/\0i(\d+)\0/g, (m, idx) => imgs[idx] || "")
+                    .replace(/\0k(\d+)\0/g, (m, idx) => links[idx] || "");
             }
         }
 
@@ -318,6 +336,7 @@ class EditorPane {
         const lines = [];
         const depths = [];
         const imgs = [];
+        const links = [];
 
         const walk = (node, depth) => {
             if (node.nodeType === Node.TEXT_NODE) {
@@ -383,6 +402,14 @@ class EditorPane {
                                         `<img src="${src}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`,
                                     );
                                     mainTextParts += `\0i${imgs.length - 1}\0`;
+                                } else if (ctag === "A") {
+                                    const href =
+                                        child.getAttribute("href") || "";
+                                    const content = child.innerHTML;
+                                    links.push(
+                                        `<a href="${href}" target="_blank">${content}</a>`,
+                                    );
+                                    mainTextParts += `\0k${links.length - 1}\0`;
                                 } else if (ctag === "BR") {
                                     mainTextParts += "\n";
                                 } else {
@@ -410,6 +437,14 @@ class EditorPane {
                     );
                     lines.push(`\0i${imgs.length - 1}\0`);
                     depths.push(depth);
+                } else if (tag === "A") {
+                    const href = node.getAttribute("href") || "";
+                    const content = node.innerHTML;
+                    links.push(
+                        `<a href="${href}" target="_blank">${content}</a>`,
+                    );
+                    lines.push(`\0k${links.length - 1}\0`);
+                    depths.push(depth);
                 } else if (tag === "BR") {
                     // Skip
                 } else {
@@ -429,7 +464,7 @@ class EditorPane {
         };
 
         walk(container, 0);
-        return { lines, depths, imgs };
+        return { lines, depths, imgs, links };
     }
 
     async _migrateExternalImages(container) {
@@ -470,19 +505,24 @@ class EditorPane {
     }
 
     _cleanHTMLForEditor(container) {
-        // Strip all attributes except src on images
+        // Strip all attributes except src on images and href/target on links
         const all = container.querySelectorAll("*");
         all.forEach((el) => {
             const attrs = Array.from(el.attributes);
             attrs.forEach((attr) => {
                 if (el.tagName === "IMG" && attr.name === "src") return;
+                if (
+                    el.tagName === "A" &&
+                    (attr.name === "href" || attr.name === "target")
+                )
+                    return;
                 el.removeAttribute(attr.name);
             });
         });
-        
+
         // Remove styling tags but keep structure and images
         const forbidden = container.querySelectorAll("style, script, meta, link");
-        forbidden.forEach(el => el.remove());
+        forbidden.forEach((el) => el.remove());
     }
 
     _createEditorImage(src) {
@@ -897,49 +937,76 @@ class EditorPane {
     }
 
     cleanupHTML() {
+        // 1. Identify which logical nodes are currently selected by the user
         let [n1, n2] = this.findSelectedNodes();
         if (!this.highlightSelected) {
             n1 = -1;
             n2 = -1;
         }
+
+        // 2. Mark the physical caret/selection position using temporary \0n and \0r tokens
         let t = this.markCaretPos(this.el.innerHTML);
+
+        // 3. Tokenization Phase: Convert meaningful HTML elements into internal command tokens
         const imgs = [];
         t = t.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (m, src) => {
             imgs.push(src);
-            return `\0i${imgs.length - 1}\0`;
+            return `\0i${imgs.length - 1}\0`; // \0iX\0 = Image token
         });
-        t = t
-            .replace(/<ul[^>]*>/gi, "\0u")
-            .replace(/<\/ul>/gi, "\0U")
-            .replace(/<li[^>]*>/gi, "\0l")
-            .replace(/<br[^>]*>/gi, "\0b")
-            .replace(/<\/li>/gi, "\0L")
-            .replace(/<[^>]*>/g, "")
-            .replace(/\s+/g, " ");
 
-        let tout = "",
-            nodeno = 0,
-            level = 0,
-            tagOpen = false,
-            closeUl = false,
-            accum = "",
-            first = true;
+        const links = [];
+        t = t.replace(
+            /<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi,
+            (m, href, content) => {
+                links.push({ href, content });
+                return `\0k${links.length - 1}\0`; // \0kX\0 = Link token
+            },
+        );
+
+        t = t
+            .replace(/<ul[^>]*>/gi, "\0u") // \0u = Open UL
+            .replace(/<\/ul>/gi, "\0U") // \0U = Close UL
+            .replace(/<li[^>]*>/gi, "\0l") // \0l = Open LI
+            .replace(/<br[^>]*>/gi, "\0b") // \0b = Line break (within a node)
+            .replace(/<\/li>/gi, "\0L") // \0L = Close LI
+            .replace(/<[^>]*>/g, "") // Strip all other HTML tags
+            .replace(/\s+/g, " "); // Normalize whitespace
+
+        // 4. Parser State variables
+        let tout = "", // The final reconstructed HTML string
+            nodeno = 0, // Counter for logical nodes (for selection highlighting)
+            level = 0, // Current indentation depth
+            tagOpen = false, // Is an <li> currently open?
+            closeUl = false, // Flag to close a temporary UL used for level normalization
+            accum = "", // Buffer for text content within the current <li>
+            first = true; // Is this the first line of text within an <li>? (Node title vs Comment)
+
+        // 5. Detect specialized key behaviors for caret restoration
         let pk = this.lastPressedKey;
         if (["Del", "Clear", "Cut", "EraseEof"].includes(pk)) pk = "Delete";
         if (!["Enter", "Delete", "Backspace"].includes(pk)) pk = "";
         let nPending = false,
             rPending = false;
 
+        /**
+         * Internal helper: Wraps text into categorized spans (pos, header, comment).
+         * @param {string} l - The raw text of a single line.
+         */
         const _proc = (l) => {
             if (!first)
+                // Secondary lines in an LI are treated as comments
                 return `<span class="comment">${l}</span>`;
+
             let cl =
                 nodeno in this.nodeColors
                     ? ` style="background-color:${this.nodeColors[nodeno]};" `
                     : " ";
+
+            // Match coordinate headers: [x y]
             const m = l.match(
                 /^((?:&nbsp;|\0n|\0r|\s)*)(\[(?:[0-9\- ]|\0n|\0r)*\])(.*)$/,
             );
+
             return m
                 ? l.replace(
                       m[0],
@@ -948,6 +1015,10 @@ class EditorPane {
                 : `<span${cl}class="header">${l}</span>`;
         };
 
+        /**
+         * State Machine Command Handler: Reconstructs HTML based on tokens.
+         * @param {string} c - Command token character (u, U, l, L, b, n, r)
+         */
         const _cmd = (c) => {
             if (c === "u") {
                 if (tagOpen) _cmd("L");
@@ -958,14 +1029,16 @@ class EditorPane {
                 level--;
                 tout += "</ul>";
             } else if (c === "l") {
+                // Node Start: Create <li> with depth class
                 if (tagOpen) _cmd("L");
                 if (level === 0) {
-                    _cmd("u");
+                    _cmd("u"); // Ensure we always start with a UL
                     closeUl = true;
                 }
                 tout += `<li class="${nodeno >= n1 && nodeno <= n2 ? "selected_node " : ""}level${Math.min(level, 8)}">`;
                 first = true;
                 tagOpen = true;
+                // Inject selection markers if they were pending
                 if (nPending) {
                     tout += "\0n";
                     nPending = false;
@@ -975,6 +1048,7 @@ class EditorPane {
                     rPending = false;
                 }
             } else if (c === "L") {
+                // Node End: Finalize content and close <li>
                 if (tagOpen) {
                     tout += _proc(accum) + "</li>\n";
                     nodeno++;
@@ -986,16 +1060,20 @@ class EditorPane {
                 }
                 tagOpen = false;
             } else if (c === "b") {
+                // Inline Break: Treat as line separator for multi-line nodes
                 if (tagOpen) {
                     tout += _proc(accum);
                     accum = "";
                     tout += "<br>";
-                    first = false;
+                    first = false; // Next text segment in this LI is a comment
                 }
             } else if ("nr".includes(c)) {
+                // Caret/Selection Markers
                 if (tagOpen) accum += "\0" + c;
                 else {
                     const isN = c === "n";
+                    // Heuristic: If we are at the edge of a node during deletion,
+                    // hold the marker to prevent it being lost or merging nodes incorrectly.
                     if (pk === "Delete") {
                         if (isN) nPending = true;
                         else rPending = true;
@@ -1011,6 +1089,7 @@ class EditorPane {
                                 c +
                                 tout.substring(pos);
                     } else if (pk === "Enter") {
+                        // On Enter, clone the structure
                         _cmd("l");
                         _cmd("L");
                         _cmd("l");
@@ -1020,6 +1099,7 @@ class EditorPane {
             }
         };
 
+        // 6. Main Parsing Loop: Process the tokenized string
         let p = 0;
         while (true) {
             const next = t.indexOf("\0", p);
@@ -1030,6 +1110,7 @@ class EditorPane {
             if (tagOpen) accum += t.substring(p, next);
             const cmd = t.charAt(next + 1);
             if (cmd === "i") {
+                // Image Restoration
                 p = next + 2;
                 const n = t.indexOf("\0", p);
                 if (n >= 0) {
@@ -1041,17 +1122,34 @@ class EditorPane {
                     }
                     p = n + 1;
                 } else p = next + 2;
+            } else if (cmd === "k") {
+                // Link Restoration
+                p = next + 2;
+                const n = t.indexOf("\0", p);
+                if (n >= 0) {
+                    const idx = parseInt(t.substring(p, n));
+                    if (!isNaN(idx) && links[idx]) {
+                        const link = `<a href="${links[idx].href}" target="_blank">${links[idx].content}</a>`;
+                        if (tagOpen) accum += link;
+                        else tout += link;
+                    }
+                    p = n + 1;
+                } else p = next + 2;
             } else {
                 _cmd(cmd);
                 p = next + 2;
             }
         }
+
+        // Handle trailing selection markers
         if (nPending || rPending) {
             _cmd("l");
             if (nPending) accum += "\0n";
             if (rPending) accum += "\0r";
             _cmd("L");
         }
+
+        // 7. Post-Processing: Flatten empty lists and redundant nesting
         while (true) {
             let t2 = tout
                 .replaceAll("</ul><ul>", "")
@@ -1059,7 +1157,11 @@ class EditorPane {
             if (tout === t2) break;
             tout = t2;
         }
+
+        // 8. Caret Restoration: Restore physical cursor position from marked tokens
         this.unmarkCaretPos(tout, true);
+
+        // 9. State Synchronization
         return this.updateProcessed();
     }
 
@@ -1093,12 +1195,21 @@ class EditorPane {
 
             let tp = t.substring(lipos + len, endOfHeader);
 
-            // Temporarily tokenize images to avoid interfering with text manipulation
+            // Temporarily tokenize images and links to avoid interfering with text manipulation
             const imgs = [];
             tp = tp.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (m, src) => {
                 imgs.push(src);
                 return `\0i${imgs.length - 1}\0`;
             });
+
+            const links = [];
+            tp = tp.replace(
+                /<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi,
+                (m, href, content) => {
+                    links.push({ href, content });
+                    return `\0k${links.length - 1}\0`;
+                },
+            );
 
             // Flatten for text manipulation (strip all other formatting tags)
             tp = tp
@@ -1137,6 +1248,13 @@ class EditorPane {
             tp = tp.replace(/\0i(\d+)\0/g, (m, idx) =>
                 imgs[idx]
                     ? `<img src="${imgs[idx]}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`
+                    : "",
+            );
+
+            // Restore link tokens back to actual <a> tags
+            tp = tp.replace(/\0k(\d+)\0/g, (m, idx) =>
+                links[idx]
+                    ? `<a href="${links[idx].href}" target="_blank">${links[idx].content}</a>`
                     : "",
             );
 
