@@ -211,8 +211,8 @@ class EditorPane {
 
                 for (let i = 0; i < hierarchy.lines.length; i++) {
                     let finalDepth;
-                    if (hierarchy.depths[i] === -1) {
-                        finalDepth = -2;
+                    if (hierarchy.depths[i] < 0) {
+                        finalDepth = hierarchy.depths[i];
                     } else {
                         const hDepth = detectDepth(
                             hierarchy.lines[i],
@@ -353,7 +353,7 @@ class EditorPane {
                     const content = node.textContent;
                     if (content.trim()) {
                         lines.push(content);
-                        depths.push(-1);
+                        depths.push(-2);
                     }
                     return;
                 }
@@ -391,7 +391,7 @@ class EditorPane {
                                     const content = child.textContent;
                                     if (content.trim()) {
                                         lines.push(content);
-                                        depths.push(-1);
+                                        depths.push(-2);
                                     }
                                 } else if (ctag === "UL" || ctag === "OL") {
                                     childrenToWalk.push(child);
