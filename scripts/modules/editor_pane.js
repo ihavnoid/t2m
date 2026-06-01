@@ -1,6 +1,12 @@
 import { uploadImage } from "./file_upload.js";
 import { imageDrawer } from "./image_drawer.js";
-import { reformatText, buildHierarchyHTML, detectDepth } from "./text_reorganizer.js";
+import {
+    reformatText,
+    buildHierarchyHTML,
+    detectDepth,
+    cleanLines,
+    escapeHTML,
+} from "./text_reorganizer.js";
 
 /**
  * Editor pane encapsulation.
@@ -174,18 +180,62 @@ class EditorPane {
                 }
             } else if (html || text) {
                 ev.preventDefault();
-                await this._processPasteContent(html, text);
+
+                // Detect if we are inserting into a comment section
+                let isCommentSection = false;
+                const selection = this.getWindow().getSelection();
+                if (selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    const container = range.startContainer;
+
+                    // 1. Check if inside a .comment span
+                    const commentSpan =
+                        container.nodeType === Node.ELEMENT_NODE
+                            ? container.closest(".comment")
+                            : container.parentElement?.closest(".comment");
+
+                    if (commentSpan) {
+                        isCommentSection = true;
+                    } else {
+                        // 2. Check if after a <br> tag in an LI
+                        const li =
+                            container.nodeType === Node.ELEMENT_NODE
+                                ? container.closest("li")
+                                : container.parentElement?.closest("li");
+
+                        if (li) {
+                            const children = Array.from(li.childNodes);
+                            const lastBrIdx =
+                                children.length -
+                                1 -
+                                [...children]
+                                    .reverse()
+                                    .findIndex((n) => n.tagName === "BR");
+                            if (lastBrIdx >= 0 && lastBrIdx < children.length) {
+                                let currentIdx =
+                                    container === li
+                                        ? range.startOffset
+                                        : children.indexOf(container);
+                                if (currentIdx > lastBrIdx) {
+                                    isCommentSection = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                await this._processPasteContent(html, text, isCommentSection);
             }
         }
     }
 
-    async _processPasteContent(html, text) {
+    async _processPasteContent(html, text, isCommentMode = false) {
         let fragment;
         const imgs = [];
         const links = [];
         let finalHTML = "";
 
-        // Strategy: Try to extract hierarchy from HTML first. 
+        // Strategy: Try to extract hierarchy from HTML first.
         // If that fails (zero lines), fallback to reformatting the plaintext.
         if (html) {
             const parser = new DOMParser();
@@ -197,7 +247,7 @@ class EditorPane {
 
             // Step 2: Build hierarchy from HTML structure
             const hierarchy = this._htmlToHierarchy(container);
-            
+
             if (hierarchy.lines.length > 0) {
                 // Collect images and links from HTML traversal
                 hierarchy.imgs.forEach((imgTag) => imgs.push(imgTag));
@@ -212,22 +262,28 @@ class EditorPane {
                 for (let i = 0; i < hierarchy.lines.length; i++) {
                     let finalDepth;
                     const structuralDepth = hierarchy.depths[i];
-                    const hDepth = detectDepth(
-                        hierarchy.lines[i],
-                        prevLine,
-                        prevDepth,
-                        context,
-                    );
 
-                    if (structuralDepth < 0) {
+                    if (isCommentMode) {
+                        // If we are already in a comment section, force everything to be a comment
+                        finalDepth = -1;
+                    } else if (structuralDepth < 0) {
                         // Priority 1: Structural comment (already -2)
                         finalDepth = structuralDepth;
-                    } else if (hDepth < 0) {
-                        // Priority 2: Heuristic comment from text content
-                        finalDepth = hDepth;
                     } else {
-                        // Priority 3: Deepest of structural level vs heuristic level
-                        finalDepth = Math.max(structuralDepth, hDepth);
+                        const hDepth = detectDepth(
+                            hierarchy.lines[i],
+                            prevLine,
+                            prevDepth,
+                            context,
+                        );
+
+                        if (hDepth < 0) {
+                            // Priority 2: Heuristic comment from text content
+                            finalDepth = hDepth;
+                        } else {
+                            // Priority 3: Deepest of structural level vs heuristic level
+                            finalDepth = Math.max(structuralDepth, hDepth);
+                        }
                     }
 
                     finalizedDepths.push(finalDepth);
@@ -297,13 +353,21 @@ class EditorPane {
                 );
             }
 
-            const reformatted = reformatText(processedText);
+            let reformatted;
+            if (isCommentMode) {
+                // In comment mode, treat all lines as comments of the same node
+                const lines = cleanLines(processedText);
+                const depths = lines.map(() => -1);
+                reformatted = buildHierarchyHTML(lines, depths);
+            } else {
+                reformatted = reformatText(processedText);
+            }
+
             if (reformatted) {
-                // Restore images
-                finalHTML = reformatted.replace(
-                    /\0i(\d+)\0/g,
-                    (m, idx) => imgs[idx] || "",
-                );
+                // Restore images and links
+                finalHTML = reformatted
+                    .replace(/\0i(\d+)\0/g, (m, idx) => imgs[idx] || "")
+                    .replace(/\0k(\d+)\0/g, (m, idx) => links[idx] || "");
             }
         }
 

@@ -230,7 +230,7 @@ export function buildHierarchyHTML(lines, depths) {
     return html;
 }
 
-function escapeHTML(str) {
+export function escapeHTML(str) {
     return str.replace(/[&<>"']/g, (m) => ({
         "&": "&amp;",
         "<": "&lt;",
