@@ -409,13 +409,15 @@ class MindmapEngine {
                 }
                 const changes = [];
                 this.draggedNodes.forEach((node) => {
-                    node.fixed = true;
-                    changes.push({
-                        nodenum: this.nodes.indexOf(node),
-                        frozen: true,
-                        xp: node.x,
-                        yp: node.y,
-                    });
+                    if (!node.data.parent) {
+                        node.fixed = true;
+                        changes.push({
+                            nodenum: this.nodes.indexOf(node),
+                            frozen: true,
+                            xp: node.x,
+                            yp: node.y,
+                        });
+                    }
                 });
                 window.editorPane.updateTextForCoordinates(changes);
                 this.dragStart.x = this.dragStart.y = false;
@@ -451,13 +453,15 @@ class MindmapEngine {
             }
             const changes = [];
             this.draggedNodes.forEach((node) => {
-                node.fixed = true;
-                changes.push({
-                    nodenum: this.nodes.indexOf(node),
-                    frozen: true,
-                    xp: node.x,
-                    yp: node.y,
-                });
+                if (!node.data.parent) {
+                    node.fixed = true;
+                    changes.push({
+                        nodenum: this.nodes.indexOf(node),
+                        frozen: true,
+                        xp: node.x,
+                        yp: node.y,
+                    });
+                }
             });
             window.editorPane.updateTextForCoordinates(changes);
             this.dragStart.x = this.dragStart.y = false;
