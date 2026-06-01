@@ -932,9 +932,7 @@ class EditorPane {
 
         const _proc = (l) => {
             if (!first)
-                return l === "" || "\0n\0r".includes(l)
-                    ? l
-                    : `<span class="comment">${l}</span>`;
+                return `<span class="comment">${l}</span>`;
             let cl =
                 nodeno in this.nodeColors
                     ? ` style="background-color:${this.nodeColors[nodeno]};" `
