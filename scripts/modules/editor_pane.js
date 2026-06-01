@@ -1000,10 +1000,14 @@ class EditorPane {
          * @param {string} l - The raw text of a single line.
          */
         const _proc = (l) => {
-            if (!first)
-                // Secondary lines in an LI are treated as comments
-                return `<span class="comment">${l}</span>`;
-
+            if (!first) {
+                if(l === "") {
+                    return l;
+                } else {
+                    // Secondary lines in an LI are treated as comments
+                    return `<span class="comment">${l}</span>`;
+                }
+            }
             let cl =
                 nodeno in this.nodeColors
                     ? ` style="background-color:${this.nodeColors[nodeno]};" `
