@@ -1073,6 +1073,39 @@ class EditorPane {
             } else if (c === "b") {
                 // Inline Break: Treat as line separator for multi-line nodes
                 if (tagOpen) {
+                    // Peek ahead to see if this is a trailing filler BR.
+                    // Browsers often insert a BR at the end of an LI to maintain its height.
+                    // We skip it if absolutely nothing follows it in this node.
+                    // Note: If selection markers (\0n, \0r) follow it, it's NOT trailing 
+                    // because the user is likely about to type there.
+                    let isTrailing = true;
+                    let ptr = next + 2;
+                    while (ptr < t.length) {
+                        const nMark = t.indexOf("\0", ptr);
+                        const textBetween = (nMark >= 0
+                            ? t.substring(ptr, nMark)
+                            : t.substring(ptr)
+                        ).trim();
+
+                        if (textBetween !== "") {
+                            isTrailing = false;
+                            break;
+                        }
+                        if (nMark < 0) break;
+
+                        const ncmd = t.charAt(nMark + 1);
+                        if ("LUul".includes(ncmd)) {
+                            // Reached end of node, end of list, or start of next node.
+                            break;
+                        }
+                        
+                        // If any other token follows (n, r, i, k), it's not trailing.
+                        isTrailing = false;
+                        break;
+                    }
+
+                    if (isTrailing) return;
+
                     tout += _proc(accum);
                     accum = "";
                     tout += "<br>";
@@ -1111,9 +1144,10 @@ class EditorPane {
         };
 
         // 6. Main Parsing Loop: Process the tokenized string
-        let p = 0;
+        let p = 0,
+            next = 0;
         while (true) {
-            const next = t.indexOf("\0", p);
+            next = t.indexOf("\0", p);
             if (next < 0) {
                 if (tagOpen) tout += t.substring(p);
                 break;
