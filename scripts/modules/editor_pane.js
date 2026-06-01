@@ -211,16 +211,23 @@ class EditorPane {
 
                 for (let i = 0; i < hierarchy.lines.length; i++) {
                     let finalDepth;
-                    if (hierarchy.depths[i] < 0) {
-                        finalDepth = hierarchy.depths[i];
+                    const structuralDepth = hierarchy.depths[i];
+                    const hDepth = detectDepth(
+                        hierarchy.lines[i],
+                        prevLine,
+                        prevDepth,
+                        context,
+                    );
+
+                    if (structuralDepth < 0) {
+                        // Priority 1: Structural comment (already -2)
+                        finalDepth = structuralDepth;
+                    } else if (hDepth < 0) {
+                        // Priority 2: Heuristic comment from text content
+                        finalDepth = hDepth;
                     } else {
-                        const hDepth = detectDepth(
-                            hierarchy.lines[i],
-                            prevLine,
-                            prevDepth,
-                            context,
-                        );
-                        finalDepth = Math.max(hierarchy.depths[i], hDepth);
+                        // Priority 3: Deepest of structural level vs heuristic level
+                        finalDepth = Math.max(structuralDepth, hDepth);
                     }
 
                     finalizedDepths.push(finalDepth);

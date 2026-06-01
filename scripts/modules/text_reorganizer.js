@@ -129,9 +129,11 @@ export function buildHierarchyHTML(lines, depths) {
     const stack = []; // Tracks open tags (UL or LI)
 
     const closeTagsUntil = (targetDepth) => {
+        // Safety: targetDepth should not be negative for hierarchy navigation
+        const safeTarget = Math.max(0, targetDepth);
         // We calculate current depth based on how many 'UL's are open.
         let currentDepth = stack.filter((t) => t === "UL").length - 1;
-        while (currentDepth > targetDepth) {
+        while (currentDepth > safeTarget) {
             if (stack[stack.length - 1] === "LI") {
                 html += "</li>";
                 stack.pop();
@@ -153,7 +155,7 @@ export function buildHierarchyHTML(lines, depths) {
 
     for (let i = 0; i < lines.length; i++) {
         let lineText = lines[i].trim();
-        const depth = depths[i];
+        let depth = depths[i];
 
         if (depth === -1 || depth === -2) {
             // Comment: Append to the CURRENT open LI if it exists.
@@ -171,6 +173,7 @@ export function buildHierarchyHTML(lines, depths) {
             // If no parent node exists, treat the comment as a normal node
             // to avoid losing the information.
             lineText = comment;
+            depth = 0; // Treat as root level node
         }
 
         // 1. Strip mindmap control tokens
