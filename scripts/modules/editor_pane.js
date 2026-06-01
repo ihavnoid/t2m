@@ -755,13 +755,13 @@ class EditorPane {
             b = parseInt(color.substr(4, 2), 16);
         this.nodeColors[index] =
             "#" +
-            Math.floor(384 + r / 2)
+            Math.floor(448 + r / 4)
                 .toString(16)
                 .substr(1) +
-            Math.floor(384 + g / 2)
+            Math.floor(448 + g / 4)
                 .toString(16)
                 .substr(1) +
-            Math.floor(384 + b / 2)
+            Math.floor(448 + b / 4)
                 .toString(16)
                 .substr(1);
     }
