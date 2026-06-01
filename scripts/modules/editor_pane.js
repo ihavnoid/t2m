@@ -253,7 +253,16 @@ class EditorPane {
                 hierarchy.imgs.forEach((imgTag) => imgs.push(imgTag));
                 hierarchy.links.forEach((linkTag) => links.push(linkTag));
 
-                if (isCommentMode) {
+                // Determine if this HTML is "natively structured" (lists or nested branches).
+                // If it is, we should NOT treat it as a comment even if the cursor is in a comment section.
+                const isStructuredHTML =
+                    hierarchy.depths.some((d) => d > 0) ||
+                    (hierarchy.depths.some((d) => d >= 0) &&
+                        hierarchy.lines.length > 1);
+
+                const effectiveCommentMode = isCommentMode && !isStructuredHTML;
+
+                if (effectiveCommentMode) {
                     // In comment mode, treat all lines as comments of the same node.
                     // Bypass buildHierarchyHTML to avoid the leading <br> on hollow nodes.
                     finalHTML = hierarchy.lines
