@@ -155,16 +155,22 @@ export function buildHierarchyHTML(lines, depths) {
         let lineText = lines[i].trim();
         const depth = depths[i];
 
-        if (depth === -1) {
+        if (depth === -1 || depth === -2) {
             // Comment: Append to the CURRENT open LI if it exists.
-            const comment = lines[i]
-                .trim()
-                .replace(/^\/\/\s?|^note:\s?|^remark:\s?/i, "");
-            
+            let comment = lines[i].trim();
+
+            if (depth === -1) {
+                // Heuristic comment from plaintext: strip prefixes
+                comment = comment.replace(/^\/\/\s?|^note:\s?|^remark:\s?|^#\s?/i, "");
+            }
+
             if (stack.length > 0 && stack[stack.length - 1] === "LI") {
                 html += `<br>${escapeHTML(comment)}`;
+                continue;
             }
-            continue;
+            // If no parent node exists, treat the comment as a normal node
+            // to avoid losing the information.
+            lineText = comment;
         }
 
         // 1. Strip mindmap control tokens

@@ -212,7 +212,7 @@ class EditorPane {
                 for (let i = 0; i < hierarchy.lines.length; i++) {
                     let finalDepth;
                     if (hierarchy.depths[i] === -1) {
-                        finalDepth = -1;
+                        finalDepth = -2;
                     } else {
                         const hDepth = detectDepth(
                             hierarchy.lines[i],
@@ -350,8 +350,8 @@ class EditorPane {
                 const isComment = node.classList.contains("comment");
 
                 if (isComment) {
-                    const content = node.textContent.trim();
-                    if (content) {
+                    const content = node.textContent;
+                    if (content.trim()) {
                         lines.push(content);
                         depths.push(-1);
                     }
@@ -388,8 +388,8 @@ class EditorPane {
                                         depths.push(depth);
                                         mainTextParts = "";
                                     }
-                                    const content = child.textContent.trim();
-                                    if (content) {
+                                    const content = child.textContent;
+                                    if (content.trim()) {
                                         lines.push(content);
                                         depths.push(-1);
                                     }
