@@ -411,9 +411,11 @@ class MindmapEngine {
                 this.draggedNodes.forEach((node) => {
                     if (!node.data.parent) {
                         node.fixed = true;
+                    }
+                    if(node.frozen) {
                         changes.push({
                             nodenum: this.nodes.indexOf(node),
-                            frozen: true,
+                            frozen: node.frozen,
                             xp: node.x,
                             yp: node.y,
                         });
@@ -455,9 +457,11 @@ class MindmapEngine {
             this.draggedNodes.forEach((node) => {
                 if (!node.data.parent) {
                     node.fixed = true;
+                }
+                if(node.frozen) {
                     changes.push({
                         nodenum: this.nodes.indexOf(node),
-                        frozen: true,
+                        frozen: node.frozen,
                         xp: node.x,
                         yp: node.y,
                     });
@@ -1020,14 +1024,16 @@ class MindmapEngine {
             if (event.shiftKey) {
                 this.draggedNodes = [node];
                 this.nodes.forEach((n) => {
-                    if (this.draggedNodes.indexOf(n.data.parent) >= 0)
+                    if (this.draggedNodes.indexOf(n.data.parent) >= 0) {
                         this.draggedNodes.push(n);
+                        n.fixed = true;
+                    }
                 });
             } else {
                 this.draggedNodes = [node];
             }
             window.getSelection().removeAllRanges();
-            node.fixedtemp = node.fixed || this.config.lockAfterMoving;
+            node.frozen = node.frozen || this.config.lockAfterMoving;
             node.fixed = true;
             this.dragLastPos = this.getPointerPos(
                 event.pageX || event.targetTouches[0].pageX,
@@ -1057,7 +1063,7 @@ class MindmapEngine {
                 window.editorPane.moveCursorToNode(index);
                 this.redraw();
             }
-            node.fixed = node.fixedtemp;
+            node.fixed = node.frozen;
             this.updateFixedNodeCoordinates();
         });
         group.on("mouseout", () => {
@@ -1415,7 +1421,6 @@ class MindmapEngine {
     }
     buildStartingPos(updatedRate) {
         this.nodes.forEach((node, index) => {
-            node.fixedtemp = node.fixed;
             if (typeof node.x === "undefined") {
                 this.setStartPosition(node, index, this.nodes.length);
             } else {
@@ -1535,7 +1540,7 @@ class MindmapEngine {
                 .tick(100)
                 .stop();
         }
-        this.nodes.forEach((node) => (node.fixed = node.fixedtemp));
+        this.nodes.forEach((node) => (node.fixed = node.frozen || (!node.data.parent)));
     }
     setTheme(data) {
         data.font = this.config.font;
