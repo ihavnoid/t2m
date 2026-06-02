@@ -88,6 +88,8 @@
 						<li><a href="#" id="mindmap-lock-all"><i class="fa-solid fa-lock fa-fw"></i>Lock all<span class="dropdown-shortcut"></span></a></li>
 						<li><a href="#" id="mindmap-unlock-all"><i class="fa-solid fa-unlock fa-fw"></i>Unlock all<span class="dropdown-shortcut"></span></a></li>
 						<li class="dropdown-divider"></li>
+						<li><a href="#" id="layout-toggle"><i class="fa-solid fa-rotate fa-fw"></i>Toggle Layout</a></li>
+						<li class="dropdown-divider"></li>
 						<li><a href="#" id="file-preferences"><i class="fa-solid fa-gear fa-fw"></i>Preferences</a></li>
 					</ul>
 				</li>

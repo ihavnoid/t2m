@@ -113,6 +113,7 @@ class App {
                 "file-rename": () => appFunctions.fileRename(),
                 "file-preferences": () => appFunctions.filePreferences(),
                 "navbar-history": () => historyModule.open(),
+                "layout-toggle": () => paneResizer.toggleLayout(),
             });
             // Initialize Modal
             modal.init();

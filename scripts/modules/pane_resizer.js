@@ -13,8 +13,8 @@ class PaneResizer {
         this.$floatButton = null;
         this.$body = null;
 
-        this.minPaneWidth = 200;
-        this.minCollapseWidth = 100;
+        this.minPaneSize = 200;
+        this.minCollapseSize = 100;
 
         this.dragging = false;
         this.shouldSplitPanes = false;
@@ -25,6 +25,7 @@ class PaneResizer {
         this.viewerPanePercentage = 65;
 
         this.editFloatMode = false;
+        this.layoutMode = "horizontal";
     }
 
     init() {
@@ -63,34 +64,52 @@ class PaneResizer {
         );
         this.$floatButton.on("click touchstart", () => this.clickFloatButton());
 
-        this.$dragbar.on("mousedown", (mousedownEvent) => {
+        this.$dragbar.on("mousedown touchstart", (mousedownEvent) => {
             this.dragging = true;
             this.$body.addClass("no-selection");
-            const mouseDownPos = mousedownEvent.pageX;
-            const initialLeftPaneWidth = this.$editorPane.width();
 
-            $(document).on("mousemove", (mousemoveEvent) => {
+            const isTouch = mousedownEvent.type === "touchstart";
+            const isHoriz = this.layoutMode === "horizontal";
+            const mouseDownPos = isHoriz
+                ? isTouch
+                    ? mousedownEvent.originalEvent.touches[0].pageX
+                    : mousedownEvent.pageX
+                : isTouch
+                  ? mousedownEvent.originalEvent.touches[0].pageY
+                  : mousedownEvent.pageY;
+
+            const initialEditorSize = isHoriz
+                ? this.$editorPane.width()
+                : this.$editorPane.height();
+
+            const moveEvent = isTouch ? "touchmove" : "mousemove";
+            const upEvent = isTouch ? "touchend" : "mouseup";
+
+            $(document).on(moveEvent, (ev) => {
                 if (this.dragging) {
-                    const deltaPageX = mousemoveEvent.pageX - mouseDownPos;
-                    const unit = this.$paneContainer.width() / 100;
+                    const currentPos = isHoriz
+                        ? isTouch
+                            ? ev.originalEvent.touches[0].pageX
+                            : ev.pageX
+                        : isTouch
+                          ? ev.originalEvent.touches[0].pageY
+                          : ev.pageY;
+
+                    const delta = currentPos - mouseDownPos;
+                    const containerSize = isHoriz
+                        ? this.$paneContainer.width()
+                        : this.$paneContainer.height();
+                    const unit = containerSize / 100;
+
+                    // In vertical mode, moving mouse down (positive delta) makes editor smaller
+                    // because editor is placed at the bottom.
+                    const actualDelta = isHoriz ? delta : -delta;
                     const newEditorPanePercentage =
-                        (initialLeftPaneWidth + deltaPageX) / unit;
-                    const newViewerPanePercentage =
-                        100 - newEditorPanePercentage;
+                        (initialEditorSize + actualDelta) / unit;
+
                     this.editorPanePercentage = newEditorPanePercentage;
-                    this.viewerPanePercentage = newViewerPanePercentage;
-                    if (this.editorPanePercentage < this.minPaneWidth / unit) {
-                        this.editorPanePercentage = this.minPaneWidth / unit;
-                        this.viewerPanePercentage =
-                            100 - this.editorPanePercentage;
-                    }
-                    if (this.viewerPanePercentage < this.minPaneWidth / unit) {
-                        this.viewerPanePercentage = this.minPaneWidth / unit;
-                        this.editorPanePercentage =
-                            100 - this.viewerPanePercentage;
-                    }
-                    this.oldEditorPanePercentage = this.editorPanePercentage;
-                    this.oldViewerPanePercentage = this.viewerPanePercentage;
+                    this.viewerPanePercentage = 100 - newEditorPanePercentage;
+
                     this.resizePanesToPercentage(
                         this.editorPanePercentage,
                         this.viewerPanePercentage,
@@ -98,130 +117,274 @@ class PaneResizer {
                 }
             });
 
-            $(document).on("mouseup", () => {
+            $(document).on(upEvent, () => {
                 if (this.dragging) {
                     this.dragging = false;
                     this.$body.removeClass("no-selection");
-                    $(document).off("mousemove");
+                    $(document).off(moveEvent);
+                    // Save percentage on drop, avoiding 0 or 100
+                    if (
+                        this.editorPanePercentage > 0 &&
+                        this.editorPanePercentage < 100
+                    ) {
+                        this.oldEditorPanePercentage = this.editorPanePercentage;
+                        this.oldViewerPanePercentage = this.viewerPanePercentage;
+                    }
                 }
             });
         });
     }
 
+    toggleLayout() {
+        this.layoutMode =
+            this.layoutMode === "horizontal" ? "vertical" : "horizontal";
+
+        // Clear styles to prevent cross-contamination between modes
+        this.$editorPane.attr("style", "");
+        this.$viewerPane.attr("style", "");
+        this.$dragbar.attr("style", "");
+        $("#viewer-container").attr("style", "");
+
+        // Re-apply visibility for buttons
+        this.$editorCollapseButton.css("visibility", "visible");
+        this.$viewerCollapseButton.css("visibility", "visible");
+        this.$floatButton.css("visibility", "visible");
+
+        this.resizePanesToPercentage(
+            this.editorPanePercentage,
+            this.viewerPanePercentage,
+        );
+    }
+
     resizePanesToPercentage(newEditorPanePercentage, newViewerPanePercentage) {
+        // Validate sum
         if (
             Math.abs(newEditorPanePercentage + newViewerPanePercentage - 100) >
             0.1
         ) {
-            console.warn(
-                "Error resizing panes, percentages don't add up. Resetting to 50% split.",
-            );
             this.editorPanePercentage = 50;
             this.viewerPanePercentage = 50;
-            return this.resizePanesToPercentage(
-                this.editorPanePercentage,
-                this.viewerPanePercentage,
-            );
+            return this.resizePanesToPercentage(50, 50);
         }
-        let newLeftWidth =
-            (this.$paneContainer.width() / 100) * newEditorPanePercentage;
-        let newRightWidth =
-            (this.$paneContainer.width() / 100) * newViewerPanePercentage;
+
+        const isHoriz = this.layoutMode === "horizontal";
+        const containerSize = isHoriz
+            ? this.$paneContainer.width()
+            : this.$paneContainer.height();
+
+        let newEditorSize = (containerSize / 100) * newEditorPanePercentage;
+        let newViewerSize = (containerSize / 100) * newViewerPanePercentage;
+
         this.$dragbar.show();
-        if (newEditorPanePercentage === 0 || newViewerPanePercentage === 0) {
+        if (newEditorPanePercentage <= 0 || newViewerPanePercentage <= 0) {
             if (
                 this.shouldSplitPanes &&
-                this.$paneContainer.width() >= this.minPaneWidth * 2
+                containerSize >= this.minPaneSize * 2
             ) {
                 this.shouldSplitPanes = false;
-                this.editorPanePercentage = this.oldEditorPanePercentage;
-                this.viewerPanePercentage = this.oldViewerPanePercentage;
+                this.editorPanePercentage = this.oldEditorPanePercentage || 35;
+                this.viewerPanePercentage = this.oldViewerPanePercentage || 65;
                 return this.resizePanesToPercentage(
                     this.editorPanePercentage,
                     this.viewerPanePercentage,
                 );
             }
-            if (newEditorPanePercentage === 0) {
+            if (newEditorPanePercentage <= 0) {
                 this.$dragbar.hide();
+                newEditorSize = 0;
+                newViewerSize = containerSize;
+            } else {
+                newEditorSize = containerSize;
+                newViewerSize = 0;
             }
         } else {
-            if (this.$paneContainer.width() < this.minPaneWidth * 2) {
+            if (containerSize < this.minPaneSize * 2) {
                 this.shouldSplitPanes = true;
                 this.editorPanePercentage = 100;
                 this.viewerPanePercentage = 0;
-                return this.resizePanesToPercentage(
-                    this.editorPanePercentage,
-                    this.viewerPanePercentage,
-                );
+                return this.resizePanesToPercentage(100, 0);
             }
-            if (newLeftWidth < this.minCollapseWidth) {
+            if (newEditorSize < this.minCollapseSize) {
                 this.editorPanePercentage = 0;
                 this.viewerPanePercentage = 100;
-                return this.resizePanesToPercentage(
-                    this.editorPanePercentage,
-                    this.viewerPanePercentage,
-                );
+                return this.resizePanesToPercentage(0, 100);
             }
-            if (newRightWidth < this.minCollapseWidth) {
+            if (newViewerSize < this.minCollapseSize) {
                 this.editorPanePercentage = 100;
                 this.viewerPanePercentage = 0;
-                return this.resizePanesToPercentage(
-                    this.editorPanePercentage,
-                    this.viewerPanePercentage,
-                );
+                return this.resizePanesToPercentage(100, 0);
             }
-            if (newLeftWidth < this.minPaneWidth) {
-                newLeftWidth = this.minPaneWidth;
-                newRightWidth = this.$paneContainer.width() - newLeftWidth;
+            if (newEditorSize < this.minPaneSize) {
+                newEditorSize = this.minPaneSize;
+                newViewerSize = containerSize - newEditorSize;
             }
-            if (newRightWidth < this.minPaneWidth) {
-                newRightWidth = this.minPaneWidth;
-                newLeftWidth = this.$paneContainer.width() - newRightWidth;
+            if (newViewerSize < this.minPaneSize) {
+                newViewerSize = this.minPaneSize;
+                newEditorSize = containerSize - newViewerSize;
             }
         }
-        this.$editorPane.width(newLeftWidth);
-        this.$viewerPane.width(newRightWidth);
-        this.setCollapseButtonPositions();
+
+        // Apply calculated sizes using inline styles
+        if (isHoriz) {
+            this.$editorPane.css({
+                width: newEditorSize + "px",
+                height: "",
+                top: "",
+                left: "",
+                right: "",
+            });
+            this.$viewerPane.css({
+                width: newViewerSize + "px",
+                height: "",
+                top: "",
+                left: "",
+                right: 0,
+            });
+            this.$dragbar.css({
+                width: "",
+                height: "",
+                float: "",
+                position: "",
+                bottom: "",
+                left: "",
+                cursor: "",
+                zIndex: "",
+            });
+            $("#viewer-container").css({ width: "", height: "", float: "" });
+        } else {
+            // Vertical mode: Viewer top, Editor bottom
+            this.$viewerPane.css({
+                width: "100%",
+                height: newViewerSize + "px",
+                top: "50px", // Compensate for navbar
+                left: 0,
+                right: "auto",
+            });
+
+            this.$dragbar.css({
+                width: "100%",
+                height: "6px",
+                float: "none",
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                cursor: "row-resize",
+                zIndex: 100,
+                display:
+                    newEditorSize === 0 || newViewerSize === 0
+                        ? "none"
+                        : "block",
+            });
+
+            $("#viewer-container").css({
+                width: "100%",
+                height: "calc(100% - 6px)",
+                float: "none",
+            });
+
+            this.$editorPane.css({
+                width: "100%",
+                height: newEditorSize + "px",
+                top: 50 + newViewerSize + "px", // Start directly under viewer
+                left: 0,
+                right: "auto",
+            });
+        }
+
+        this.setCollapseButtonPositions(newEditorSize, newViewerSize);
         if (window.mindmap && window.mindmap.updateCanvasSize) {
             window.mindmap.updateCanvasSize();
         }
     }
 
-    setCollapseButtonPositions() {
-        if (this.$editorPane.width() === 0) {
-            if (this.editFloatMode) {
-                this.$viewerCollapseButton.hide();
-            } else {
-                this.$viewerCollapseButton.show();
-            }
+    setCollapseButtonPositions(editorSize, viewerSize) {
+        // Visibility
+        if (editorSize === 0) {
+            this.$viewerCollapseButton.show();
             this.$floatButton.hide();
         } else {
             this.$viewerCollapseButton.hide();
             this.$floatButton.show();
         }
-        if (this.$viewerPane.width() === 0) {
+        if (viewerSize === 0) {
             this.$editorCollapseButton.show();
         } else {
             this.$editorCollapseButton.hide();
         }
-        let rightOffset = 29;
-        this.$editorCollapseButton.css("left", `calc(100% - ${rightOffset}px)`);
-        if (this.editorPanePercentage === 0) {
-            this.$viewerCollapseButton.css("margin-left", "5px");
+
+        const isHoriz = this.layoutMode === "horizontal";
+        const rightOffset = 29;
+
+        if (isHoriz) {
+            this.$editorCollapseButton.css({
+                left: `calc(100% - ${rightOffset}px)`,
+                top: "45%",
+                bottom: "auto",
+            });
+            this.$editorCollapseButton.find("i").css("transform", "");
+
+            this.$floatButton.css({
+                left: `calc(100% - ${rightOffset}px)`,
+                top: "0px",
+                bottom: "auto",
+            });
+
+            this.$viewerCollapseButton.css({
+                left: "5px",
+                top: "45%",
+                bottom: "auto",
+            });
+            this.$viewerCollapseButton.find("i").css("transform", "");
         } else {
-            this.$viewerCollapseButton.css("margin-left", "10px");
+            // Vertical mode: Use CSS rotation so we don't change the DOM/classes
+            // left chevron rotated 90deg clockwise points UP (to reveal Top/Viewer)
+            // right chevron rotated 90deg clockwise points DOWN (to reveal Bottom/Editor)
+
+            // viewerCollapseButton reveals the editor. Editor is at bottom.
+            // It originally has fa-chevron-right. Right rotated 90 is Down.
+            this.$viewerCollapseButton.css({
+                left: "calc(50% - 15px)",
+                bottom: "10px",
+                top: "auto",
+            });
+            this.$viewerCollapseButton
+                .find("i")
+                .css("transform", "rotate(90deg)");
+
+            // editorCollapseButton reveals the viewer. Viewer is at top.
+            // It originally has fa-chevron-left. Left rotated 90 is Up.
+            this.$editorCollapseButton.css({
+                left: "calc(50% - 15px)",
+                top: "10px",
+                bottom: "auto",
+            });
+            this.$editorCollapseButton
+                .find("i")
+                .css("transform", "rotate(90deg)");
+
+            // Keep float button top-right of editor
+            this.$floatButton.css({
+                left: `calc(100% - ${rightOffset}px)`,
+                top: "0px",
+                bottom: "auto",
+            });
         }
     }
 
     toggleEditor() {
         if (this.editorPanePercentage === 0) {
-            if (this.$paneContainer.width() >= this.minPaneWidth * 2) {
-                this.editorPanePercentage = this.oldEditorPanePercentage;
-                this.viewerPanePercentage = this.oldViewerPanePercentage;
-            } else {
-                this.editorPanePercentage = 100;
-                this.viewerPanePercentage = 0;
-            }
+            const containerSize =
+                this.layoutMode === "horizontal"
+                    ? this.$paneContainer.width()
+                    : this.$paneContainer.height();
+
+            // Enforce minimum visible size
+            const minPercent = (150 / containerSize) * 100;
+            this.editorPanePercentage = Math.max(
+                minPercent,
+                this.oldEditorPanePercentage || 35,
+            );
+            this.viewerPanePercentage = 100 - this.editorPanePercentage;
         } else {
             this.editorPanePercentage = 0;
             this.viewerPanePercentage = 100;
@@ -234,13 +397,18 @@ class PaneResizer {
 
     toggleViewer() {
         if (this.viewerPanePercentage === 0) {
-            if (this.$paneContainer.width() >= this.minPaneWidth * 2) {
-                this.editorPanePercentage = this.oldEditorPanePercentage;
-                this.viewerPanePercentage = this.oldViewerPanePercentage;
-            } else {
-                this.editorPanePercentage = 0;
-                this.viewerPanePercentage = 100;
-            }
+            const containerSize =
+                this.layoutMode === "horizontal"
+                    ? this.$paneContainer.width()
+                    : this.$paneContainer.height();
+
+            // Enforce minimum visible size
+            const minPercent = (150 / containerSize) * 100;
+            this.viewerPanePercentage = Math.max(
+                minPercent,
+                this.oldViewerPanePercentage || 65,
+            );
+            this.editorPanePercentage = 100 - this.viewerPanePercentage;
         } else {
             this.editorPanePercentage = 100;
             this.viewerPanePercentage = 0;
@@ -252,8 +420,8 @@ class PaneResizer {
     }
 
     editorUnfloat() {
-        this.editorPanePercentage = this.oldEditorPanePercentage;
-        this.viewerPanePercentage = this.oldViewerPanePercentage;
+        this.editorPanePercentage = this.oldEditorPanePercentage || 35;
+        this.viewerPanePercentage = this.oldViewerPanePercentage || 65;
         this.editFloatMode = false;
         this.resizePanesToPercentage(
             this.editorPanePercentage,
