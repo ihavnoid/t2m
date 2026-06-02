@@ -53,8 +53,44 @@ class Mindmap {
             }
         });
 
-        $("#stageHolder").on("wheel", (event) => {
+        const $stage = $("#stageHolder");
+        $stage.on("wheel", (event) => {
             this.engine.zoom(-event.originalEvent.deltaY);
+        });
+
+        // Pinch-to-Zoom Support
+        let lastDist = 0;
+        $stage.on("touchstart", (ev) => {
+            if (ev.originalEvent.touches.length === 2) {
+                const t1 = ev.originalEvent.touches[0];
+                const t2 = ev.originalEvent.touches[1];
+                lastDist = Math.hypot(t1.pageX - t2.pageX, t1.pageY - t2.pageY);
+            }
+        });
+
+        $stage.on("touchmove", (ev) => {
+            if (ev.originalEvent.touches.length === 2) {
+                ev.preventDefault(); // Prevent browser zoom/scroll
+                const t1 = ev.originalEvent.touches[0];
+                const t2 = ev.originalEvent.touches[1];
+                const dist = Math.hypot(t1.pageX - t2.pageX, t1.pageY - t2.pageY);
+                
+                if (lastDist > 0) {
+                    const delta = dist - lastDist;
+                    if (Math.abs(delta) > 5) {
+                        this.engine.zoom(delta * 5); // Amplify touch zoom speed
+                        lastDist = dist;
+                    }
+                } else {
+                    lastDist = dist;
+                }
+            }
+        });
+
+        $stage.on("touchend", (ev) => {
+            if (ev.originalEvent.touches.length < 2) {
+                lastDist = 0;
+            }
         });
 
         $("#lockAfterMoving").change(function () {
@@ -373,63 +409,45 @@ class MindmapEngine {
                 this.isDraggingStage = true;
                 $(window).on("touchmove mousemove", (ev) => {
                     ev.stopPropagation();
-                    ev.preventDefault();
                     if (!this.dragStart.x && !this.dragStart.y) {
                         this.dragStart.x =
-                            ev.pageX || ev.originalEvent.touches[0].pageX;
+                            ev.pageX || ev.originalEvent?.touches?.[0]?.pageX;
                         this.dragStart.y =
-                            ev.pageY || ev.originalEvent.touches[0].pageY;
+                            ev.pageY || ev.originalEvent?.touches?.[0]?.pageY;
                     }
-                    const bx = ev.pageX || ev.originalEvent.touches[0].pageX;
-                    const by = ev.pageY || ev.originalEvent.touches[0].pageY;
-                    this.layer.move(
-                        bx - this.dragStart.x,
-                        by - this.dragStart.y,
-                    );
-                    this.dragStart.x = bx;
-                    this.dragStart.y = by;
-                    this.layer.draw();
+                    const bx = ev.pageX || ev.originalEvent?.touches?.[0]?.pageX;
+                    const by = ev.pageY || ev.originalEvent?.touches?.[0]?.pageY;
+                    if (bx && by) {
+                        if (ev.type === "touchmove") ev.preventDefault();
+                        this.layer.move(
+                            bx - this.dragStart.x,
+                            by - this.dragStart.y,
+                        );
+                        this.dragStart.x = bx;
+                        this.dragStart.y = by;
+                        this.layer.draw();
+                    }
                 });
             }
             event.stopPropagation();
         });
 
         $stage.on("touchmove mousemove", (event) => {
-            this.lastXPos =
-                (event.pageX || event.originalEvent.touches[0].pageX) -
-                $("#viewer-container").offset().left;
-            this.lastYPos =
-                (event.pageY || event.originalEvent.touches[0].pageY) -
-                $("#viewer-container").offset().top;
+            const pageX = event.pageX || event.originalEvent?.touches?.[0]?.pageX;
+            const pageY = event.pageY || event.originalEvent?.touches?.[0]?.pageY;
+            if (!pageX || !pageY) return;
+
+            this.lastXPos = pageX - $("#viewer-container").offset().left;
+            this.lastYPos = pageY - $("#viewer-container").offset().top;
             this.shiftKey = event.shiftKey;
-            if (event.buttons == 0) {
-                if (this.isDraggingStage) {
-                    $(window).off("touchmove mousemove");
-                    this.isDraggingStage = false;
-                }
-                const changes = [];
-                this.draggedNodes.forEach((node) => {
-                    if (!node.data.parent) {
-                        node.fixed = true;
-                    }
-                    if(node.frozen) {
-                        changes.push({
-                            nodenum: this.nodes.indexOf(node),
-                            frozen: node.frozen,
-                            xp: node.x,
-                            yp: node.y,
-                        });
-                    }
-                });
-                window.editorPane.updateTextForCoordinates(changes);
-                this.dragStart.x = this.dragStart.y = false;
-                this.draggedNodes = [];
+
+            if (event.type === "mousemove" && event.buttons == 0) {
+                this._finalizeDrag();
             }
+
             if (this.draggedNodes.length > 0) {
-                const pos = this.getPointerPos(
-                    event.pageX || event.originalEvent.targetTouches[0].pageX,
-                    event.pageY || event.originalEvent.targetTouches[0].pageY,
-                );
+                if (event.type === "touchmove") event.preventDefault();
+                const pos = this.getPointerPos(pageX, pageY);
                 this.draggedNodes.forEach((node) => {
                     node.x += pos.x - this.dragLastPos.x;
                     node.y += pos.y - this.dragLastPos.y;
@@ -449,28 +467,34 @@ class MindmapEngine {
 
         $(window).on("mouseup touchend", (event) => {
             this.shiftKey = event.shiftKey;
-            if (this.isDraggingStage) {
-                $(window).off("touchmove mousemove");
-                this.isDraggingStage = false;
-            }
-            const changes = [];
-            this.draggedNodes.forEach((node) => {
-                if (!node.data.parent) {
-                    node.fixed = true;
-                }
-                if(node.frozen) {
-                    changes.push({
-                        nodenum: this.nodes.indexOf(node),
-                        frozen: node.frozen,
-                        xp: node.x,
-                        yp: node.y,
-                    });
-                }
-            });
-            window.editorPane.updateTextForCoordinates(changes);
-            this.dragStart.x = this.dragStart.y = false;
-            this.draggedNodes = [];
+            this._finalizeDrag();
         });
+    }
+
+    _finalizeDrag() {
+        if (this.isDraggingStage) {
+            $(window).off("touchmove mousemove");
+            this.isDraggingStage = false;
+        }
+        const changes = [];
+        this.draggedNodes.forEach((node) => {
+            if (!node.data.parent) {
+                node.fixed = true;
+            }
+            if (node.frozen) {
+                changes.push({
+                    nodenum: this.nodes.indexOf(node),
+                    frozen: node.frozen,
+                    xp: node.x,
+                    yp: node.y,
+                });
+            }
+        });
+        if (changes.length > 0) {
+            window.editorPane.updateTextForCoordinates(changes);
+        }
+        this.dragStart.x = this.dragStart.y = false;
+        this.draggedNodes = [];
     }
 
     settings(settingsObj, triggerRedraw) {
@@ -1018,6 +1042,8 @@ class MindmapEngine {
             currentY += el.h + (el.isImage ? imgMargin * 2 : 0) + itemSpacing;
         });
 
+        let longPressTimer = null;
+
         group.on("touchstart mousedown", (event) => {
             if (!window.editorPane.isEditable()) return;
             event.cancelBubble = true;
@@ -1035,11 +1061,69 @@ class MindmapEngine {
             window.getSelection().removeAllRanges();
             node.frozen = node.frozen || this.config.lockAfterMoving;
             node.fixed = true;
-            this.dragLastPos = this.getPointerPos(
-                event.pageX || event.targetTouches[0].pageX,
-                event.pageY || event.targetTouches[0].pageY,
-            );
+
+            const pageX = event.pageX || event.originalEvent?.targetTouches?.[0]?.pageX;
+            const pageY = event.pageY || event.originalEvent?.targetTouches?.[0]?.pageY;
+            this.dragLastPos = this.getPointerPos(pageX, pageY);
+
+            // Long-press detection
+            if (event.type === "touchstart") {
+                longPressTimer = setTimeout(() => {
+                    // Toggle freeze
+                    node.frozen = !node.frozen;
+                    const index = this.nodes.indexOf(node);
+                    window.editorPane.updateTextForCoordinates([{
+                        nodenum: index,
+                        frozen: node.frozen,
+                        xp: node.x,
+                        yp: node.y
+                    }]);
+                    this.redraw();
+                    longPressTimer = null;
+                }, 600);
+            }
         });
+
+        group.on("touchmove", (event) => {
+            if (longPressTimer) {
+                const pageX = event.originalEvent?.targetTouches?.[0]?.pageX;
+                const pageY = event.originalEvent?.targetTouches?.[0]?.pageY;
+                const pos = this.getPointerPos(pageX, pageY);
+                const dist = Math.hypot(
+                    pos.x - this.dragLastPos.x,
+                    pos.y - this.dragLastPos.y,
+                );
+                if (dist > 10) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+            }
+        });
+
+        group.on("touchend", (event) => {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            // Tap-to-select on mobile
+            if (this.draggedNodes.length === 0 || !this.dragLastPos) return;
+
+            const pageX = event.originalEvent?.changedTouches?.[0]?.pageX;
+            const pageY = event.originalEvent?.changedTouches?.[0]?.pageY;
+            if (pageX && pageY) {
+                const pos = this.getPointerPos(pageX, pageY);
+                const dist = Math.hypot(
+                    pos.x - this.dragLastPos.x,
+                    pos.y - this.dragLastPos.y,
+                );
+                if (dist < 5) {
+                    const index = this.nodes.indexOf(node);
+                    window.editorPane.moveCursorToNode(index);
+                    this.redraw();
+                }
+            }
+        });
+
         group.on("mouseover", () => {
             if (!this.shiftKey) {
                 document.getElementById(this.containerId).style.cursor =
@@ -1587,10 +1671,13 @@ class MindmapEngine {
                 x: (pageX - transform[4]) / transform[0],
                 y: (pageY - transform[5]) / transform[3],
             };
-        const offset = $("#" + this.containerId).offset();
+        
+        const container = document.getElementById(this.containerId);
+        const rect = container.getBoundingClientRect();
+        
         return {
-            x: (pageX - offset.left - transform[4]) / transform[0],
-            y: (pageY - offset.top - transform[5]) / transform[3],
+            x: (pageX - rect.left - window.scrollX - transform[4]) / transform[0],
+            y: (pageY - rect.top - window.scrollY - transform[5]) / transform[3],
         };
     }
 }
