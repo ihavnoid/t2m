@@ -54,9 +54,18 @@ class Mindmap {
         });
 
         const $stage = $("#stageHolder");
-        $stage.on("wheel", (event) => {
-            this.engine.zoom(-event.originalEvent.deltaY);
-        });
+        const stageEl = $stage[0];
+
+        if (stageEl) {
+            stageEl.addEventListener(
+                "wheel",
+                (event) => {
+                    event.preventDefault();
+                    this.engine.zoom(-event.deltaY);
+                },
+                { passive: false },
+            );
+        }
 
         // Pinch-to-Zoom Support
         let lastDist = 0;
