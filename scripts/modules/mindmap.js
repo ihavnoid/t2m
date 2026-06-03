@@ -401,6 +401,18 @@ class MindmapEngine {
         this._initDragAndDropEvents(containerId);
     }
 
+    _getTouchPos(event) {
+        if (event.pageX !== undefined && event.pageY !== undefined) {
+            return { pageX: event.pageX, pageY: event.pageY };
+        }
+        const ev = event.originalEvent || event;
+        const touch = ev.touches?.[0] || ev.targetTouches?.[0] || ev.changedTouches?.[0];
+        if (touch) {
+            return { pageX: touch.pageX, pageY: touch.pageY };
+        }
+        return { pageX: 0, pageY: 0 };
+    }
+
     _initDragAndDropEvents(containerId) {
         const $stage = $("#" + containerId);
         $stage.on("touchstart mousedown", (event) => {
@@ -409,22 +421,20 @@ class MindmapEngine {
                 this.isDraggingStage = true;
                 $(window).on("touchmove mousemove", (ev) => {
                     ev.stopPropagation();
+                    const { pageX, pageY } = this._getTouchPos(ev);
+                    
                     if (!this.dragStart.x && !this.dragStart.y) {
-                        this.dragStart.x =
-                            ev.pageX || ev.originalEvent?.touches?.[0]?.pageX;
-                        this.dragStart.y =
-                            ev.pageY || ev.originalEvent?.touches?.[0]?.pageY;
+                        this.dragStart.x = pageX;
+                        this.dragStart.y = pageY;
                     }
-                    const bx = ev.pageX || ev.originalEvent?.touches?.[0]?.pageX;
-                    const by = ev.pageY || ev.originalEvent?.touches?.[0]?.pageY;
-                    if (bx && by) {
+                    if (pageX && pageY) {
                         if (ev.type === "touchmove") ev.preventDefault();
                         this.layer.move(
-                            bx - this.dragStart.x,
-                            by - this.dragStart.y,
+                            pageX - this.dragStart.x,
+                            pageY - this.dragStart.y,
                         );
-                        this.dragStart.x = bx;
-                        this.dragStart.y = by;
+                        this.dragStart.x = pageX;
+                        this.dragStart.y = pageY;
                         this.layer.draw();
                     }
                 });
@@ -433,8 +443,7 @@ class MindmapEngine {
         });
 
         $stage.on("touchmove mousemove", (event) => {
-            const pageX = event.pageX || event.originalEvent?.touches?.[0]?.pageX;
-            const pageY = event.pageY || event.originalEvent?.touches?.[0]?.pageY;
+            const { pageX, pageY } = this._getTouchPos(event);
             if (!pageX || !pageY) return;
 
             this.lastXPos = pageX - $("#viewer-container").offset().left;
@@ -448,6 +457,8 @@ class MindmapEngine {
             if (this.draggedNodes.length > 0) {
                 if (event.type === "touchmove") event.preventDefault();
                 const pos = this.getPointerPos(pageX, pageY);
+                if (isNaN(pos.x) || isNaN(pos.y)) return; // Failsafe against NaN corruption
+
                 this.draggedNodes.forEach((node) => {
                     node.x += pos.x - this.dragLastPos.x;
                     node.y += pos.y - this.dragLastPos.y;
@@ -1062,8 +1073,7 @@ class MindmapEngine {
             node.frozen = node.frozen || this.config.lockAfterMoving;
             node.fixed = true;
 
-            const pageX = event.pageX || event.originalEvent?.targetTouches?.[0]?.pageX;
-            const pageY = event.pageY || event.originalEvent?.targetTouches?.[0]?.pageY;
+            const { pageX, pageY } = this._getTouchPos(event);
             this.dragLastPos = this.getPointerPos(pageX, pageY);
 
             // Long-press detection
@@ -1086,16 +1096,17 @@ class MindmapEngine {
 
         group.on("touchmove", (event) => {
             if (longPressTimer) {
-                const pageX = event.originalEvent?.targetTouches?.[0]?.pageX;
-                const pageY = event.originalEvent?.targetTouches?.[0]?.pageY;
-                const pos = this.getPointerPos(pageX, pageY);
-                const dist = Math.hypot(
-                    pos.x - this.dragLastPos.x,
-                    pos.y - this.dragLastPos.y,
-                );
-                if (dist > 10) {
-                    clearTimeout(longPressTimer);
-                    longPressTimer = null;
+                const { pageX, pageY } = this._getTouchPos(event);
+                if (pageX && pageY) {
+                    const pos = this.getPointerPos(pageX, pageY);
+                    const dist = Math.hypot(
+                        pos.x - this.dragLastPos.x,
+                        pos.y - this.dragLastPos.y,
+                    );
+                    if (dist > 10) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
                 }
             }
         });
@@ -1108,8 +1119,7 @@ class MindmapEngine {
             // Tap-to-select on mobile
             if (this.draggedNodes.length === 0 || !this.dragLastPos) return;
 
-            const pageX = event.originalEvent?.changedTouches?.[0]?.pageX;
-            const pageY = event.originalEvent?.changedTouches?.[0]?.pageY;
+            const { pageX, pageY } = this._getTouchPos(event);
             if (pageX && pageY) {
                 const pos = this.getPointerPos(pageX, pageY);
                 const dist = Math.hypot(
