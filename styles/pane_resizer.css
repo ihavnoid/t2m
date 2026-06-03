@@ -61,11 +61,11 @@
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
 }
 
-.vertical-layout {
+.vertical-btn-layout {
     text-align: center;
 }
 
-.vertical-layout > div {
+.vertical-btn-layout > div {
     width: 60px;
     height: 30px;
     padding: 5px 0;

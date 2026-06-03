@@ -373,11 +373,10 @@ class PaneResizer {
             }
 
             // using the bottom attribute doesn't work because the button is actually a hidden element on the layout with a zero size
-            const topOffset = this.$paneContainer.height() - 35; 
             this.$viewerCollapseButtonV.css({
                 left: "calc(50% - 30px)",
                 bottom: "auto",
-                top: `${topOffset}px`,
+                top: "calc(100% - 35px)",
             });
 
             this.$editorCollapseButtonV.css({
