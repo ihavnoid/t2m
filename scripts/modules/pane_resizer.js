@@ -156,7 +156,7 @@ class PaneResizer {
         );
     }
 
-    resizePanesToPercentage(newEditorPanePercentage, newViewerPanePercentage) {
+    resizePanesToPercentage(newEditorPanePercentage, newViewerPanePercentage, force = false) {
         // Validate sum
         if (
             Math.abs(newEditorPanePercentage + newViewerPanePercentage - 100) >
@@ -164,7 +164,7 @@ class PaneResizer {
         ) {
             this.editorPanePercentage = 50;
             this.viewerPanePercentage = 50;
-            return this.resizePanesToPercentage(50, 50);
+            return this.resizePanesToPercentage(50, 50, force);
         }
 
         const isHoriz = this.layoutMode === "horizontal";
@@ -187,6 +187,7 @@ class PaneResizer {
                 return this.resizePanesToPercentage(
                     this.editorPanePercentage,
                     this.viewerPanePercentage,
+                    force
                 );
             }
             if (newEditorPanePercentage <= 0) {
@@ -197,22 +198,22 @@ class PaneResizer {
                 newEditorSize = containerSize;
                 newViewerSize = 0;
             }
-        } else {
+        } else if (!force) {
             if (containerSize < this.minPaneSize * 2) {
                 this.shouldSplitPanes = true;
                 this.editorPanePercentage = 100;
                 this.viewerPanePercentage = 0;
-                return this.resizePanesToPercentage(100, 0);
+                return this.resizePanesToPercentage(100, 0, force);
             }
             if (newEditorSize < this.minCollapseSize) {
                 this.editorPanePercentage = 0;
                 this.viewerPanePercentage = 100;
-                return this.resizePanesToPercentage(0, 100);
+                return this.resizePanesToPercentage(0, 100, force);
             }
             if (newViewerSize < this.minCollapseSize) {
                 this.editorPanePercentage = 100;
                 this.viewerPanePercentage = 0;
-                return this.resizePanesToPercentage(100, 0);
+                return this.resizePanesToPercentage(100, 0, force);
             }
             if (newEditorSize < this.minPaneSize) {
                 newEditorSize = this.minPaneSize;
@@ -392,6 +393,7 @@ class PaneResizer {
         this.resizePanesToPercentage(
             this.editorPanePercentage,
             this.viewerPanePercentage,
+            true
         );
     }
 
@@ -416,6 +418,7 @@ class PaneResizer {
         this.resizePanesToPercentage(
             this.editorPanePercentage,
             this.viewerPanePercentage,
+            true
         );
     }
 
@@ -426,6 +429,7 @@ class PaneResizer {
         this.resizePanesToPercentage(
             this.editorPanePercentage,
             this.viewerPanePercentage,
+            true
         );
     }
 
@@ -438,6 +442,7 @@ class PaneResizer {
         this.resizePanesToPercentage(
             this.editorPanePercentage,
             this.viewerPanePercentage,
+            true
         );
 
         if (window.editorPane && window.editorPane.startFloatMode) {
