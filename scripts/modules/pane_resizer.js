@@ -344,8 +344,8 @@ class PaneResizer {
             this.$editorCollapseButtonH.find("i").css("transform", "");
 
             this.$floatButton.css({
-                left: `calc(100% - ${rightOffset}px)`,
-                top: "0px",
+                left: `calc(100% - ${rightOffset}px - 10px)`,
+                top: "10px",
                 bottom: "auto",
             });
 
@@ -387,8 +387,8 @@ class PaneResizer {
 
             // Keep float button top-right of editor
             this.$floatButton.css({
-                left: `calc(100% - ${rightOffset}px)`,
-                top: "0px",
+                left: `calc(100% - ${rightOffset}px - 10px)`,
+                top: "10px",
                 bottom: "auto",
             });
         }
