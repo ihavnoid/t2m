@@ -22,13 +22,18 @@ class App {
         this.lastUpdateTime = 0;
     }
 
-    init() {
-        if (/Mobi/.test(navigator.userAgent)) {
-            alert(
-                "The website doesn't currently work very well in mobile browsers, so it's recommended that you use a computer. Sorry about that!",
-            );
-        }
+    /**
+     * Heuristic to detect whether we are dealing with a touch-based agent
+     * without a physical keyboard (like a phone or a tablet in portrait mode).
+     */
+    isKeyboardlessAgent() {
+        return (
+            window.matchMedia("(pointer: coarse)").matches &&
+            window.matchMedia("(hover: none)").matches
+        );
+    }
 
+    init() {
         $(document).ready(() => {
             // Initialize Modules
             editorPane.init();
