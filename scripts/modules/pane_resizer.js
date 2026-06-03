@@ -372,21 +372,14 @@ class PaneResizer {
                 this.$editorCollapseButtonV.hide();
             }
 
-
-            // Vertical mode: Use CSS rotation so we don't change the DOM/classes
-            // left chevron rotated 90deg clockwise points UP (to reveal Top/Viewer)
-            // right chevron rotated 90deg clockwise points DOWN (to reveal Bottom/Editor)
-
-            // viewerCollapseButtonV reveals the editor. Editor is at bottom.
-            // It originally has fa-chevron-right. Right rotated 90 is Down.
+            // using the bottom attribute doesn't work because the button is actually a hidden element on the layout with a zero size
+            const topOffset = this.$paneContainer.height() - 35; 
             this.$viewerCollapseButtonV.css({
                 left: "calc(50% - 30px)",
-                bottom: "5px",
-                top: "auto",
+                bottom: "auto",
+                top: `${topOffset}px`,
             });
 
-            // editorCollapseButtonV reveals the viewer. Viewer is at top.
-            // It originally has fa-chevron-left. Left rotated 90 is Up.
             this.$editorCollapseButtonV.css({
                 left: "calc(50% - 30px)",
                 top: "5px",

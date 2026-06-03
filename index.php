@@ -109,9 +109,9 @@
                         <i class="fa-regular fa-window-restore"></i>
                     </div>
                 </div>
-                <div class="collapse-button" id="editor-collapse-button-v" style="visibility: visible;left: calc(100% - 29px); display: none;">
+                <div class="collapse-button vertical-layout" id="editor-collapse-button-v" style="visibility: visible;left: calc(100% - 29px); display: none;">
                     <div>
-                        <i class="fa-solid fa-fw fa-chevron-up layout-icon layout-icon-vert"></i>
+                        <i class="fa-solid fa-fw fa-chevron-down layout-icon layout-icon-vert"></i>
                     </div>
                 </div>
                 <div class="collapse-button" id="editor-collapse-button-h" style="visibility: visible;left: calc(100% - 29px);">
@@ -125,9 +125,9 @@
                 </div>
 			</div>
 			<div id="viewer-pane">
-				<div class="collapse-button" id="viewer-collapse-button-v" style="visibility: hidden; display: none;">
+				<div class="collapse-button vertical-layout" id="viewer-collapse-button-v" style="visibility: hidden; display: none;">
 					<div>
-						<i class="fa-solid fa-fw fa-chevron-down layout-icon layout-icon-vert"></i>
+						<i class="fa-solid fa-fw fa-chevron-up layout-icon layout-icon-vert"></i>
 					</div>
 				</div>
 				<div class="collapse-button" id="viewer-collapse-button-h" style="visibility: hidden;">
