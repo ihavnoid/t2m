@@ -120,6 +120,10 @@
                     </div>
                 </div>
                 <div id="editor">
+                    <div id="editor-touch-toolbar" style="display:none;">
+                        <button id="touch-outdent" class="touch-btn"><i class="fa-solid fa-outdent"></i></button>
+                        <button id="touch-indent" class="touch-btn"><i class="fa-solid fa-indent"></i></button>
+                    </div>
                     <div id="textedit_message"></div>
                     <div id="textedit" spellcheck="false" contenteditable="true"></div>
                 </div>

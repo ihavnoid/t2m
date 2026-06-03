@@ -46,14 +46,46 @@ class EditorPane {
         });
     }
 
-    init() {
+    init(isTouch = false) {
         this.el = document.getElementById("textedit");
         this.elm = document.getElementById("textedit_message");
         this.all_events.forEach(([ev, f]) => this.el.addEventListener(ev, f));
         this.cleanupHTML();
 
+        if (isTouch) {
+            this._setupTouchToolbar();
+        }
+
         this.on("keydown", (ev) => this._handleKeyDown(ev));
         this.on("paste", (ev) => this._handlePaste(ev));
+    }
+
+    /**
+     * Shows and binds events for the touch-specific toolbar.
+     */
+    _setupTouchToolbar() {
+        const toolbar = document.getElementById("editor-touch-toolbar");
+        const editor = document.getElementById("editor");
+        if (toolbar && editor) {
+            toolbar.style.display = "flex";
+            editor.classList.add("touch-mode");
+
+            const btnIndent = document.getElementById("touch-indent");
+            const btnOutdent = document.getElementById("touch-outdent");
+
+            if (btnIndent) {
+                btnIndent.addEventListener("touchstart", (ev) => {
+                    ev.preventDefault();
+                    this._handleTab(false);
+                });
+            }
+            if (btnOutdent) {
+                btnOutdent.addEventListener("touchstart", (ev) => {
+                    ev.preventDefault();
+                    this._handleTab(true);
+                });
+            }
+        }
     }
 
     _handleKeyDown(ev) {

@@ -32,6 +32,33 @@ As the Gemini CLI cannot access a physical touch device, please perform the foll
 *   **Expected**: The dragging state should finalize cleanly when you lift your finger outside the viewport.
 *   **Verification**: The mindmap shouldn't get "stuck" in a dragging state.
 
-## 7. Performance Check
+## 7. Vertical Layout Mode (Portrait Friendly)
+*   **Action**: Tap 'Mind Map' -> 'Toggle Layout' in the navbar.
+*   **Expected**: The UI should switch from side-by-side (Editor/Viewer) to stacked (Viewer at top, Editor at bottom).
+*   **Verification**: 
+    *   Ensure the dragbar is now horizontal and works by dragging it up/down.
+    *   Ensure the mindmap correctly fills the top area and the editor is at the bottom.
+    *   Toggle back to horizontal to ensure it restores correctly.
+
+## 8. Editor Touch Toolbar (Indent/Outdent)
+*   **Action**: Open the app on a touch device without a physical keyboard.
+*   **Expected**: A toolbar with two buttons (Indent and Outdent icons) should appear at the top of the text editor area.
+*   **Verification**: 
+    *   Tap a line in the editor to focus it.
+    *   Tap the **Indent** button (right-pointing icon). The line should move deeper in the hierarchy.
+    *   Tap the **Outdent** button (left-pointing icon). The line should move shallower.
+    *   Verify the mindmap updates accordingly.
+
+## 9. 100% Modes and Restore Buttons
+*   **Action**: Drag the separator (dragbar) all the way to any edge of the screen.
+*   **Expected**: The separator should snap to the edge, hiding one pane and making the other 100% visible.
+*   **Verification**: 
+    *   **Drag Right (Horizontal)**: Viewer disappears. A semitransparent button with a `>` icon appears on the right edge. Tapping it restores the mindmap.
+    *   **Drag Left (Horizontal)**: Editor disappears. A semitransparent button with a `<` icon appears on the left edge. Tapping it restores the editor.
+    *   **Drag Up (Vertical)**: Viewer disappears. A semitransparent button with a `^` icon appears at the top. Tapping it restores the mindmap.
+    *   **Drag Down (Vertical)**: Editor disappears. A semitransparent button with a `v` icon appears at the bottom. Tapping it restores the editor.
+    *   Ensure the dragbar is hidden while in 100% mode.
+
+## 10. Performance Check
 *   **Action**: Rapidly pan and zoom a large mindmap.
 *   **Expected**: Frame rate should stay high, and there should be no significant "ghosting" or lag in touch response.

@@ -36,7 +36,7 @@ class App {
     init() {
         $(document).ready(() => {
             // Initialize Modules
-            editorPane.init();
+            editorPane.init(this.isKeyboardlessAgent());
             editorPane.setEditable(false);
 
             // Before the user closes the window, warn them if they have unsaved changes.
