@@ -8,8 +8,10 @@ class PaneResizer {
         this.$dragbar = null;
         this.$editorPane = null;
         this.$viewerPane = null;
-        this.$editorCollapseButton = null;
-        this.$viewerCollapseButton = null;
+        this.$editorCollapseButtonH = null;
+        this.$editorCollapseButtonV = null;
+        this.$viewerCollapseButtonH = null;
+        this.$viewerCollapseButtonV = null;
         this.$floatButton = null;
         this.$body = null;
 
@@ -33,13 +35,17 @@ class PaneResizer {
         this.$dragbar = $("#dragbar");
         this.$editorPane = $("#editor-pane");
         this.$viewerPane = $("#viewer-pane");
-        this.$editorCollapseButton = $("#editor-collapse-button");
-        this.$viewerCollapseButton = $("#viewer-collapse-button");
+        this.$editorCollapseButtonH = $("#editor-collapse-button-h");
+        this.$editorCollapseButtonV = $("#editor-collapse-button-v");
+        this.$viewerCollapseButtonH = $("#viewer-collapse-button-h");
+        this.$viewerCollapseButtonV = $("#viewer-collapse-button-v");
         this.$floatButton = $("#editor-float-button");
         this.$body = $("body");
 
-        this.$editorCollapseButton.css("visibility", "visible");
-        this.$viewerCollapseButton.css("visibility", "visible");
+        this.$editorCollapseButtonH.css("visibility", "visible");
+        this.$editorCollapseButtonV.css("visibility", "visible");
+        this.$viewerCollapseButtonH.css("visibility", "visible");
+        this.$viewerCollapseButtonV.css("visibility", "visible");
         this.$floatButton.css("visibility", "visible");
 
         this.oldEditorPanePercentage = this.editorPanePercentage;
@@ -56,10 +62,16 @@ class PaneResizer {
             );
         });
 
-        this.$editorCollapseButton.on("click touchstart", () =>
+        this.$editorCollapseButtonH.on("click touchstart", () =>
             this.toggleViewer(),
         );
-        this.$viewerCollapseButton.on("click touchstart", () =>
+        this.$editorCollapseButtonV.on("click touchstart", () =>
+            this.toggleViewer(),
+        );
+        this.$viewerCollapseButtonH.on("click touchstart", () =>
+            this.toggleEditor(),
+        );
+        this.$viewerCollapseButtonV.on("click touchstart", () =>
             this.toggleEditor(),
         );
         this.$floatButton.on("click touchstart", () => this.clickFloatButton());
@@ -146,8 +158,13 @@ class PaneResizer {
         $("#viewer-container").attr("style", "");
 
         // Re-apply visibility for buttons
-        this.$editorCollapseButton.css("visibility", "visible");
-        this.$viewerCollapseButton.css("visibility", "visible");
+        if(this.layoutMode === "horizontal") {
+            this.$editorCollapseButtonH.css("visibility", "visible");
+            this.$viewerCollapseButtonH.css("visibility", "visible");
+        } else {
+            this.$editorCollapseButtonV.css("visibility", "visible");
+            this.$viewerCollapseButtonV.css("visibility", "visible");
+        }
         this.$floatButton.css("visibility", "visible");
 
         this.resizePanesToPercentage(
@@ -299,30 +316,32 @@ class PaneResizer {
     }
 
     setCollapseButtonPositions(editorSize, viewerSize) {
-        // Visibility
-        if (editorSize <= 0) {
-            this.$viewerCollapseButton.show();
-            this.$floatButton.hide();
-        } else {
-            this.$viewerCollapseButton.hide();
-            this.$floatButton.show();
-        }
-        if (viewerSize <= 0) {
-            this.$editorCollapseButton.show();
-        } else {
-            this.$editorCollapseButton.hide();
-        }
-
         const isHoriz = this.layoutMode === "horizontal";
         const rightOffset = 29;
 
         if (isHoriz) {
-            this.$editorCollapseButton.css({
+            this.$viewerCollapseButtonV.hide();
+            this.$editorCollapseButtonV.hide();
+            // Visibility
+            if (editorSize <= 0) {
+                this.$viewerCollapseButtonH.show();
+                this.$floatButton.hide();
+            } else {
+                this.$viewerCollapseButtonH.hide();
+                this.$floatButton.show();
+            }
+            if (viewerSize <= 0) {
+                this.$editorCollapseButtonH.show();
+            } else {
+                this.$editorCollapseButtonH.hide();
+            }
+
+            this.$editorCollapseButtonH.css({
                 left: `calc(100% - ${rightOffset}px)`,
                 top: "45%",
                 bottom: "auto",
             });
-            this.$editorCollapseButton.find("i").css("transform", "");
+            this.$editorCollapseButtonH.find("i").css("transform", "");
 
             this.$floatButton.css({
                 left: `calc(100% - ${rightOffset}px)`,
@@ -330,38 +349,49 @@ class PaneResizer {
                 bottom: "auto",
             });
 
-            this.$viewerCollapseButton.css({
+            this.$viewerCollapseButtonH.css({
                 left: "5px",
                 top: "45%",
                 bottom: "auto",
             });
-            this.$viewerCollapseButton.find("i").css("transform", "");
+            this.$viewerCollapseButtonH.find("i").css("transform", "");
         } else {
+            this.$viewerCollapseButtonH.hide();
+            this.$editorCollapseButtonH.hide();
+            // Visibility
+            if (editorSize <= 0) {
+                this.$viewerCollapseButtonV.show();
+                this.$floatButton.hide();
+            } else {
+                this.$viewerCollapseButtonV.hide();
+                this.$floatButton.show();
+            }
+            if (viewerSize <= 0) {
+                this.$editorCollapseButtonV.show();
+            } else {
+                this.$editorCollapseButtonV.hide();
+            }
+
+
             // Vertical mode: Use CSS rotation so we don't change the DOM/classes
             // left chevron rotated 90deg clockwise points UP (to reveal Top/Viewer)
             // right chevron rotated 90deg clockwise points DOWN (to reveal Bottom/Editor)
 
-            // viewerCollapseButton reveals the editor. Editor is at bottom.
+            // viewerCollapseButtonV reveals the editor. Editor is at bottom.
             // It originally has fa-chevron-right. Right rotated 90 is Down.
-            this.$viewerCollapseButton.css({
+            this.$viewerCollapseButtonV.css({
                 left: "calc(50% - 30px)",
                 bottom: "5px",
                 top: "auto",
             });
-            this.$viewerCollapseButton
-                .find("i")
-                .css("transform", "rotate(90deg)");
 
-            // editorCollapseButton reveals the viewer. Viewer is at top.
+            // editorCollapseButtonV reveals the viewer. Viewer is at top.
             // It originally has fa-chevron-left. Left rotated 90 is Up.
-            this.$editorCollapseButton.css({
+            this.$editorCollapseButtonV.css({
                 left: "calc(50% - 30px)",
                 top: "5px",
                 bottom: "auto",
             });
-            this.$editorCollapseButton
-                .find("i")
-                .css("transform", "rotate(90deg)");
 
             // Keep float button top-right of editor
             this.$floatButton.css({

@@ -60,6 +60,30 @@
     opacity: 1;
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
 }
+
+.layout-icon-vert {
+    display: none !important;
+}
+
+#pane-container.vertical-layout .layout-icon-horiz {
+    display: none !important;
+}
+
+#pane-container.vertical-layout .layout-icon-vert {
+    display: inline-block !important;
+}
+
+.vertical-layout .collapse-button {
+    width: 60px;
+    height: 30px;
+}
+
+.vertical-layout .collapse-button > div {
+    width: 60px;
+    height: 30px;
+    padding: 5px 0;
+}
+
 .float-button {
     position: relative;
     width: 0;
