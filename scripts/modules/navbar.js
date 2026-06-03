@@ -41,19 +41,28 @@ class Navbar {
                 event.preventDefault();
             }
             const id = $target.attr("id");
-            console.log(id);
             if (id in this.idFunctionMap) {
                 this.idFunctionMap[id]($target);
                 this.closeDropdowns();
+                event.stopPropagation();
             }
         });
 
         // Close all open dropdowns if the user clicks anywhere but the dropdown.
-        $(document).on("click", (event) => {
-            this.closeDropdowns();
-            const $navbarDropdown = $(event.target).parent(".navbar-dropdown");
+        $(document).on("click touchstart", (event) => {
+            const $navbarDropdown = $(event.target).closest(".navbar-dropdown");
             if ($navbarDropdown.length !== 0) {
-                $navbarDropdown.find(".dropdown-content").show();
+                // If it's a dropdown trigger, toggle it
+                const $content = $navbarDropdown.find(".dropdown-content");
+                const isVisible = $content.is(":visible");
+                this.closeDropdowns();
+                if (!isVisible) {
+                    $content.show();
+                }
+                // Don't preventDefault here as it might break other interactions, 
+                // but stop propagation if we are handling it.
+            } else {
+                this.closeDropdowns();
             }
         });
     }
