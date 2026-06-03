@@ -414,50 +414,47 @@ class MindmapEngine {
     }
 
     _initDragAndDropEvents(containerId) {
-        const $stage = $("#" + containerId);
-        $stage.on("touchstart mousedown", (event) => {
-            this.shiftKey = event.shiftKey;
-            if (this.draggedNodes.length == 0) {
-                this.isDraggingStage = true;
-                $(window).on("touchmove mousemove", (ev) => {
-                    ev.stopPropagation();
-                    const { pageX, pageY } = this._getTouchPos(ev);
-                    
-                    if (!this.dragStart.x && !this.dragStart.y) {
-                        this.dragStart.x = pageX;
-                        this.dragStart.y = pageY;
-                    }
-                    if (pageX && pageY) {
-                        if (ev.type === "touchmove") ev.preventDefault();
-                        this.layer.move(
-                            pageX - this.dragStart.x,
-                            pageY - this.dragStart.y,
-                        );
-                        this.dragStart.x = pageX;
-                        this.dragStart.y = pageY;
-                        this.layer.draw();
-                    }
-                });
-            }
-            event.stopPropagation();
-        });
+        const stageEl = document.getElementById(containerId);
+        
+        // Native event handler for stage panning
+        this._stagePanHandler = (ev) => {
+            if (!this.isDraggingStage) return;
+            ev.stopPropagation();
+            if (ev.type === "touchmove") ev.preventDefault(); // Must not be passive
 
-        $stage.on("touchmove mousemove", (event) => {
-            const { pageX, pageY } = this._getTouchPos(event);
+            const { pageX, pageY } = this._getTouchPos(ev);
+            if (!this.dragStart.x && !this.dragStart.y) {
+                this.dragStart.x = pageX;
+                this.dragStart.y = pageY;
+            }
+            if (pageX && pageY) {
+                this.layer.move(
+                    pageX - this.dragStart.x,
+                    pageY - this.dragStart.y,
+                );
+                this.dragStart.x = pageX;
+                this.dragStart.y = pageY;
+                this.layer.draw();
+            }
+        };
+
+        // Native event handler for node dragging
+        this._nodeDragHandler = (ev) => {
+            const { pageX, pageY } = this._getTouchPos(ev);
             if (!pageX || !pageY) return;
 
             this.lastXPos = pageX - $("#viewer-container").offset().left;
             this.lastYPos = pageY - $("#viewer-container").offset().top;
-            this.shiftKey = event.shiftKey;
+            this.shiftKey = ev.shiftKey;
 
-            if (event.type === "mousemove" && event.buttons == 0) {
+            if (ev.type === "mousemove" && ev.buttons == 0) {
                 this._finalizeDrag();
             }
 
             if (this.draggedNodes.length > 0) {
-                if (event.type === "touchmove") event.preventDefault();
+                if (ev.type === "touchmove") ev.preventDefault(); // Must not be passive
                 const pos = this.getPointerPos(pageX, pageY);
-                if (isNaN(pos.x) || isNaN(pos.y)) return; // Failsafe against NaN corruption
+                if (isNaN(pos.x) || isNaN(pos.y)) return; 
 
                 this.draggedNodes.forEach((node) => {
                     node.x += pos.x - this.dragLastPos.x;
@@ -474,6 +471,21 @@ class MindmapEngine {
                     this.redraw();
                 }
             }
+        };
+
+        // Bind non-passive listeners
+        window.addEventListener("touchmove", this._stagePanHandler, { passive: false });
+        window.addEventListener("mousemove", this._stagePanHandler);
+        
+        stageEl.addEventListener("touchmove", this._nodeDragHandler, { passive: false });
+        stageEl.addEventListener("mousemove", this._nodeDragHandler);
+
+        $(stageEl).on("touchstart mousedown", (event) => {
+            this.shiftKey = event.shiftKey;
+            if (this.draggedNodes.length == 0) {
+                this.isDraggingStage = true;
+            }
+            event.stopPropagation();
         });
 
         $(window).on("mouseup touchend", (event) => {
@@ -484,7 +496,6 @@ class MindmapEngine {
 
     _finalizeDrag() {
         if (this.isDraggingStage) {
-            $(window).off("touchmove mousemove");
             this.isDraggingStage = false;
         }
         const changes = [];
