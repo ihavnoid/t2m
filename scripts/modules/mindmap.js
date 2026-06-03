@@ -1675,19 +1675,26 @@ class MindmapEngine {
         return data;
     }
     getPointerPos(pageX, pageY, isRaw) {
+        // We must calculate the relative position on the canvas considering the zoom/pan transform.
         const transform = this.layer.getTransform().m;
+        
+        // For raw canvas positions (used internally by some D3 loops)
         if (isRaw)
             return {
                 x: (pageX - transform[4]) / transform[0],
                 y: (pageY - transform[5]) / transform[3],
             };
         
+        // For standard event coordinates (pageX/Y), we must subtract the container's physical offset on the screen
         const container = document.getElementById(this.containerId);
         const rect = container.getBoundingClientRect();
         
+        const relativeX = pageX - rect.left - window.scrollX;
+        const relativeY = pageY - rect.top - window.scrollY;
+
         return {
-            x: (pageX - rect.left - window.scrollX - transform[4]) / transform[0],
-            y: (pageY - rect.top - window.scrollY - transform[5]) / transform[3],
+            x: (relativeX - transform[4]) / transform[0],
+            y: (relativeY - transform[5]) / transform[3],
         };
     }
 }
