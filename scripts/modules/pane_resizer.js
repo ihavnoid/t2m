@@ -300,14 +300,14 @@ class PaneResizer {
 
     setCollapseButtonPositions(editorSize, viewerSize) {
         // Visibility
-        if (editorSize === 0) {
+        if (editorSize <= 0) {
             this.$viewerCollapseButton.show();
             this.$floatButton.hide();
         } else {
             this.$viewerCollapseButton.hide();
             this.$floatButton.show();
         }
-        if (viewerSize === 0) {
+        if (viewerSize <= 0) {
             this.$editorCollapseButton.show();
         } else {
             this.$editorCollapseButton.hide();
@@ -344,8 +344,8 @@ class PaneResizer {
             // viewerCollapseButton reveals the editor. Editor is at bottom.
             // It originally has fa-chevron-right. Right rotated 90 is Down.
             this.$viewerCollapseButton.css({
-                left: "calc(50% - 15px)",
-                bottom: "10px",
+                left: "calc(50% - 30px)",
+                bottom: "5px",
                 top: "auto",
             });
             this.$viewerCollapseButton
@@ -355,8 +355,8 @@ class PaneResizer {
             // editorCollapseButton reveals the viewer. Viewer is at top.
             // It originally has fa-chevron-left. Left rotated 90 is Up.
             this.$editorCollapseButton.css({
-                left: "calc(50% - 15px)",
-                top: "10px",
+                left: "calc(50% - 30px)",
+                top: "5px",
                 bottom: "auto",
             });
             this.$editorCollapseButton
@@ -373,7 +373,7 @@ class PaneResizer {
     }
 
     toggleEditor() {
-        if (this.editorPanePercentage === 0) {
+        if (this.editorPanePercentage <= 0) {
             const containerSize =
                 this.layoutMode === "horizontal"
                     ? this.$paneContainer.width()
@@ -398,7 +398,7 @@ class PaneResizer {
     }
 
     toggleViewer() {
-        if (this.viewerPanePercentage === 0) {
+        if (this.viewerPanePercentage <= 0) {
             const containerSize =
                 this.layoutMode === "horizontal"
                     ? this.$paneContainer.width()
