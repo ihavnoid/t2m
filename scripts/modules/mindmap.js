@@ -386,6 +386,7 @@ class MindmapEngine {
         this.lastXPos = 0;
         this.lastYPos = 0;
         this.shiftKey = false;
+        this.longPressTimer = null;
         this.layer = new Kinetic.Layer();
         this.stage = new Kinetic.Stage({
             container: containerId,
@@ -406,7 +407,8 @@ class MindmapEngine {
             return { pageX: event.pageX, pageY: event.pageY };
         }
         const ev = event.originalEvent || event;
-        const touch = ev.touches?.[0] || ev.targetTouches?.[0] || ev.changedTouches?.[0];
+        const touch =
+            ev.touches?.[0] || ev.targetTouches?.[0] || ev.changedTouches?.[0];
         if (touch) {
             return { pageX: touch.pageX, pageY: touch.pageY };
         }
@@ -415,46 +417,63 @@ class MindmapEngine {
 
     _initDragAndDropEvents(containerId) {
         const stageEl = document.getElementById(containerId);
-        
-        // Native event handler for stage panning
-        this._stagePanHandler = (ev) => {
-            if (!this.isDraggingStage) return;
-            ev.stopPropagation();
-            if (ev.type === "touchmove") ev.preventDefault(); // Must not be passive
 
-            const { pageX, pageY } = this._getTouchPos(ev);
-            if (!this.dragStart.x && !this.dragStart.y) {
-                this.dragStart.x = pageX;
-                this.dragStart.y = pageY;
+        const getHitNode = (pageX, pageY) => {
+            const pos = this.getPointerPos(pageX, pageY);
+            // Iterate backwards to pick top-most node
+            for (let i = this.nodes.length - 1; i >= 0; i--) {
+                const node = this.nodes[i];
+                if (!node.w || !node.h) continue;
+                if (
+                    Math.abs(pos.x - node.x) <= node.w / 2 &&
+                    Math.abs(pos.y - node.y) <= node.h / 2
+                ) {
+                    return node;
+                }
             }
-            if (pageX && pageY) {
-                this.layer.move(
-                    pageX - this.dragStart.x,
-                    pageY - this.dragStart.y,
-                );
-                this.dragStart.x = pageX;
-                this.dragStart.y = pageY;
-                this.layer.draw();
-            }
+            return null;
         };
 
-        // Native event handler for node dragging
-        this._nodeDragHandler = (ev) => {
+        // Native event handler for stage panning and node dragging
+        this._stagePanHandler = (ev) => {
             const { pageX, pageY } = this._getTouchPos(ev);
-            if (!pageX || !pageY) return;
 
-            this.lastXPos = pageX - $("#viewer-container").offset().left;
-            this.lastYPos = pageY - $("#viewer-container").offset().top;
-            this.shiftKey = ev.shiftKey;
-
-            if (ev.type === "mousemove" && ev.buttons == 0) {
-                this._finalizeDrag();
+            if (this.isDraggingStage) {
+                ev.stopPropagation();
+                if (ev.type === "touchmove") ev.preventDefault();
+                if (!this.dragStart.x && !this.dragStart.y) {
+                    this.dragStart.x = pageX;
+                    this.dragStart.y = pageY;
+                }
+                if (pageX && pageY) {
+                    this.layer.move(
+                        pageX - this.dragStart.x,
+                        pageY - this.dragStart.y,
+                    );
+                    this.dragStart.x = pageX;
+                    this.dragStart.y = pageY;
+                    this.layer.draw();
+                }
+                return;
             }
 
+            // If dragging nodes
             if (this.draggedNodes.length > 0) {
-                if (ev.type === "touchmove") ev.preventDefault(); // Must not be passive
+                ev.stopPropagation();
+                if (ev.type === "touchmove") ev.preventDefault();
                 const pos = this.getPointerPos(pageX, pageY);
-                if (isNaN(pos.x) || isNaN(pos.y)) return; 
+                if (isNaN(pos.x) || isNaN(pos.y)) return;
+
+                if (this.longPressTimer) {
+                    const dist = Math.hypot(
+                        pos.x - this.dragLastPos.x,
+                        pos.y - this.dragLastPos.y,
+                    );
+                    if (dist > 10) {
+                        clearTimeout(this.longPressTimer);
+                        this.longPressTimer = null;
+                    }
+                }
 
                 this.draggedNodes.forEach((node) => {
                     node.x += pos.x - this.dragLastPos.x;
@@ -470,25 +489,106 @@ class MindmapEngine {
                 } else {
                     this.redraw();
                 }
+                return;
+            }
+
+            // Hover effects for mouse
+            if (ev.type === "mousemove" && !this.isDraggingStage) {
+                const hitNode = getHitNode(pageX, pageY);
+                stageEl.style.cursor = hitNode ? "pointer" : "move";
+
+                // Mouse-over selection effect
+                if (hitNode && !ev.shiftKey) {
+                    const [selectedStart, selectedEnd] =
+                        window.editorPane.findSelectedNodes();
+                    const index = this.nodes.indexOf(hitNode);
+                    if (selectedStart != index || selectedEnd != index) {
+                        window.editorPane.moveCursorToNode(index);
+                        hitNode.data.redraw = true;
+                        window.editorPane.refresh();
+                        this.redraw();
+                    }
+                }
             }
         };
 
-        // Bind non-passive listeners
-        window.addEventListener("touchmove", this._stagePanHandler, { passive: false });
+        window.addEventListener("touchmove", this._stagePanHandler, {
+            passive: false,
+        });
         window.addEventListener("mousemove", this._stagePanHandler);
-        
-        stageEl.addEventListener("touchmove", this._nodeDragHandler, { passive: false });
-        stageEl.addEventListener("mousemove", this._nodeDragHandler);
 
         $(stageEl).on("touchstart mousedown", (event) => {
             this.shiftKey = event.shiftKey;
-            if (this.draggedNodes.length == 0) {
+            const { pageX, pageY } = this._getTouchPos(event);
+            const hitNode = getHitNode(pageX, pageY);
+
+            if (hitNode) {
+                if (!window.editorPane.isEditable()) return;
+                if (event.shiftKey) {
+                    this.draggedNodes = [hitNode];
+                    this.nodes.forEach((n) => {
+                        if (this.draggedNodes.indexOf(n.data.parent) >= 0) {
+                            this.draggedNodes.push(n);
+                            n.fixed = true;
+                        }
+                    });
+                } else {
+                    this.draggedNodes = [hitNode];
+                }
+                window.getSelection().removeAllRanges();
+                hitNode.frozen = hitNode.frozen || this.config.lockAfterMoving;
+                hitNode.fixed = true;
+
+                this.dragLastPos = this.getPointerPos(pageX, pageY);
+
+                // Long-press detection
+                if (event.type === "touchstart") {
+                    this.longPressTimer = setTimeout(() => {
+                        hitNode.frozen = !hitNode.frozen;
+                        const index = this.nodes.indexOf(hitNode);
+                        window.editorPane.updateTextForCoordinates([
+                            {
+                                nodenum: index,
+                                frozen: hitNode.frozen,
+                                xp: hitNode.x,
+                                yp: hitNode.y,
+                            },
+                        ]);
+                        this.redraw();
+                        this.longPressTimer = null;
+                    }, 600);
+                }
+            } else {
                 this.isDraggingStage = true;
+                this.dragStart.x = pageX;
+                this.dragStart.y = pageY;
             }
             event.stopPropagation();
         });
 
         $(window).on("mouseup touchend", (event) => {
+            if (this.longPressTimer) {
+                clearTimeout(this.longPressTimer);
+                this.longPressTimer = null;
+            }
+
+            if (this.draggedNodes.length > 0) {
+                const { pageX, pageY } = this._getTouchPos(event);
+                const pos = this.getPointerPos(pageX, pageY);
+                const dist = Math.hypot(
+                    pos.x - this.dragLastPos.x,
+                    pos.y - this.dragLastPos.y,
+                );
+
+                if (dist < 5) {
+                    const hitNode = getHitNode(pageX, pageY);
+                    if (hitNode) {
+                        const index = this.nodes.indexOf(hitNode);
+                        window.editorPane.moveCursorToNode(index);
+                    }
+                }
+            }
+
             this.shiftKey = event.shiftKey;
             this._finalizeDrag();
         });
@@ -511,12 +611,15 @@ class MindmapEngine {
                     yp: node.y,
                 });
             }
+            node.fixed = node.frozen;
         });
         if (changes.length > 0) {
             window.editorPane.updateTextForCoordinates(changes);
         }
         this.dragStart.x = this.dragStart.y = false;
         this.draggedNodes = [];
+        this.updateFixedNodeCoordinates();
+        this.redraw();
     }
 
     settings(settingsObj, triggerRedraw) {
@@ -1064,118 +1167,6 @@ class MindmapEngine {
             currentY += el.h + (el.isImage ? imgMargin * 2 : 0) + itemSpacing;
         });
 
-        let longPressTimer = null;
-
-        group.on("touchstart mousedown", (event) => {
-            if (!window.editorPane.isEditable()) return;
-            event.cancelBubble = true;
-            if (event.shiftKey) {
-                this.draggedNodes = [node];
-                this.nodes.forEach((n) => {
-                    if (this.draggedNodes.indexOf(n.data.parent) >= 0) {
-                        this.draggedNodes.push(n);
-                        n.fixed = true;
-                    }
-                });
-            } else {
-                this.draggedNodes = [node];
-            }
-            window.getSelection().removeAllRanges();
-            node.frozen = node.frozen || this.config.lockAfterMoving;
-            node.fixed = true;
-
-            const { pageX, pageY } = this._getTouchPos(event);
-            this.dragLastPos = this.getPointerPos(pageX, pageY);
-
-            // Long-press detection
-            if (event.type === "touchstart") {
-                longPressTimer = setTimeout(() => {
-                    // Toggle freeze
-                    node.frozen = !node.frozen;
-                    const index = this.nodes.indexOf(node);
-                    window.editorPane.updateTextForCoordinates([{
-                        nodenum: index,
-                        frozen: node.frozen,
-                        xp: node.x,
-                        yp: node.y
-                    }]);
-                    this.redraw();
-                    longPressTimer = null;
-                }, 600);
-            }
-        });
-
-        group.on("touchmove", (event) => {
-            if (longPressTimer) {
-                const { pageX, pageY } = this._getTouchPos(event);
-                if (pageX && pageY) {
-                    const pos = this.getPointerPos(pageX, pageY);
-                    const dist = Math.hypot(
-                        pos.x - this.dragLastPos.x,
-                        pos.y - this.dragLastPos.y,
-                    );
-                    if (dist > 10) {
-                        clearTimeout(longPressTimer);
-                        longPressTimer = null;
-                    }
-                }
-            }
-        });
-
-        group.on("touchend", (event) => {
-            if (longPressTimer) {
-                clearTimeout(longPressTimer);
-                longPressTimer = null;
-            }
-            // Tap-to-select on mobile
-            if (this.draggedNodes.length === 0 || !this.dragLastPos) return;
-
-            const { pageX, pageY } = this._getTouchPos(event);
-            if (pageX && pageY) {
-                const pos = this.getPointerPos(pageX, pageY);
-                const dist = Math.hypot(
-                    pos.x - this.dragLastPos.x,
-                    pos.y - this.dragLastPos.y,
-                );
-                if (dist < 5) {
-                    const index = this.nodes.indexOf(node);
-                    window.editorPane.moveCursorToNode(index);
-                    this.redraw();
-                }
-            }
-        });
-
-        group.on("mouseover", () => {
-            if (!this.shiftKey) {
-                document.getElementById(this.containerId).style.cursor =
-                    "pointer";
-                const [selectedStart, selectedEnd] =
-                    window.editorPane.findSelectedNodes();
-                const index = this.nodes.indexOf(node);
-                if (selectedStart != index || selectedEnd != index) {
-                    window.editorPane.moveCursorToNode(index);
-                    node.data.redraw = true;
-                    window.editorPane.refresh();
-                    this.redraw();
-                }
-            }
-        });
-        group.on("mouseup touchend", () => {
-            const [selectedStart, selectedEnd] =
-                window.editorPane.findSelectedNodes();
-            const index = this.nodes.indexOf(node);
-            if (selectedStart != index || selectedEnd != index) {
-                window.editorPane.moveCursorToNode(index);
-                this.redraw();
-            }
-            node.fixed = node.frozen;
-            this.updateFixedNodeCoordinates();
-        });
-        group.on("mouseout", () => {
-            if (this.draggedNodes.length == 0)
-                document.getElementById(this.containerId).style.cursor = "move";
-            this.redraw();
-        });
         return [group, width, height];
     }
     newRect(node, width, height, isSelected) {
