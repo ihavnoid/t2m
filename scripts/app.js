@@ -36,6 +36,7 @@ class App {
 
                     if (
                         window.paneResizer &&
+                        window.paneResizer.$paneContainer &&
                         window.paneResizer.resizePanesToPercentage
                     ) {
                         window.paneResizer.resizePanesToPercentage(
