@@ -27,16 +27,31 @@
 								<button class="thickness-swatch active" data-thickness="5" title="Medium"><div class="dot" style="width: 8px; height: 8px;"></div></button>
 								<button class="thickness-swatch" data-thickness="10" title="Thick"><div class="dot" style="width: 14px; height: 14px;"></div></button>
 							</div>
-							<span class="divider"></span>
-							<button id="draw-tool-undo" title="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
-							<button id="draw-tool-redo" title="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
-							<button id="draw-tool-clear" title="Clear Canvas"><i class="fa-solid fa-trash"></i></button>
-							<button id="draw-tool-help" title="Keyboard Shortcuts (H or ?)"><i class="fa-solid fa-circle-question"></i></button>
-							<span class="divider"></span>
-							<button id="draw-zoom-out" title="Zoom Out (Q)"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-							<span id="draw-zoom-level" style="min-width: 45px; text-align: center; font-family: monospace; font-weight: bold;">100%</span>
-							<button id="draw-zoom-in" title="Zoom In (Ctrl +)"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-							<span class="divider"></span>
+							<span class="divider desktop-only"></span>
+							<button id="draw-tool-undo" class="desktop-only" title="Undo"><i class="fa-solid fa-arrow-rotate-left"></i></button>
+							<button id="draw-tool-redo" class="desktop-only" title="Redo"><i class="fa-solid fa-arrow-rotate-right"></i></button>
+							<button id="draw-tool-clear" class="desktop-only" title="Clear Canvas"><i class="fa-solid fa-trash"></i></button>
+							<button id="draw-tool-help" class="desktop-only" title="Keyboard Shortcuts (H or ?)"><i class="fa-solid fa-circle-question"></i></button>
+							<span class="divider desktop-only"></span>
+							<button id="draw-zoom-out" class="desktop-only" title="Zoom Out (Q)"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+							<span id="draw-zoom-level" class="desktop-only" style="min-width: 45px; text-align: center; font-family: monospace; font-weight: bold;">100%</span>
+							<button id="draw-zoom-in" class="desktop-only" title="Zoom In (Ctrl +)"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+							<span class="divider desktop-only"></span>
+
+							<button id="draw-tool-more" class="toolbar-more-btn" title="More Options"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+							<div id="draw-more-menu" class="draw-more-dropdown" style="display: none;">
+								<button id="draw-menu-undo" title="Undo"><i class="fa-solid fa-arrow-rotate-left fa-fw"></i> Undo</button>
+								<button id="draw-menu-redo" title="Redo"><i class="fa-solid fa-arrow-rotate-right fa-fw"></i> Redo</button>
+								<button id="draw-menu-clear" title="Clear Canvas"><i class="fa-solid fa-trash fa-fw"></i> Clear Canvas</button>
+								<button id="draw-menu-help" title="Keyboard Shortcuts"><i class="fa-solid fa-circle-question fa-fw"></i> Help</button>
+								<div class="menu-divider"></div>
+								<div class="menu-zoom-controls">
+									<button id="draw-menu-zoom-out" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+									<span id="draw-menu-zoom-level" style="min-width: 45px; text-align: center; font-family: monospace; font-weight: bold; color: black; display: inline-block;">100%</span>
+									<button id="draw-menu-zoom-in" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+								</div>
+							</div>
+
 							<button id="draw-save" class="button-save" title="Save Image"><i class="fa-solid fa-check"></i> Save</button>
 							<button class="button-cancel close-modal" title="Cancel"><i class="fa-solid fa-xmark"></i> Cancel</button>
 						</div>

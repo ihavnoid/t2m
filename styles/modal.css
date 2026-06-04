@@ -593,3 +593,120 @@
     right: -6px;
     cursor: se-resize;
 }
+
+.toolbar-more-btn {
+    display: none;
+}
+
+.draw-more-dropdown {
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    padding: 8px;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    top: 50px;
+    right: 10px;
+    min-width: 160px;
+}
+
+.draw-more-dropdown button {
+    background: none !important;
+    border: none !important;
+    width: 100% !important;
+    height: 36px !important;
+    padding: 0 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    font-size: 14px !important;
+    gap: 8px !important;
+    color: #333 !important;
+    cursor: pointer;
+    border-radius: 4px !important;
+}
+
+.draw-more-dropdown button:hover {
+    background-color: #f0f0f0 !important;
+}
+
+.draw-more-dropdown .menu-divider {
+    height: 1px;
+    background-color: #eee;
+    margin: 4px 0;
+}
+
+.draw-more-dropdown .menu-zoom-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    gap: 8px;
+}
+
+.draw-more-dropdown .menu-zoom-controls button {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid #ccc !important;
+    border-radius: 4px !important;
+    background-color: #fff !important;
+}
+
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 10px auto !important;
+        max-width: 96% !important;
+    }
+
+    .desktop-only {
+        display: none !important;
+    }
+
+    .toolbar-more-btn {
+        display: flex !important;
+    }
+
+    .drawing-toolbar {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 4px;
+    }
+
+    .drawing-toolbar button {
+        min-width: 36px !important;
+        height: 36px !important;
+        font-size: 1.1em !important;
+        padding: 4px 8px !important;
+    }
+
+    .color-picker {
+        padding: 2px !important;
+        gap: 2px !important;
+    }
+
+    .color-swatch {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .thickness-picker {
+        gap: 2px !important;
+    }
+
+    .thickness-swatch {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .drawing-toolbar .button-save {
+        margin-left: 0 !important;
+    }
+}

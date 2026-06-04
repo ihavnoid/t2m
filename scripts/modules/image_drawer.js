@@ -86,6 +86,9 @@ class ImageDrawer {
         const wrapper = this.doc.getElementById("drawing-canvas-wrapper");
         const spacer = this.doc.getElementById("drawing-canvas-spacer");
         const levelDisplay = this.doc.getElementById("draw-zoom-level");
+        const mobileLevelDisplay = this.doc.getElementById(
+            "draw-menu-zoom-level",
+        );
 
         if (wrapper) {
             wrapper.style.transform = `scale(${this.zoomLevel})`;
@@ -98,6 +101,10 @@ class ImageDrawer {
 
         if (levelDisplay) {
             levelDisplay.innerText = `${Math.round(this.zoomLevel * 100)}%`;
+        }
+
+        if (mobileLevelDisplay) {
+            mobileLevelDisplay.innerText = `${Math.round(this.zoomLevel * 100)}%`;
         }
     }
 
@@ -158,6 +165,52 @@ class ImageDrawer {
                     this.context.lineWidth = this.currentThickness;
                 }
             });
+        });
+
+        // Mobile more menu bindings (trigger click on desktop buttons)
+        const bindShadowClick = (menuId, toolId) => {
+            const menuBtn = d.getElementById(menuId);
+            if (menuBtn) {
+                menuBtn.addEventListener("click", (e) => {
+                    const toolBtn = d.getElementById(toolId);
+                    if (toolBtn) {
+                        toolBtn.click();
+                    }
+                    const moreMenu = d.getElementById("draw-more-menu");
+                    if (moreMenu) {
+                        moreMenu.style.display = "none";
+                    }
+                    e.stopPropagation();
+                });
+            }
+        };
+
+        bindShadowClick("draw-menu-undo", "draw-tool-undo");
+        bindShadowClick("draw-menu-redo", "draw-tool-redo");
+        bindShadowClick("draw-menu-clear", "draw-tool-clear");
+        bindShadowClick("draw-menu-help", "draw-tool-help");
+        bindShadowClick("draw-menu-zoom-out", "draw-zoom-out");
+        bindShadowClick("draw-menu-zoom-in", "draw-zoom-in");
+
+        // Toggle mobile more menu dropdown
+        const moreBtn = d.getElementById("draw-tool-more");
+        if (moreBtn) {
+            moreBtn.addEventListener("click", (e) => {
+                const moreMenu = d.getElementById("draw-more-menu");
+                if (moreMenu) {
+                    const isVisible = moreMenu.style.display === "block";
+                    moreMenu.style.display = isVisible ? "none" : "block";
+                }
+                e.stopPropagation();
+            });
+        }
+
+        // Close more menu when clicking/touching elsewhere
+        d.addEventListener("click", () => {
+            const moreMenu = d.getElementById("draw-more-menu");
+            if (moreMenu) {
+                moreMenu.style.display = "none";
+            }
         });
     }
 
