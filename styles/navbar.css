@@ -142,3 +142,97 @@
     border-top: 4px solid white;
     margin-left: 5px;
 }
+
+.navbar-toggle {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        overflow: visible !important;
+    }
+
+    .navbar-toggle {
+        display: block;
+        float: right;
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 24px;
+        height: 50px;
+        width: 50px;
+        cursor: pointer;
+        outline: none;
+    }
+
+    .navbar-toggle:active {
+        background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    .navbar > ul {
+        display: none;
+        height: auto;
+        clear: both;
+        background-color: #424242;
+        width: 100%;
+        position: absolute;
+        top: 50px;
+        left: 0;
+        z-index: 9999;
+        border-bottom: 2px solid #333;
+        max-height: calc(100vh - 50px);
+        overflow-y: auto;
+    }
+
+    .navbar.navbar-open > ul {
+        display: block;
+    }
+
+    .navbar-item {
+        float: none !important;
+        width: 100% !important;
+        height: 44px !important;
+        border-bottom: 1px solid #525252;
+    }
+
+    .navbar-item a {
+        display: flex !important;
+        justify-content: flex-start !important;
+        padding-left: 15px !important;
+        height: 100% !important;
+    }
+
+    .navbar-dropdown {
+        height: auto !important;
+    }
+
+    .dropdown-content {
+        position: static !important;
+        width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        background-color: #525252 !important;
+        padding: 0 !important;
+    }
+
+    .dropdown-content li:not(.dropdown-divider) {
+        height: 40px !important;
+        border-bottom: 1px solid #626262;
+    }
+
+    .dropdown-content a {
+        color: white !important;
+        padding-left: 30px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .dropdown-shortcut {
+        display: none !important;
+    }
+
+    .navbar-dropdown > a:after {
+        margin-left: auto !important;
+        margin-right: 15px !important;
+    }
+}

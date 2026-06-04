@@ -70,6 +70,7 @@
 <body>
 	<div class="wrapper">
 		<div class="navbar">
+			<button id="navbar-toggle-btn" class="navbar-toggle"><i class="fa-solid fa-bars"></i></button>
 			<ul>
 				<li id="keypane1" class="navbar-item" style="width: 200px;">
                 </li>

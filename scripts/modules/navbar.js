@@ -34,6 +34,13 @@ class Navbar {
 
         const $links = $(".navbar a");
 
+        // Toggle mobile menu
+        $("#navbar-toggle-btn").on("click touchstart", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            $(".navbar").toggleClass("navbar-open");
+        });
+
         // When the dropdown item is clicked, call the appropriate function.
         $links.on("click touchstart", (event) => {
             const $target = $(event.currentTarget);
@@ -44,13 +51,17 @@ class Navbar {
             if (id in this.idFunctionMap) {
                 this.idFunctionMap[id]($target);
                 this.closeDropdowns();
+                $(".navbar").removeClass("navbar-open");
                 event.stopPropagation();
             }
         });
 
-        // Close all open dropdowns if the user clicks anywhere but the dropdown.
+        // Close all open dropdowns and mobile menu if the user clicks anywhere but the dropdown.
         $(document).on("click touchstart", (event) => {
-            const $navbarDropdown = $(event.target).closest(".navbar-dropdown");
+            const $target = $(event.target);
+            const $navbarDropdown = $target.closest(".navbar-dropdown");
+            const $navbar = $target.closest(".navbar");
+
             if ($navbarDropdown.length !== 0) {
                 // If it's a dropdown trigger, toggle it
                 const $content = $navbarDropdown.find(".dropdown-content");
@@ -59,10 +70,12 @@ class Navbar {
                 if (!isVisible) {
                     $content.show();
                 }
-                // Don't preventDefault here as it might break other interactions, 
-                // but stop propagation if we are handling it.
             } else {
                 this.closeDropdowns();
+            }
+
+            if ($navbar.length === 0) {
+                $(".navbar").removeClass("navbar-open");
             }
         });
     }
