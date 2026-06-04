@@ -134,8 +134,10 @@
                         <button id="touch-selectall" class="touch-btn" title="Select All (Ctrl+A)"><i class="fa-solid fa-square-check"></i></button>
                         <button id="touch-redraw" class="touch-btn" title="Redraw (Ctrl+Enter)"><i class="fa-solid fa-arrows-rotate"></i></button>
                     </div>
-                    <div id="textedit_message"></div>
-                    <div id="textedit" spellcheck="false" contenteditable="true"></div>
+                    <div class="editor-input-wrapper">
+                        <div id="textedit_message"></div>
+                        <div id="textedit" spellcheck="false" contenteditable="true"></div>
+                    </div>
                 </div>
 			</div>
 			<div id="viewer-pane">

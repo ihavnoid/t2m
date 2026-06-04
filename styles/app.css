@@ -12,7 +12,7 @@ body {
 
 #pane-container {
     /* 100% minus the height of the navbar */
-    height: calc(100% - 50px);
+    height: calc(var(--visual-viewport-height, 100%) - 50px);
     width: 100%;
     overflow: hidden;
 }
