@@ -22,22 +22,10 @@ class App {
         this.lastUpdateTime = 0;
     }
 
-    /**
-     * Heuristic to detect whether we are dealing with a touch-based agent
-     * without a physical keyboard (like a phone or a tablet in portrait mode).
-     */
-    isKeyboardlessAgent() {
-        return (
-            window.matchMedia("(pointer: coarse)").matches ||
-            "ontouchstart" in window ||
-            navigator.maxTouchPoints > 0
-        );
-    }
-
     init() {
         $(document).ready(() => {
             // Initialize Modules
-            editorPane.init(this.isKeyboardlessAgent());
+            editorPane.init(false);
             editorPane.setEditable(false);
 
             // Before the user closes the window, warn them if they have unsaved changes.
