@@ -121,6 +121,10 @@
                     </div>
                 </div>
                 <div id="editor">
+                    <div class="editor-input-wrapper">
+                        <div id="textedit_message"></div>
+                        <div id="textedit" spellcheck="false" contenteditable="true"></div>
+                    </div>
                     <div id="editor-touch-toolbar" style="display:none;">
                         <button id="touch-outdent" class="touch-btn" title="Outdent (Shift+Tab)"><i class="fa-solid fa-outdent"></i></button>
                         <button id="touch-indent" class="touch-btn" title="Indent (Tab)"><i class="fa-solid fa-indent"></i></button>
@@ -134,10 +138,6 @@
                         <button id="touch-image" class="touch-btn" title="Insert Image (Ctrl+I)"><i class="fa-solid fa-image"></i></button>
                         <button id="touch-selectall" class="touch-btn" title="Select All (Ctrl+A)"><i class="fa-solid fa-square-check"></i></button>
                         <button id="touch-redraw" class="touch-btn" title="Redraw (Ctrl+Enter)"><i class="fa-solid fa-arrows-rotate"></i></button>
-                    </div>
-                    <div class="editor-input-wrapper">
-                        <div id="textedit_message"></div>
-                        <div id="textedit" spellcheck="false" contenteditable="true"></div>
                     </div>
                 </div>
 			</div>
