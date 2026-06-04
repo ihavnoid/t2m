@@ -6,7 +6,11 @@ body {
 }
 
 .wrapper {
-    height: 100%;
+    position: fixed;
+    width:100%;
+    left:0;
+    top:0;
+    height: var(--visual-viewport-height, 100%);
     overflow: hidden;
 }
 
