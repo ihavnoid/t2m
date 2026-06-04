@@ -70,20 +70,26 @@ class EditorPane {
             toolbar.style.display = "flex";
             editor.classList.add("touch-mode");
 
-            const btnIndent = document.getElementById("touch-indent");
-            const btnOutdent = document.getElementById("touch-outdent");
+            const bindings = {
+                "touch-indent": () => this._handleTab(false),
+                "touch-outdent": () => this._handleTab(true),
+                "touch-undo": () => window.appFunctions.editUndo(),
+                "touch-redo": () => window.appFunctions.editRedo(),
+                "touch-lock": () => window.appFunctions.freezeNodes(),
+                "touch-unlock": () => window.appFunctions.unfreezeNodes(),
+                "touch-image": () => window.appFunctions.insertImage(),
+                "touch-selectall": () => window.appFunctions.editSelectAll(),
+                "touch-redraw": () => window.appFunctions.redraw(),
+            };
 
-            if (btnIndent) {
-                btnIndent.addEventListener("touchstart", (ev) => {
-                    ev.preventDefault();
-                    this._handleTab(false);
-                });
-            }
-            if (btnOutdent) {
-                btnOutdent.addEventListener("touchstart", (ev) => {
-                    ev.preventDefault();
-                    this._handleTab(true);
-                });
+            for (const [id, func] of Object.entries(bindings)) {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.addEventListener("touchstart", (ev) => {
+                        ev.preventDefault();
+                        func();
+                    });
+                }
             }
         }
     }

@@ -121,6 +121,39 @@ class AppFunctions {
             }
         }
     }
+
+    editSelectAll() {
+        if (!window.editorPane.el) return;
+        window.editorPane.el.focus();
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(window.editorPane.el);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
+    insertImage() {
+        window.imageDrawer.open(null, async (url) => {
+            const img = document.createElement("img");
+            img.src = url;
+            img.style.maxWidth = "200px";
+            img.style.maxHeight = "200px";
+            img.style.display = "inline-block";
+            img.style.verticalAlign = "middle";
+
+            window.editorPane.insertAtCursor(img);
+            if (window.editorPane.refresh()) {
+                if (window.editorPane.observerFunc)
+                    window.editorPane.observerFunc();
+            }
+        });
+    }
+
+    redraw() {
+        if (window.mindmap && window.mindmap.render) {
+            window.mindmap.render();
+        }
+    }
 }
 
 export const appFunctions = new AppFunctions();

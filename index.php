@@ -121,8 +121,18 @@
                 </div>
                 <div id="editor">
                     <div id="editor-touch-toolbar" style="display:none;">
-                        <button id="touch-outdent" class="touch-btn"><i class="fa-solid fa-outdent"></i></button>
-                        <button id="touch-indent" class="touch-btn"><i class="fa-solid fa-indent"></i></button>
+                        <button id="touch-outdent" class="touch-btn" title="Outdent (Shift+Tab)"><i class="fa-solid fa-outdent"></i></button>
+                        <button id="touch-indent" class="touch-btn" title="Indent (Tab)"><i class="fa-solid fa-indent"></i></button>
+                        <div class="touch-toolbar-divider"></div>
+                        <button id="touch-undo" class="touch-btn" title="Undo (Ctrl+Z)"><i class="fa-solid fa-arrow-rotate-left"></i></button>
+                        <button id="touch-redo" class="touch-btn" title="Redo (Ctrl+Y)"><i class="fa-solid fa-arrow-rotate-right"></i></button>
+                        <div class="touch-toolbar-divider"></div>
+                        <button id="touch-lock" class="touch-btn" title="Lock (Ctrl+])"><i class="fa-solid fa-lock"></i></button>
+                        <button id="touch-unlock" class="touch-btn" title="Unlock (Ctrl+[)"><i class="fa-solid fa-lock-open"></i></button>
+                        <div class="touch-toolbar-divider"></div>
+                        <button id="touch-image" class="touch-btn" title="Insert Image (Ctrl+I)"><i class="fa-solid fa-image"></i></button>
+                        <button id="touch-selectall" class="touch-btn" title="Select All (Ctrl+A)"><i class="fa-solid fa-square-check"></i></button>
+                        <button id="touch-redraw" class="touch-btn" title="Redraw (Ctrl+Enter)"><i class="fa-solid fa-arrows-rotate"></i></button>
                     </div>
                     <div id="textedit_message"></div>
                     <div id="textedit" spellcheck="false" contenteditable="true"></div>

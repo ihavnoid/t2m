@@ -40,14 +40,16 @@ As the Gemini CLI cannot access a physical touch device, please perform the foll
     *   Ensure the mindmap correctly fills the top area and the editor is at the bottom.
     *   Toggle back to horizontal to ensure it restores correctly.
 
-## 8. Editor Touch Toolbar (Indent/Outdent)
+## 8. Editor Touch Toolbar (Full Controls)
 *   **Action**: Open the app on a touch device without a physical keyboard.
-*   **Expected**: A toolbar with two buttons (Indent and Outdent icons) should appear at the top of the text editor area.
+*   **Expected**: A toolbar with multiple buttons (Indent, Outdent, Undo, Redo, Lock, Unlock, Image, Select All, Redraw) should appear at the top of the text editor.
 *   **Verification**: 
-    *   Tap a line in the editor to focus it.
-    *   Tap the **Indent** button (right-pointing icon). The line should move deeper in the hierarchy.
-    *   Tap the **Outdent** button (left-pointing icon). The line should move shallower.
-    *   Verify the mindmap updates accordingly.
+    *   **Indent/Outdent**: Tapping these should change the hierarchy level of the focused line.
+    *   **Undo/Redo**: Tapping these should revert or re-apply recent text changes.
+    *   **Lock/Unlock**: Tapping these should toggle the "Frozen" state of selected nodes (adding/removing coordinates).
+    *   **Image**: Tapping this should open the Image Drawer and allow you to insert a drawing.
+    *   **Select All**: Tapping this should highlight all text in the editor.
+    *   **Redraw**: Tapping this should manually trigger a mindmap refresh (equivalent to Ctrl+Enter).
 
 ## 9. 100% Modes and Restore Buttons
 *   **Action**: Drag the separator (dragbar) all the way to any edge of the screen.

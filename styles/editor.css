@@ -20,25 +20,36 @@
 
 #editor-touch-toolbar {
     display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
     position: relative;
     z-index: 10;
+    padding: 8px;
+    background-color: #e8e8e8;
+    border-radius: 8px;
 }
 
 .touch-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    border: 1px solid #bbb;
     background-color: #fff;
-    color: #333;
-    font-size: 18px;
+    color: #444;
+    font-size: 16px;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.touch-toolbar-divider {
+    width: 1px;
+    height: 30px;
+    background-color: #ccc;
+    margin: 5px 2px;
 }
 
 .touch-btn:active {
