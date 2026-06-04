@@ -29,6 +29,7 @@ class EditorPane {
         this.observer = null;
         this.observerFunc = null;
         this._onContextTransfer = () => {};
+        this._touchToolbarBound = false;
 
         this._initListeners();
     }
@@ -51,13 +52,45 @@ class EditorPane {
         this.elm = document.getElementById("textedit_message");
         this.all_events.forEach(([ev, f]) => this.el.addEventListener(ev, f));
         this.cleanupHTML();
+        this._touchToolbarBound = false;
 
-        if (isTouch) {
-            this._setupTouchToolbar();
-        }
+        this.setTouchMode(isTouch);
 
         this.on("keydown", (ev) => this._handleKeyDown(ev));
         this.on("paste", (ev) => this._handlePaste(ev));
+
+        // Listen for touch start to immediately show touch mode on mobile
+        this.el.addEventListener("touchstart", () => {
+            this.setTouchMode(true);
+            setTimeout(() => {
+                const visualViewport = window.visualViewport;
+                const currentLayoutHeight = visualViewport
+                    ? visualViewport.height * visualViewport.scale
+                    : window.innerHeight;
+                if (currentLayoutHeight >= window.innerHeight * 0.9) {
+                    this.setTouchMode(false);
+                }
+            }, 300);
+        });
+
+        // Hide toolbar when editor is blurred
+        this.el.addEventListener("blur", () => {
+            this.setTouchMode(false);
+        });
+
+        // Listen to visual viewport changes (virtual keyboard showing/hiding)
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener("resize", () => {
+                const visualViewport = window.visualViewport;
+                const currentLayoutHeight =
+                    visualViewport.height * visualViewport.scale;
+                if (currentLayoutHeight >= window.innerHeight * 0.9) {
+                    this.setTouchMode(false);
+                } else if (document.activeElement === this.el) {
+                    this.setTouchMode(true);
+                }
+            });
+        }
     }
 
     /**
@@ -70,26 +103,43 @@ class EditorPane {
             toolbar.style.display = "flex";
             editor.classList.add("touch-mode");
 
-            const bindings = {
-                "touch-indent": () => this._handleTab(false),
-                "touch-outdent": () => this._handleTab(true),
-                "touch-undo": () => window.appFunctions.editUndo(),
-                "touch-redo": () => window.appFunctions.editRedo(),
-                "touch-lock": () => window.appFunctions.freezeNodes(),
-                "touch-unlock": () => window.appFunctions.unfreezeNodes(),
-                "touch-image": () => window.appFunctions.insertImage(),
-                "touch-selectall": () => window.appFunctions.editSelectAll(),
-                "touch-redraw": () => window.appFunctions.redraw(),
-            };
+            if (!this._touchToolbarBound) {
+                const bindings = {
+                    "touch-indent": () => this._handleTab(false),
+                    "touch-outdent": () => this._handleTab(true),
+                    "touch-undo": () => window.appFunctions.editUndo(),
+                    "touch-redo": () => window.appFunctions.editRedo(),
+                    "touch-lock": () => window.appFunctions.freezeNodes(),
+                    "touch-unlock": () => window.appFunctions.unfreezeNodes(),
+                    "touch-image": () => window.appFunctions.insertImage(),
+                    "touch-selectall": () =>
+                        window.appFunctions.editSelectAll(),
+                    "touch-redraw": () => window.appFunctions.redraw(),
+                };
 
-            for (const [id, func] of Object.entries(bindings)) {
-                const btn = document.getElementById(id);
-                if (btn) {
-                    btn.addEventListener("touchstart", (ev) => {
-                        ev.preventDefault();
-                        func();
-                    });
+                for (const [id, func] of Object.entries(bindings)) {
+                    const btn = document.getElementById(id);
+                    if (btn) {
+                        btn.addEventListener("touchstart", (ev) => {
+                            ev.preventDefault();
+                            func();
+                        });
+                    }
                 }
+                this._touchToolbarBound = true;
+            }
+        }
+    }
+
+    setTouchMode(enabled) {
+        const toolbar = document.getElementById("editor-touch-toolbar");
+        const editor = document.getElementById("editor");
+        if (toolbar && editor) {
+            if (enabled) {
+                this._setupTouchToolbar();
+            } else {
+                toolbar.style.display = "none";
+                editor.classList.remove("touch-mode");
             }
         }
     }
@@ -107,6 +157,19 @@ class EditorPane {
             // Tab
             ev.preventDefault();
             this._handleTab(ev.shiftKey);
+        }
+
+        // Hide toolbar if physical keys are pressed or layout is full sized
+        if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.key === "Tab") {
+            this.setTouchMode(false);
+        } else {
+            const visualViewport = window.visualViewport;
+            const currentLayoutHeight = visualViewport
+                ? visualViewport.height * visualViewport.scale
+                : window.innerHeight;
+            if (currentLayoutHeight >= window.innerHeight * 0.9) {
+                this.setTouchMode(false);
+            }
         }
     }
 
@@ -407,10 +470,10 @@ class EditorPane {
             let reformatted;
             if (isCommentMode) {
                 // In comment mode, treat all lines as comments of the same node.
-                // We join with <br> directly to avoid the leading <br> that buildHierarchyHTML 
+                // We join with <br> directly to avoid the leading <br> that buildHierarchyHTML
                 // adds for parentless comments.
                 const lines = cleanLines(processedText);
-                reformatted = lines.map(l => escapeHTML(l)).join("<br>");
+                reformatted = lines.map((l) => escapeHTML(l)).join("<br>");
             } else {
                 reformatted = reformatText(processedText);
             }
@@ -543,7 +606,10 @@ class EditorPane {
                                     // Flush any pending main text before the comment
                                     if (mainTextParts.trim()) {
                                         lines.push(
-                                            mainTextParts.replace(/\r\n/g, "\n"),
+                                            mainTextParts.replace(
+                                                /\r\n/g,
+                                                "\n",
+                                            ),
                                         );
                                         depths.push(depth);
                                         mainTextParts = "";
@@ -556,8 +622,7 @@ class EditorPane {
                                 } else if (ctag === "UL" || ctag === "OL") {
                                     childrenToWalk.push(child);
                                 } else if (ctag === "IMG") {
-                                    const src =
-                                        child.getAttribute("src") || "";
+                                    const src = child.getAttribute("src") || "";
                                     imgs.push(
                                         `<img src="${src}" style="max-width:200px; max-height:200px; display:inline-block; vertical-align:middle;">`,
                                     );
@@ -681,7 +746,9 @@ class EditorPane {
         });
 
         // Remove styling tags but keep structure and images
-        const forbidden = container.querySelectorAll("style, script, meta, link");
+        const forbidden = container.querySelectorAll(
+            "style, script, meta, link",
+        );
         forbidden.forEach((el) => el.remove());
     }
 
@@ -1154,7 +1221,7 @@ class EditorPane {
          */
         const _proc = (l) => {
             if (!first) {
-                if(l === "") {
+                if (l === "") {
                     return l;
                 } else {
                     // Secondary lines in an LI are treated as comments
