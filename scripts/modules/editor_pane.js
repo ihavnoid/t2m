@@ -59,25 +59,6 @@ class EditorPane {
         this.on("keydown", (ev) => this._handleKeyDown(ev));
         this.on("paste", (ev) => this._handlePaste(ev));
 
-        // Listen for touch start to immediately show touch mode on mobile
-        this.el.addEventListener("touchstart", () => {
-            this.setTouchMode(true);
-            setTimeout(() => {
-                const visualViewport = window.visualViewport;
-                const currentLayoutHeight = visualViewport
-                    ? visualViewport.height * visualViewport.scale
-                    : window.innerHeight;
-                if (currentLayoutHeight >= window.innerHeight * 0.9) {
-                    this.setTouchMode(false);
-                }
-            }, 300);
-        });
-
-        // Hide toolbar when editor is blurred
-        this.el.addEventListener("blur", () => {
-            this.setTouchMode(false);
-        });
-
         // Listen to visual viewport changes (virtual keyboard showing/hiding)
         if (window.visualViewport) {
             window.visualViewport.addEventListener("resize", () => {
@@ -157,19 +138,6 @@ class EditorPane {
             // Tab
             ev.preventDefault();
             this._handleTab(ev.shiftKey);
-        }
-
-        // Hide toolbar if physical keys are pressed or layout is full sized
-        if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.key === "Tab") {
-            this.setTouchMode(false);
-        } else {
-            const visualViewport = window.visualViewport;
-            const currentLayoutHeight = visualViewport
-                ? visualViewport.height * visualViewport.scale
-                : window.innerHeight;
-            if (currentLayoutHeight >= window.innerHeight * 0.9) {
-                this.setTouchMode(false);
-            }
         }
     }
 
