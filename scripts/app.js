@@ -24,6 +24,35 @@ class App {
 
     init() {
         $(document).ready(() => {
+            // Listen to visual viewport changes globally for layout resizing
+            if (window.visualViewport) {
+                const handleViewportResize = () => {
+                    const visualViewport = window.visualViewport;
+                    const height = visualViewport.height * visualViewport.scale;
+                    document.documentElement.style.setProperty(
+                        "--visual-viewport-height",
+                        `${height}px`,
+                    );
+
+                    if (
+                        window.paneResizer &&
+                        window.paneResizer.resizePanesToPercentage
+                    ) {
+                        window.paneResizer.resizePanesToPercentage(
+                            window.paneResizer.editorPanePercentage,
+                            window.paneResizer.viewerPanePercentage,
+                            true,
+                        );
+                    }
+                };
+                window.visualViewport.addEventListener(
+                    "resize",
+                    handleViewportResize,
+                );
+                // Call it initially to ensure proper setting on start
+                handleViewportResize();
+            }
+
             // Initialize Modules
             editorPane.init(false);
             editorPane.setEditable(false);
