@@ -3,25 +3,12 @@
     width: 6px;
     float: left;
     height: 100%;
-    background: #d3d3d3;
     background: rgba(0, 0, 0, 0.1);
-    background: -webkit-linear-gradient(
-        right,
-        rgba(0, 0, 0, 0.2),
-        rgba(0, 0, 0, 0)
-    );
-    background: -o-linear-gradient(right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0));
-    background: -moz-linear-gradient(
-        right,
-        rgba(0, 0, 0, 0.2),
-        rgba(0, 0, 0, 0)
-    );
     background: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0));
 }
 
 #dragbar:hover,
 #dragbar:active {
-    background: #c0c0c0;
     background: rgba(0, 0, 0, 0.2);
 }
 
@@ -35,13 +22,12 @@
 .collapse-button > div {
     position: absolute;
     z-index: 10;
-    color: black;
+    color: var(--text-color-dark);
     width: 25px;
     cursor: pointer;
     padding: 20px 0;
     border-radius: 3px;
     opacity: 0.3;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=30)";
 }
 
 .collapse-button > div svg {
@@ -51,14 +37,12 @@
 }
 
 .collapse-button > div:hover {
-    background-color: #bbb;
+    background-color: var(--border-color-dark);
     opacity: 0.8;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
 }
 
 .collapse-button > div:active {
     opacity: 1;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
 }
 
 .vertical-btn-layout {
@@ -81,13 +65,12 @@
 .float-button > div {
     position: absolute;
     z-index: 10;
-    color: black;
+    color: var(--text-color-dark);
     width: 30px;
     cursor: pointer;
     padding: 10px 0;
     border-radius: 3px;
     opacity: 0.3;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=30)";
 }
 
 .float-button > div svg {
@@ -97,12 +80,10 @@
 }
 
 .float-button > div:hover {
-    background-color: #bbb;
+    background-color: var(--border-color-dark);
     opacity: 0.8;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=80)";
 }
 
 .float-button > div:active {
     opacity: 1;
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
 }

@@ -1,9 +1,5 @@
 .document-title-container {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
     align-items: center;
     height: 100%;
     padding-left: 10px;
@@ -25,7 +21,7 @@
     background-color: inherit;
     border: none;
     font-size: 1.15em;
-    color: white;
+    color: var(--text-color-light);
     padding: 2px 5px 2px 7px;
 }
 
@@ -40,6 +36,6 @@
     outline: none;
 }
 #keypane {
-    color: white;
+    color: var(--text-color-light);
     width: 500px;
 }

@@ -1,5 +1,55 @@
 :root {
+    /* Colors */
+    --primary-color: #2780e3;
+    --primary-hover-color: #216dbf;
+    --primary-active-color: #1c4d8e;
+
+    --bg-dark: #424242;
+    --bg-dark-hover: rgba(0, 0, 0, 0.25);
+    --bg-dark-active: rgba(0, 0, 0, 0.35);
+    --bg-dark-hover-solid: #323232;
+    --bg-dark-active-solid: #222222;
+    --bg-dark-menu: #525252;
+    --bg-dark-menu-item-border: #626262;
+    --bg-light: #f0f0f0;
+    --bg-light-hover: #e0e0e0;
+    --bg-light-active: #d4d4d4;
+    --bg-light-header: #f7f7f7;
+    --bg-toolbar: #e8e8e8;
+    --bg-backdrop: #000;
+
+    --border-color: #ccc;
+    --border-color-light: #eee;
+    --border-color-dark: #bbb;
+    --border-color-darkest: #323232;
+    --border-color-modal: #e5e5e5;
+    --border-color-medium: #ddd;
+
+    --text-color-dark: #333333;
+    --text-color-light: #ffffff;
+    --text-color-muted: #808080;
+    --text-color-shortcut: #aaaaaa;
+
+    --drawing-primary: #2365ba;
+    --drawing-primary-dark: #1c4d8e;
+    --drawing-primary-light: #eef4ff;
+
+    --success-color: #28a745;
+    --success-hover-color: #218838;
+    --danger-color: #dc3545;
+    --danger-hover-color: #c82333;
+
+    /* Layout heights & offsets */
     --navbar-height: 50px;
+    --visual-viewport-height: 100%;
+
+    /* Typography */
+    --font-sans: sans-serif;
+    --font-mono: monospace;
+
+    /* Transitions */
+    --transition-fast: 0.1s ease;
+    --transition-normal: 0.2s ease;
 }
 
 html,
@@ -7,13 +57,14 @@ body {
     margin: 0;
     height: 100%;
     overflow: hidden;
+    font-family: var(--font-sans);
 }
 
 .wrapper {
     position: fixed;
-    width:100%;
-    left:0;
-    top:0;
+    width: 100%;
+    left: 0;
+    top: 0;
     height: var(--visual-viewport-height, 100%);
     overflow: hidden;
 }
@@ -24,7 +75,6 @@ body {
     width: 100%;
     overflow: hidden;
 }
-
 
 .modal-container {
     width: 100%;
@@ -43,9 +93,9 @@ body {
 
 /* Buttons */
 .button {
-    border: 1px solid #ccc;
-    background-color: white;
-    color: black;
+    border: 1px solid var(--border-color);
+    background-color: var(--text-color-light);
+    color: var(--text-color-dark);
     height: 3em;
     border-radius: 3px;
     outline: 0;
@@ -55,25 +105,25 @@ body {
 }
 
 .button:hover {
-    background-color: #e6e6e6;
+    background-color: var(--bg-light-hover);
 }
 
 .button:active {
-    background-color: #d4d4d4;
+    background-color: var(--bg-light-active);
 }
 
 .button.dark {
-    background-color: #424242;
-    color: white;
-    border: 1px solid #323232;
+    background-color: var(--bg-dark);
+    color: var(--text-color-light);
+    border: 1px solid var(--border-color-darkest);
 }
 
 .button.dark:hover {
-    background-color: #323232;
+    background-color: var(--bg-dark-hover-solid);
 }
 
 .button.dark:active {
-    background-color: #222222;
+    background-color: var(--bg-dark-active-solid);
 }
 
 .button svg {
@@ -103,7 +153,7 @@ form .control-label {
     margin-right: 1em;
     width: 10em;
     min-width: 5em;
-    color: #333;
+    color: var(--text-color-dark);
     flex: 0.5;
 }
 
@@ -118,7 +168,7 @@ form input[type="number"] {
     flex: 1;
     margin-right: 3em;
     border-radius: 3px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     padding: 0.5em;
     font-size: 1em;
     height: 1em;
@@ -165,11 +215,11 @@ form select {
     flex: 1;
     margin-right: 3em;
     border-radius: 3px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     padding: 0 0.5em;
     font-size: 1em;
     height: 2em;
-    background-color: white;
+    background-color: var(--text-color-light);
 }
 
 .no-selection {
