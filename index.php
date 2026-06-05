@@ -61,7 +61,6 @@
     <script src="scripts/old/d3-quadtree.js"></script>
     <script src="scripts/old/d3-timer.js"></script>
     <script src="scripts/old/d3-force.js"></script>
-    <script src="scripts/old/kineticjs.js"></script>
     <script src="scripts/old/difflib.js"></script>
     <script type="module" src="scripts/app.js"></script>
 <?php } ?>

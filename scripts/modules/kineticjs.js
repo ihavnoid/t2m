@@ -29,7 +29,7 @@
  * @namespace
  */
 var Kinetic = {};
-((function () {
+(function () {
     ((Kinetic.version = "4.3.3"),
         (Kinetic.Filters = {}),
         (Kinetic.Plugins = {}),
@@ -72,16 +72,7 @@ var Kinetic = {};
                 }
             },
         }));
-})(),
-    (function (a, b) {
-        typeof exports == "object"
-            ? (module.exports = b())
-            : typeof define == "function" && define.amd
-              ? define(b)
-              : (a.returnExports = b());
-    })(this, function () {
-        return Kinetic;
-    }));
+})();
 (function () {
     Kinetic.Type = {
         _isElement: function (a) {
@@ -2393,3 +2384,6 @@ var Kinetic = {};
         Kinetic.Global.extend(Kinetic.Line, Kinetic.Shape),
         Kinetic.Node.addGetters(Kinetic.Line, ["points"]));
 })();
+
+export default Kinetic;
+export { Kinetic };

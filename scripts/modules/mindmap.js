@@ -3,6 +3,8 @@
  * Refactored from scripts/old/mindmap.min.js
  */
 
+import Kinetic from "./kineticjs.js";
+
 class Mindmap {
     constructor() {
         this.epochDate = new Date(1, 1, 2e3, 12, 0, 0);
@@ -82,8 +84,11 @@ class Mindmap {
                 ev.preventDefault(); // Prevent browser zoom/scroll
                 const t1 = ev.originalEvent.touches[0];
                 const t2 = ev.originalEvent.touches[1];
-                const dist = Math.hypot(t1.pageX - t2.pageX, t1.pageY - t2.pageY);
-                
+                const dist = Math.hypot(
+                    t1.pageX - t2.pageX,
+                    t1.pageY - t2.pageY,
+                );
+
                 if (lastDist > 0) {
                     const delta = dist - lastDist;
                     if (Math.abs(delta) > 5) {
@@ -1645,7 +1650,9 @@ class MindmapEngine {
                 .tick(100)
                 .stop();
         }
-        this.nodes.forEach((node) => (node.fixed = node.frozen || (!node.data.parent)));
+        this.nodes.forEach(
+            (node) => (node.fixed = node.frozen || !node.data.parent),
+        );
     }
     setTheme(data) {
         data.font = this.config.font;
@@ -1688,18 +1695,18 @@ class MindmapEngine {
     getPointerPos(pageX, pageY, isRaw) {
         // We must calculate the relative position on the canvas considering the zoom/pan transform.
         const transform = this.layer.getTransform().m;
-        
+
         // For raw canvas positions (used internally by some D3 loops)
         if (isRaw)
             return {
                 x: (pageX - transform[4]) / transform[0],
                 y: (pageY - transform[5]) / transform[3],
             };
-        
+
         // For standard event coordinates (pageX/Y), we must subtract the container's physical offset on the screen
         const container = document.getElementById(this.containerId);
         const rect = container.getBoundingClientRect();
-        
+
         const relativeX = pageX - rect.left - window.scrollX;
         const relativeY = pageY - rect.top - window.scrollY;
 
