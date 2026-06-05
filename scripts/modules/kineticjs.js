@@ -270,319 +270,359 @@ var Kinetic = {};
             b.backingStorePixelRatio ||
             1,
         e = c / d;
-    ((Kinetic.Canvas = function (a, b, c) {
-        ((this.pixelRatio = c || e),
-            (this.width = a),
-            (this.height = b),
-            (this.element = document.createElement("canvas")),
-            (this.context = this.element.getContext("2d", {
+    Kinetic.Canvas = class {
+        constructor(width, height, pixelRatio) {
+            this.pixelRatio = pixelRatio || e;
+            this.width = width;
+            this.height = height;
+            this.element = document.createElement("canvas");
+            this.context = this.element.getContext("2d", {
                 willReadFrequently: true,
-            })),
-            this.setSize(a || 0, b || 0));
-    }),
-        (Kinetic.Canvas.prototype = {
-            clear: function () {
-                var a = this.getContext(),
-                    b = this.getElement();
-                a.clearRect(0, 0, b.width, b.height);
-            },
-            getElement: function () {
-                return this.element;
-            },
-            getContext: function () {
-                return this.context;
-            },
-            setWidth: function (a) {
-                ((this.width = a),
-                    (this.element.width = a * this.pixelRatio),
-                    (this.element.style.width = a + "px"));
-            },
-            setHeight: function (a) {
-                ((this.height = a),
-                    (this.element.height = a * this.pixelRatio),
-                    (this.element.style.height = a + "px"));
-            },
-            getWidth: function () {
-                return this.width;
-            },
-            getHeight: function () {
-                return this.height;
-            },
-            setSize: function (a, b) {
-                (this.setWidth(a), this.setHeight(b));
-            },
-            toDataURL: function (a, b) {
+            });
+            this.setSize(width || 0, height || 0);
+        }
+        clear() {
+            var context = this.getContext(),
+                element = this.getElement();
+            context.clearRect(0, 0, element.width, element.height);
+        }
+        getElement() {
+            return this.element;
+        }
+        getContext() {
+            return this.context;
+        }
+        setWidth(width) {
+            this.width = width;
+            this.element.width = width * this.pixelRatio;
+            this.element.style.width = width + "px";
+        }
+        setHeight(height) {
+            this.height = height;
+            this.element.height = height * this.pixelRatio;
+            this.element.style.height = height + "px";
+        }
+        getWidth() {
+            return this.width;
+        }
+        getHeight() {
+            return this.height;
+        }
+        setSize(width, height) {
+            this.setWidth(width);
+            this.setHeight(height);
+        }
+        toDataURL(mimeType, quality) {
+            try {
+                return this.element.toDataURL(mimeType, quality);
+            } catch (err) {
                 try {
-                    return this.element.toDataURL(a, b);
-                } catch (c) {
-                    try {
-                        return this.element.toDataURL();
-                    } catch (c) {
-                        return (
-                            Kinetic.Global.warn(
-                                "Unable to get data URL. " + c.message,
-                            ),
-                            ""
-                        );
-                    }
+                    return this.element.toDataURL();
+                } catch (err2) {
+                    Kinetic.Global.warn(
+                        "Unable to get data URL. " + err2.message,
+                    );
+                    return "";
                 }
-            },
-            fill: function (a) {
-                a.getFillEnabled() && this._fill(a);
-            },
-            stroke: function (a) {
-                a.getStrokeEnabled() && this._stroke(a);
-            },
-            fillStroke: function (a) {
-                var b = a.getFillEnabled();
-                (b && this._fill(a),
-                    a.getStrokeEnabled() &&
-                        this._stroke(a, a.hasShadow() && a.hasFill() && b));
-            },
-            applyShadow: function (a, b) {
-                var c = this.context;
-                (c.save(), this._applyShadow(a), b(), c.restore(), b());
-            },
-            _applyLineCap: function (a) {
-                var b = a.getLineCap();
-                b && (this.context.lineCap = b);
-            },
-            _applyOpacity: function (a) {
-                var b = a.getAbsoluteOpacity();
-                b !== 1 && (this.context.globalAlpha = b);
-            },
-            _applyLineJoin: function (a) {
-                var b = a.getLineJoin();
-                b && (this.context.lineJoin = b);
-            },
-            _applyAncestorTransforms: function (a) {
-                var b = this.context;
-                a._eachAncestorReverse(function (a) {
-                    var c = a.getTransform(),
-                        d = c.getMatrix();
-                    b.transform(d[0], d[1], d[2], d[3], d[4], d[5]);
-                }, !0);
-            },
-        }),
-        (Kinetic.SceneCanvas = function (a, b, c) {
-            Kinetic.Canvas.call(this, a, b, c);
-        }),
-        (Kinetic.SceneCanvas.prototype = {
-            setWidth: function (a) {
-                var b = this.pixelRatio;
-                (Kinetic.Canvas.prototype.setWidth.call(this, a),
-                    this.context.scale(b, b));
-            },
-            setHeight: function (a) {
-                var b = this.pixelRatio;
-                (Kinetic.Canvas.prototype.setHeight.call(this, a),
-                    this.context.scale(b, b));
-            },
-            _fillColor: function (a) {
-                var b = this.context,
-                    c = a.getFill();
-                ((b.fillStyle = c), a._fillFunc(b));
-            },
-            _fillPattern: function (a) {
-                var b = this.context,
-                    c = a.getFillPatternImage(),
-                    d = a.getFillPatternX(),
-                    e = a.getFillPatternY(),
-                    f = a.getFillPatternScale(),
-                    g = a.getFillPatternRotation(),
-                    h = a.getFillPatternOffset(),
-                    i = a.getFillPatternRepeat();
-                ((d || e) && b.translate(d || 0, e || 0),
-                    g && b.rotate(g),
-                    f && b.scale(f.x, f.y),
-                    h && b.translate(-1 * h.x, -1 * h.y),
-                    (b.fillStyle = b.createPattern(c, i || "repeat")),
-                    b.fill());
-            },
-            _fillLinearGradient: function (a) {
-                var b = this.context,
-                    c = a.getFillLinearGradientStartPoint(),
-                    d = a.getFillLinearGradientEndPoint(),
-                    e = a.getFillLinearGradientColorStops(),
-                    f = b.createLinearGradient(c.x, c.y, d.x, d.y);
-                for (var g = 0; g < e.length; g += 2)
-                    f.addColorStop(e[g], e[g + 1]);
-                ((b.fillStyle = f), b.fill());
-            },
-            _fillRadialGradient: function (a) {
-                var b = this.context,
-                    c = a.getFillRadialGradientStartPoint(),
-                    d = a.getFillRadialGradientEndPoint(),
-                    e = a.getFillRadialGradientStartRadius(),
-                    f = a.getFillRadialGradientEndRadius(),
-                    g = a.getFillRadialGradientColorStops(),
-                    h = b.createRadialGradient(c.x, c.y, e, d.x, d.y, f);
-                for (var i = 0; i < g.length; i += 2)
-                    h.addColorStop(g[i], g[i + 1]);
-                ((b.fillStyle = h), b.fill());
-            },
-            _fill: function (a, b) {
-                var c = this.context,
-                    d = a.getFill(),
-                    e = a.getFillPatternImage(),
-                    f = a.getFillLinearGradientStartPoint(),
-                    g = a.getFillRadialGradientStartPoint(),
-                    h = a.getFillPriority();
-                (c.save(),
-                    !b && a.hasShadow() && this._applyShadow(a),
-                    d && h === "color"
-                        ? this._fillColor(a)
-                        : e && h === "pattern"
-                          ? this._fillPattern(a)
-                          : f && h === "linear-gradient"
-                            ? this._fillLinearGradient(a)
-                            : g && h === "radial-gradient"
-                              ? this._fillRadialGradient(a)
-                              : d
-                                ? this._fillColor(a)
-                                : e
-                                  ? this._fillPattern(a)
-                                  : f
-                                    ? this._fillLinearGradient(a)
-                                    : g && this._fillRadialGradient(a),
-                    c.restore(),
-                    !b && a.hasShadow() && this._fill(a, !0));
-            },
-            _stroke: function (a, b) {
-                var c = this.context,
-                    d = a.getStroke(),
-                    e = a.getStrokeWidth(),
-                    f = a.getDashArray();
-                if (d || e)
-                    (c.save(),
-                        this._applyLineCap(a),
-                        f &&
-                            a.getDashArrayEnabled() &&
-                            (c.setLineDash
-                                ? c.setLineDash(f)
-                                : "mozDash" in c
-                                  ? (c.mozDash = f)
-                                  : "webkitLineDash" in c &&
-                                    (c.webkitLineDash = f)),
-                        !b && a.hasShadow() && this._applyShadow(a),
-                        (c.lineWidth = e || 2),
-                        (c.strokeStyle = d || "black"),
-                        a._strokeFunc(c),
-                        c.restore(),
-                        !b && a.hasShadow() && this._stroke(a, !0));
-            },
-            _applyShadow: function (a) {
-                var b = this.context;
-                if (a.hasShadow() && a.getShadowEnabled()) {
-                    var c = a.getAbsoluteOpacity(),
-                        d = a.getShadowColor() || "black",
-                        e = a.getShadowBlur() || 5,
-                        f = a.getShadowOffset() || {
-                            x: 0,
-                            y: 0,
-                        };
-                    (a.getShadowOpacity() &&
-                        (b.globalAlpha = a.getShadowOpacity() * c),
-                        (b.shadowColor = d),
-                        (b.shadowBlur = e),
-                        (b.shadowOffsetX = f.x),
-                        (b.shadowOffsetY = f.y));
-                }
-            },
-        }),
-        Kinetic.Global.extend(Kinetic.SceneCanvas, Kinetic.Canvas),
-        (Kinetic.HitCanvas = function (a, b, c) {
-            Kinetic.Canvas.call(this, a, b, c);
-        }),
-        (Kinetic.HitCanvas.prototype = {
-            _fill: function (a) {
-                var b = this.context;
-                (b.save(),
-                    (b.fillStyle = "#" + a.colorKey),
-                    a._fillFuncHit(b),
-                    b.restore());
-            },
-            _stroke: function (a) {
-                var b = this.context,
-                    c = a.getStroke(),
-                    d = a.getStrokeWidth();
-                if (c || d)
-                    (this._applyLineCap(a),
-                        b.save(),
-                        (b.lineWidth = d || 2),
-                        (b.strokeStyle = "#" + a.colorKey),
-                        a._strokeFuncHit(b),
-                        b.restore());
-            },
-        }),
-        Kinetic.Global.extend(Kinetic.HitCanvas, Kinetic.Canvas));
+            }
+        }
+        fill(shape) {
+            shape.getFillEnabled() && this._fill(shape);
+        }
+        stroke(shape) {
+            shape.getStrokeEnabled() && this._stroke(shape);
+        }
+        fillStroke(shape) {
+            var hasFill = shape.getFillEnabled();
+            hasFill && this._fill(shape);
+            shape.getStrokeEnabled() &&
+                this._stroke(
+                    shape,
+                    shape.hasShadow() && shape.hasFill() && hasFill,
+                );
+        }
+        applyShadow(shape, drawFunc) {
+            var context = this.context;
+            context.save();
+            this._applyShadow(shape);
+            drawFunc();
+            context.restore();
+            drawFunc();
+        }
+        _applyLineCap(shape) {
+            var lineCap = shape.getLineCap();
+            lineCap && (this.context.lineCap = lineCap);
+        }
+        _applyOpacity(shape) {
+            var opacity = shape.getAbsoluteOpacity();
+            opacity !== 1 && (this.context.globalAlpha = opacity);
+        }
+        _applyLineJoin(shape) {
+            var lineJoin = shape.getLineJoin();
+            lineJoin && (this.context.lineJoin = lineJoin);
+        }
+        _applyAncestorTransforms(shape) {
+            var context = this.context;
+            shape._eachAncestorReverse(function (ancestor) {
+                var transform = ancestor.getTransform(),
+                    matrix = transform.getMatrix();
+                context.transform(
+                    matrix[0],
+                    matrix[1],
+                    matrix[2],
+                    matrix[3],
+                    matrix[4],
+                    matrix[5],
+                );
+            }, true);
+        }
+    };
+
+    Kinetic.SceneCanvas = class extends Kinetic.Canvas {
+        setWidth(width) {
+            super.setWidth(width);
+            this.context.scale(this.pixelRatio, this.pixelRatio);
+        }
+        setHeight(height) {
+            super.setHeight(height);
+            this.context.scale(this.pixelRatio, this.pixelRatio);
+        }
+        _fillColor(shape) {
+            var context = this.context,
+                fill = shape.getFill();
+            context.fillStyle = fill;
+            shape._fillFunc(context);
+        }
+        _fillPattern(shape) {
+            var context = this.context,
+                image = shape.getFillPatternImage(),
+                x = shape.getFillPatternX(),
+                y = shape.getFillPatternY(),
+                scale = shape.getFillPatternScale(),
+                rotation = shape.getFillPatternRotation(),
+                offset = shape.getFillPatternOffset(),
+                repeat = shape.getFillPatternRepeat();
+            (x || y) && context.translate(x || 0, y || 0);
+            rotation && context.rotate(rotation);
+            scale && context.scale(scale.x, scale.y);
+            offset && context.translate(-1 * offset.x, -1 * offset.y);
+            context.fillStyle = context.createPattern(
+                image,
+                repeat || "repeat",
+            );
+            context.fill();
+        }
+        _fillLinearGradient(shape) {
+            var context = this.context,
+                startPoint = shape.getFillLinearGradientStartPoint(),
+                endPoint = shape.getFillLinearGradientEndPoint(),
+                colorStops = shape.getFillLinearGradientColorStops(),
+                gradient = context.createLinearGradient(
+                    startPoint.x,
+                    startPoint.y,
+                    endPoint.x,
+                    endPoint.y,
+                );
+            for (var i = 0; i < colorStops.length; i += 2) {
+                gradient.addColorStop(colorStops[i], colorStops[i + 1]);
+            }
+            context.fillStyle = gradient;
+            context.fill();
+        }
+        _fillRadialGradient(shape) {
+            var context = this.context,
+                startPoint = shape.getFillRadialGradientStartPoint(),
+                endPoint = shape.getFillRadialGradientEndPoint(),
+                startRadius = shape.getFillRadialGradientStartRadius(),
+                endRadius = shape.getFillRadialGradientEndRadius(),
+                colorStops = shape.getFillRadialGradientColorStops(),
+                gradient = context.createRadialGradient(
+                    startPoint.x,
+                    startPoint.y,
+                    startRadius,
+                    endPoint.x,
+                    endPoint.y,
+                    endRadius,
+                );
+            for (var i = 0; i < colorStops.length; i += 2) {
+                gradient.addColorStop(colorStops[i], colorStops[i + 1]);
+            }
+            context.fillStyle = gradient;
+            context.fill();
+        }
+        _fill(shape, skipShadow) {
+            var context = this.context,
+                fill = shape.getFill(),
+                patternImage = shape.getFillPatternImage(),
+                linearStart = shape.getFillLinearGradientStartPoint(),
+                radialStart = shape.getFillRadialGradientStartPoint(),
+                priority = shape.getFillPriority();
+            context.save();
+            !skipShadow && shape.hasShadow() && this._applyShadow(shape);
+            fill && priority === "color"
+                ? this._fillColor(shape)
+                : patternImage && priority === "pattern"
+                  ? this._fillPattern(shape)
+                  : linearStart && priority === "linear-gradient"
+                    ? this._fillLinearGradient(shape)
+                    : radialStart && priority === "radial-gradient"
+                      ? this._fillRadialGradient(shape)
+                      : fill
+                        ? this._fillColor(shape)
+                        : patternImage
+                          ? this._fillPattern(shape)
+                          : linearStart
+                            ? this._fillLinearGradient(shape)
+                            : radialStart && this._fillRadialGradient(shape);
+            context.restore();
+            !skipShadow && shape.hasShadow() && this._fill(shape, true);
+        }
+        _stroke(shape, skipShadow) {
+            var context = this.context,
+                stroke = shape.getStroke(),
+                strokeWidth = shape.getStrokeWidth(),
+                dashArray = shape.getDashArray();
+            if (stroke || strokeWidth) {
+                context.save();
+                this._applyLineCap(shape);
+                dashArray &&
+                    shape.getDashArrayEnabled() &&
+                    (context.setLineDash
+                        ? context.setLineDash(dashArray)
+                        : "mozDash" in context
+                          ? (context.mozDash = dashArray)
+                          : "webkitLineDash" in context &&
+                            (context.webkitLineDash = dashArray));
+                !skipShadow && shape.hasShadow() && this._applyShadow(shape);
+                context.lineWidth = strokeWidth || 2;
+                context.strokeStyle = stroke || "black";
+                shape._strokeFunc(context);
+                context.restore();
+                !skipShadow && shape.hasShadow() && this._stroke(shape, true);
+            }
+        }
+        _applyShadow(shape) {
+            var context = this.context;
+            if (shape.hasShadow() && shape.getShadowEnabled()) {
+                var opacity = shape.getAbsoluteOpacity(),
+                    shadowColor = shape.getShadowColor() || "black",
+                    shadowBlur = shape.getShadowBlur() || 5,
+                    shadowOffset = shape.getShadowOffset() || {
+                        x: 0,
+                        y: 0,
+                    };
+                shape.getShadowOpacity() &&
+                    (context.globalAlpha = shape.getShadowOpacity() * opacity);
+                context.shadowColor = shadowColor;
+                context.shadowBlur = shadowBlur;
+                context.shadowOffsetX = shadowOffset.x;
+                context.shadowOffsetY = shadowOffset.y;
+            }
+        }
+    };
+
+    Kinetic.HitCanvas = class extends Kinetic.Canvas {
+        _fill(shape) {
+            var context = this.context;
+            context.save();
+            context.fillStyle = "#" + shape.colorKey;
+            shape._fillFuncHit(context);
+            context.restore();
+        }
+        _stroke(shape) {
+            var context = this.context,
+                stroke = shape.getStroke(),
+                strokeWidth = shape.getStrokeWidth();
+            if (stroke || strokeWidth) {
+                this._applyLineCap(shape);
+                context.save();
+                context.lineWidth = strokeWidth || 2;
+                context.strokeStyle = "#" + shape.colorKey;
+                shape._strokeFuncHit(context);
+                context.restore();
+            }
+        }
+    };
 })();
 (function () {
-    ((Kinetic.Transform = function () {
-        this.m = [1, 0, 0, 1, 0, 0];
-    }),
-        (Kinetic.Transform.prototype = {
-            translate: function (a, b) {
-                ((this.m[4] += this.m[0] * a + this.m[2] * b),
-                    (this.m[5] += this.m[1] * a + this.m[3] * b));
-            },
-            scale: function (a, b) {
-                ((this.m[0] *= a),
-                    (this.m[1] *= a),
-                    (this.m[2] *= b),
-                    (this.m[3] *= b));
-            },
-            rotate: function (a) {
-                var b = Math.cos(a),
-                    c = Math.sin(a),
-                    d = this.m[0] * b + this.m[2] * c,
-                    e = this.m[1] * b + this.m[3] * c,
-                    f = this.m[0] * -c + this.m[2] * b,
-                    g = this.m[1] * -c + this.m[3] * b;
-                ((this.m[0] = d),
-                    (this.m[1] = e),
-                    (this.m[2] = f),
-                    (this.m[3] = g));
-            },
-            getTranslation: function () {
-                return {
-                    x: this.m[4],
-                    y: this.m[5],
-                };
-            },
-            multiply: function (a) {
-                var b = this.m[0] * a.m[0] + this.m[2] * a.m[1],
-                    c = this.m[1] * a.m[0] + this.m[3] * a.m[1],
-                    d = this.m[0] * a.m[2] + this.m[2] * a.m[3],
-                    e = this.m[1] * a.m[2] + this.m[3] * a.m[3],
-                    f = this.m[0] * a.m[4] + this.m[2] * a.m[5] + this.m[4],
-                    g = this.m[1] * a.m[4] + this.m[3] * a.m[5] + this.m[5];
-                ((this.m[0] = b),
-                    (this.m[1] = c),
-                    (this.m[2] = d),
-                    (this.m[3] = e),
-                    (this.m[4] = f),
-                    (this.m[5] = g));
-            },
-            invert: function () {
-                var a = 1 / (this.m[0] * this.m[3] - this.m[1] * this.m[2]),
-                    b = this.m[3] * a,
-                    c = -this.m[1] * a,
-                    d = -this.m[2] * a,
-                    e = this.m[0] * a,
-                    f = a * (this.m[2] * this.m[5] - this.m[3] * this.m[4]),
-                    g = a * (this.m[1] * this.m[4] - this.m[0] * this.m[5]);
-                ((this.m[0] = b),
-                    (this.m[1] = c),
-                    (this.m[2] = d),
-                    (this.m[3] = e),
-                    (this.m[4] = f),
-                    (this.m[5] = g));
-            },
-            getMatrix: function () {
-                return this.m;
-            },
-        }));
+    Kinetic.Transform = class {
+        constructor() {
+            this.m = [1, 0, 0, 1, 0, 0];
+        }
+
+        translate(x, y) {
+            this.m[4] += this.m[0] * x + this.m[2] * y;
+            this.m[5] += this.m[1] * x + this.m[3] * y;
+        }
+
+        scale(x, y) {
+            this.m[0] *= x;
+            this.m[1] *= x;
+            this.m[2] *= y;
+            this.m[3] *= y;
+        }
+
+        rotate(rad) {
+            var cosVal = Math.cos(rad),
+                sinVal = Math.sin(rad),
+                m00 = this.m[0] * cosVal + this.m[2] * sinVal,
+                m10 = this.m[1] * cosVal + this.m[3] * sinVal,
+                m01 = this.m[0] * -sinVal + this.m[2] * cosVal,
+                m11 = this.m[1] * -sinVal + this.m[3] * cosVal;
+            this.m[0] = m00;
+            this.m[1] = m10;
+            this.m[2] = m01;
+            this.m[3] = m11;
+        }
+
+        getTranslation() {
+            return {
+                x: this.m[4],
+                y: this.m[5],
+            };
+        }
+
+        multiply(matrix) {
+            var m00 = this.m[0] * matrix.m[0] + this.m[2] * matrix.m[1],
+                m10 = this.m[1] * matrix.m[0] + this.m[3] * matrix.m[1],
+                m01 = this.m[0] * matrix.m[2] + this.m[2] * matrix.m[3],
+                m11 = this.m[1] * matrix.m[2] + this.m[3] * matrix.m[3],
+                m02 =
+                    this.m[0] * matrix.m[4] +
+                    this.m[2] * matrix.m[5] +
+                    this.m[4],
+                m12 =
+                    this.m[1] * matrix.m[4] +
+                    this.m[3] * matrix.m[5] +
+                    this.m[5];
+            this.m[0] = m00;
+            this.m[1] = m10;
+            this.m[2] = m01;
+            this.m[3] = m11;
+            this.m[4] = m02;
+            this.m[5] = m12;
+        }
+
+        invert() {
+            var d = 1 / (this.m[0] * this.m[3] - this.m[1] * this.m[2]),
+                m00 = this.m[3] * d,
+                m10 = -this.m[1] * d,
+                m01 = -this.m[2] * d,
+                m11 = this.m[0] * d,
+                m02 = d * (this.m[2] * this.m[5] - this.m[3] * this.m[4]),
+                m12 = d * (this.m[1] * this.m[4] - this.m[0] * this.m[5]);
+            this.m[0] = m00;
+            this.m[1] = m10;
+            this.m[2] = m01;
+            this.m[3] = m11;
+            this.m[4] = m02;
+            this.m[5] = m12;
+        }
+
+        getMatrix() {
+            return this.m;
+        }
+    };
 })();
 (function () {
     ((Kinetic.Collection = function () {
@@ -606,597 +646,708 @@ var Kinetic = {};
         }));
 })();
 (function () {
-    ((Kinetic.Node = function (a) {
-        this._nodeInit(a);
-    }),
-        (Kinetic.Node.prototype = {
-            _nodeInit: function (a) {
-                ((this._id = Kinetic.Global.idCounter++),
-                    (this.defaultNodeAttrs = {
-                        visible: !0,
-                        listening: !0,
-                        name: undefined,
-                        opacity: 1,
-                        x: 0,
-                        y: 0,
-                        scale: {
-                            x: 1,
-                            y: 1,
-                        },
-                        rotation: 0,
-                        offset: {
-                            x: 0,
-                            y: 0,
-                        },
-                        draggable: !1,
-                        dragOnTop: !0,
-                    }),
-                    this.setDefaultAttrs(this.defaultNodeAttrs),
-                    (this.eventListeners = {}),
-                    this.setAttrs(a));
-            },
-            on: function (a, b) {
-                var c = a.split(" "),
-                    d = c.length;
-                for (var e = 0; e < d; e++) {
-                    var f = c[e],
-                        g = f,
-                        h = g.split("."),
-                        i = h[0],
-                        j = h.length > 1 ? h[1] : "";
-                    (this.eventListeners[i] || (this.eventListeners[i] = []),
-                        this.eventListeners[i].push({
-                            name: j,
-                            handler: b,
-                        }));
-                }
-            },
-            off: function (a) {
-                var b = a.split(" "),
-                    c = b.length;
-                for (var d = 0; d < c; d++) {
-                    var e = b[d],
-                        f = e,
-                        g = f.split("."),
-                        h = g[0];
-                    if (g.length > 1)
-                        if (h) this.eventListeners[h] && this._off(h, g[1]);
-                        else
-                            for (var e in this.eventListeners)
-                                this._off(e, g[1]);
-                    else delete this.eventListeners[h];
-                }
-            },
-            remove: function () {
-                var a = this.getParent();
-                (a &&
-                    a.children &&
-                    (a.children.splice(this.index, 1), a._setChildrenIndices()),
-                    delete this.parent);
-            },
-            destroy: function () {
-                var a = this.getParent(),
-                    b = this.getStage(),
-                    c = Kinetic.DD,
-                    d = Kinetic.Global;
-                while (this.children && this.children.length > 0)
-                    this.children[0].destroy();
-                (d._removeId(this.getId()),
-                    d._removeName(this.getName(), this._id),
-                    c && c.node && c.node._id === this._id && c.node._endDrag(),
-                    this.trans && this.trans.stop(),
-                    this.remove());
-            },
-            getAttrs: function () {
-                return this.attrs;
-            },
-            setDefaultAttrs: function (a) {
-                this.attrs === undefined && (this.attrs = {});
-                if (a)
-                    for (var b in a)
-                        this.attrs[b] === undefined && (this.attrs[b] = a[b]);
-            },
-            setAttrs: function (a) {
-                if (a)
-                    for (var b in a) {
-                        var c = "set" + b.charAt(0).toUpperCase() + b.slice(1);
-                        Kinetic.Type._isFunction(this[c])
-                            ? this[c](a[b])
-                            : this.setAttr(b, a[b]);
-                    }
-            },
-            getVisible: function () {
-                var a = this.attrs.visible,
-                    b = this.getParent();
-                return a && b && !b.getVisible() ? !1 : a;
-            },
-            getListening: function () {
-                var a = this.attrs.listening,
-                    b = this.getParent();
-                return a && b && !b.getListening() ? !1 : a;
-            },
-            show: function () {
-                this.setVisible(!0);
-            },
-            hide: function () {
-                this.setVisible(!1);
-            },
-            getZIndex: function () {
-                return this.index;
-            },
-            getAbsoluteZIndex: function () {
-                function e(b) {
-                    var f = [],
-                        g = b.length;
-                    for (var h = 0; h < g; h++) {
-                        var i = b[h];
-                        (d++,
-                            i.nodeType !== "Shape" &&
-                                (f = f.concat(i.getChildren())),
-                            i._id === c._id && (h = g));
-                    }
-                    f.length > 0 && f[0].getLevel() <= a && e(f);
-                }
-                var a = this.getLevel(),
-                    b = this.getStage(),
-                    c = this,
-                    d = 0;
-                return (
-                    c.nodeType !== "Stage" && e(c.getStage().getChildren()),
-                    d
-                );
-            },
-            getLevel: function () {
-                var a = 0,
-                    b = this.parent;
-                while (b) (a++, (b = b.parent));
-                return a;
-            },
-            setPosition: function () {
-                var a = Kinetic.Type._getXY([].slice.call(arguments));
-                (this.setAttr("x", a.x), this.setAttr("y", a.y));
-            },
-            getPosition: function () {
-                var a = this.attrs;
-                return {
-                    x: a.x,
-                    y: a.y,
-                };
-            },
-            getAbsolutePosition: function () {
-                var a = this.getAbsoluteTransform(),
-                    b = this.getOffset();
-                return (a.translate(b.x, b.y), a.getTranslation());
-            },
-            setAbsolutePosition: function () {
-                var a = Kinetic.Type._getXY([].slice.call(arguments)),
-                    b = this._clearTransform();
-                ((this.attrs.x = b.x),
-                    (this.attrs.y = b.y),
-                    delete b.x,
-                    delete b.y);
-                var c = this.getAbsoluteTransform();
-                (c.invert(),
-                    c.translate(a.x, a.y),
-                    (a = {
-                        x: this.attrs.x + c.getTranslation().x,
-                        y: this.attrs.y + c.getTranslation().y,
-                    }),
-                    this.setPosition(a.x, a.y),
-                    this._setTransform(b));
-            },
-            move: function () {
-                var a = Kinetic.Type._getXY([].slice.call(arguments)),
-                    b = this.getX(),
-                    c = this.getY();
-                (a.x !== undefined && (b += a.x),
-                    a.y !== undefined && (c += a.y),
-                    this.setPosition(b, c));
-            },
-            _eachAncestorReverse: function (a, b) {
-                var c = [],
-                    d = this.getParent();
-                b && c.unshift(this);
-                while (d) (c.unshift(d), (d = d.parent));
-                var e = c.length;
-                for (var f = 0; f < e; f++) a(c[f]);
-            },
-            rotate: function (a) {
-                this.setRotation(this.getRotation() + a);
-            },
-            rotateDeg: function (a) {
-                this.setRotation(
-                    this.getRotation() + Kinetic.Type._degToRad(a),
-                );
-            },
-            moveToTop: function () {
-                var a = this.index;
-                return (
-                    this.parent.children.splice(a, 1),
-                    this.parent.children.push(this),
-                    this.parent._setChildrenIndices(),
-                    !0
-                );
-            },
-            moveUp: function () {
-                var a = this.index,
-                    b = this.parent.getChildren().length;
-                if (a < b - 1)
-                    return (
-                        this.parent.children.splice(a, 1),
-                        this.parent.children.splice(a + 1, 0, this),
-                        this.parent._setChildrenIndices(),
-                        !0
-                    );
-            },
-            moveDown: function () {
-                var a = this.index;
-                if (a > 0)
-                    return (
-                        this.parent.children.splice(a, 1),
-                        this.parent.children.splice(a - 1, 0, this),
-                        this.parent._setChildrenIndices(),
-                        !0
-                    );
-            },
-            moveToBottom: function () {
-                var a = this.index;
-                if (a > 0)
-                    return (
-                        this.parent.children.splice(a, 1),
-                        this.parent.children.unshift(this),
-                        this.parent._setChildrenIndices(),
-                        !0
-                    );
-            },
-            setZIndex: function (a) {
-                var b = this.index;
-                (this.parent.children.splice(b, 1),
-                    this.parent.children.splice(a, 0, this),
-                    this.parent._setChildrenIndices());
-            },
-            getAbsoluteOpacity: function () {
-                var a = this.getOpacity();
-                return (
-                    this.getParent() &&
-                        (a *= this.getParent().getAbsoluteOpacity()),
-                    a
-                );
-            },
-            moveTo: function (a) {
-                (Kinetic.Node.prototype.remove.call(this), a.add(this));
-            },
-            toObject: function () {
-                var a = Kinetic.Type,
-                    b = {},
-                    c = this.attrs;
-                b.attrs = {};
-                for (var d in c) {
-                    var e = c[d];
-                    !a._isFunction(e) &&
-                        !a._isElement(e) &&
-                        (!a._isObject(e) || !a._hasMethods(e)) &&
-                        (b.attrs[d] = e);
-                }
-                return (
-                    (b.nodeType = this.nodeType),
-                    (b.shapeType = this.shapeType),
-                    b
-                );
-            },
-            toJSON: function () {
-                return JSON.stringify(this.toObject());
-            },
-            getParent: function () {
-                return this.parent;
-            },
-            getLayer: function () {
-                return this.getParent().getLayer();
-            },
-            getStage: function () {
-                return this.getParent()
-                    ? this.getParent().getStage()
-                    : undefined;
-            },
-            simulate: function (a, b) {
-                this._handleEvent(a, b || {});
-            },
-            fire: function (a, b) {
-                this._executeHandlers(a, b || {});
-            },
-            getAbsoluteTransform: function () {
-                var a = new Kinetic.Transform();
-                return (
-                    this._eachAncestorReverse(function (b) {
-                        var c = b.getTransform();
-                        a.multiply(c);
-                    }, !0),
-                    a
-                );
-            },
-            getTransform: function () {
-                var a = new Kinetic.Transform(),
-                    b = this.attrs,
-                    c = b.x,
-                    d = b.y,
-                    e = b.rotation,
-                    f = b.scale,
-                    g = f.x,
-                    h = f.y,
-                    i = b.offset,
-                    j = i.x,
-                    k = i.y;
-                return (
-                    (c !== 0 || d !== 0) && a.translate(c, d),
-                    e !== 0 && a.rotate(e),
-                    (g !== 1 || h !== 1) && a.scale(g, h),
-                    (j !== 0 || k !== 0) && a.translate(-1 * j, -1 * k),
-                    a
-                );
-            },
-            clone: function (a) {
-                var b = this.shapeType || this.nodeType,
-                    c = new Kinetic[b](this.attrs);
-                for (var d in this.eventListeners) {
-                    var e = this.eventListeners[d],
-                        f = e.length;
-                    for (var g = 0; g < f; g++) {
-                        var h = e[g];
-                        h.name.indexOf("kinetic") < 0 &&
-                            (c.eventListeners[d] || (c.eventListeners[d] = []),
-                            c.eventListeners[d].push(h));
-                    }
-                }
-                return (c.setAttrs(a), c);
-            },
-            toDataURL: function (a) {
-                a = a || {};
-                var b = a.mimeType || null,
-                    c = a.quality || null,
-                    d,
-                    e,
-                    f = a.x || 0,
-                    g = a.y || 0;
-                return (
-                    a.width && a.height
-                        ? (d = new Kinetic.SceneCanvas(a.width, a.height, 1))
-                        : ((d = this.getStage().bufferCanvas), d.clear()),
-                    (e = d.getContext()),
-                    e.save(),
-                    (f || g) && e.translate(-1 * f, -1 * g),
-                    this.drawScene(d),
-                    e.restore(),
-                    d.toDataURL(b, c)
-                );
-            },
-            toImage: function (a) {
-                Kinetic.Type._getImage(this.toDataURL(a), function (b) {
-                    a.callback(b);
+    Kinetic.Node = class {
+        constructor(config) {
+            this._nodeInit(config);
+        }
+
+        _nodeInit(config) {
+            this._id = Kinetic.Global.idCounter++;
+            this.defaultNodeAttrs = {
+                visible: true,
+                listening: true,
+                name: undefined,
+                opacity: 1,
+                x: 0,
+                y: 0,
+                scale: {
+                    x: 1,
+                    y: 1,
+                },
+                rotation: 0,
+                offset: {
+                    x: 0,
+                    y: 0,
+                },
+                draggable: false,
+                dragOnTop: true,
+            };
+            this.setDefaultAttrs(this.defaultNodeAttrs);
+            this.eventListeners = {};
+            this.setAttrs(config);
+        }
+
+        on(evtStr, handler) {
+            var events = evtStr.split(" "),
+                len = events.length;
+            for (var i = 0; i < len; i++) {
+                var eventName = events[i],
+                    parts = eventName.split("."),
+                    baseEvent = parts[0],
+                    ns = parts.length > 1 ? parts[1] : "";
+                this.eventListeners[baseEvent] ||
+                    (this.eventListeners[baseEvent] = []);
+                this.eventListeners[baseEvent].push({
+                    name: ns,
+                    handler: handler,
                 });
-            },
-            setSize: function () {
-                var a = Kinetic.Type._getSize(
-                    Array.prototype.slice.call(arguments),
-                );
-                (this.setWidth(a.width), this.setHeight(a.height));
-            },
-            getSize: function () {
-                return {
-                    width: this.getWidth(),
-                    height: this.getHeight(),
-                };
-            },
-            getWidth: function () {
-                return this.attrs.width || 0;
-            },
-            getHeight: function () {
-                return this.attrs.height || 0;
-            },
-            _get: function (a) {
-                return this.nodeType === a ? [this] : [];
-            },
-            _off: function (a, b) {
-                for (var c = 0; c < this.eventListeners[a].length; c++)
-                    if (this.eventListeners[a][c].name === b) {
-                        this.eventListeners[a].splice(c, 1);
-                        if (this.eventListeners[a].length === 0) {
-                            delete this.eventListeners[a];
-                            break;
+            }
+        }
+
+        off(evtStr) {
+            var events = evtStr.split(" "),
+                len = events.length;
+            for (var i = 0; i < len; i++) {
+                var eventName = events[i],
+                    parts = eventName.split("."),
+                    baseEvent = parts[0];
+                if (parts.length > 1) {
+                    if (baseEvent) {
+                        this.eventListeners[baseEvent] &&
+                            this._off(baseEvent, parts[1]);
+                    } else {
+                        for (var ev in this.eventListeners) {
+                            this._off(ev, parts[1]);
                         }
-                        c--;
                     }
-            },
-            _clearTransform: function () {
-                var a = this.attrs,
-                    b = a.scale,
-                    c = a.offset,
-                    d = {
-                        x: a.x,
-                        y: a.y,
-                        rotation: a.rotation,
-                        scale: {
-                            x: b.x,
-                            y: b.y,
-                        },
-                        offset: {
-                            x: c.x,
-                            y: c.y,
-                        },
-                    };
-                return (
-                    (this.attrs.x = 0),
-                    (this.attrs.y = 0),
-                    (this.attrs.rotation = 0),
-                    (this.attrs.scale = {
-                        x: 1,
-                        y: 1,
-                    }),
-                    (this.attrs.offset = {
-                        x: 0,
-                        y: 0,
-                    }),
-                    d
-                );
-            },
-            _setTransform: function (a) {
-                for (var b in a) this.attrs[b] = a[b];
-            },
-            _fireBeforeChangeEvent: function (a, b, c) {
-                this._handleEvent("before" + a.toUpperCase() + "Change", {
-                    oldVal: b,
-                    newVal: c,
-                });
-            },
-            _fireChangeEvent: function (a, b, c) {
-                this._handleEvent(a + "Change", {
-                    oldVal: b,
-                    newVal: c,
-                });
-            },
-            setId: function (a) {
-                var b = this.getId(),
-                    c = this.getStage(),
-                    d = Kinetic.Global;
-                (d._removeId(b), d._addId(this, a), this.setAttr("id", a));
-            },
-            setName: function (a) {
-                var b = this.getName(),
-                    c = this.getStage(),
-                    d = Kinetic.Global;
-                (d._removeName(b, this._id),
-                    d._addName(this, a),
-                    this.setAttr("name", a));
-            },
-            setAttr: function (a, b) {
-                if (b !== undefined) {
-                    var c = this.attrs[a];
-                    (this._fireBeforeChangeEvent(a, c, b),
-                        (this.attrs[a] = b),
-                        this._fireChangeEvent(a, c, b));
+                } else {
+                    delete this.eventListeners[baseEvent];
                 }
-            },
-            _handleEvent: function (a, b, c) {
-                b && this.nodeType === "Shape" && (b.shape = this);
-                var d = this.getStage(),
-                    e = this.eventListeners,
-                    f = !0;
-                (a === "mouseenter" && c && this._id === c._id
-                    ? (f = !1)
-                    : a === "mouseleave" && c && this._id === c._id && (f = !1),
-                    f &&
-                        (e[a] && this.fire(a, b),
-                        b &&
-                            !b.cancelBubble &&
-                            this.parent &&
-                            (c && c.parent
-                                ? this._handleEvent.call(
-                                      this.parent,
-                                      a,
-                                      b,
-                                      c.parent,
-                                  )
-                                : this._handleEvent.call(this.parent, a, b))));
-            },
-            _executeHandlers: function (a, b) {
-                var c = this.eventListeners[a],
-                    d = c.length;
-                for (var e = 0; e < d; e++) c[e].handler.apply(this, [b]);
-            },
-        }),
-        (Kinetic.Node.addSetters = function (constructor, a) {
+            }
+        }
+
+        remove() {
+            var parent = this.getParent();
+            parent &&
+                parent.children &&
+                (parent.children.splice(this.index, 1),
+                parent._setChildrenIndices());
+            delete this.parent;
+        }
+
+        destroy() {
+            var parent = this.getParent(),
+                stage = this.getStage(),
+                dd = Kinetic.DD,
+                global = Kinetic.Global;
+            while (this.children && this.children.length > 0) {
+                this.children[0].destroy();
+            }
+            global._removeId(this.getId());
+            global._removeName(this.getName(), this._id);
+            dd && dd.node && dd.node._id === this._id && dd.node._endDrag();
+            this.trans && this.trans.stop();
+            this.remove();
+        }
+
+        getAttrs() {
+            return this.attrs;
+        }
+
+        setDefaultAttrs(config) {
+            this.attrs === undefined && (this.attrs = {});
+            if (config) {
+                for (var key in config) {
+                    this.attrs[key] === undefined &&
+                        (this.attrs[key] = config[key]);
+                }
+            }
+        }
+
+        setAttrs(config) {
+            if (config) {
+                for (var key in config) {
+                    var setter =
+                        "set" + key.charAt(0).toUpperCase() + key.slice(1);
+                    Kinetic.Type._isFunction(this[setter])
+                        ? this[setter](config[key])
+                        : this.setAttr(key, config[key]);
+                }
+            }
+        }
+
+        getVisible() {
+            var visible = this.attrs.visible,
+                parent = this.getParent();
+            return visible && parent && !parent.getVisible() ? false : visible;
+        }
+
+        getListening() {
+            var listening = this.attrs.listening,
+                parent = this.getParent();
+            return listening && parent && !parent.getListening()
+                ? false
+                : listening;
+        }
+
+        show() {
+            this.setVisible(true);
+        }
+
+        hide() {
+            this.setVisible(false);
+        }
+
+        getZIndex() {
+            return this.index;
+        }
+
+        getAbsoluteZIndex() {
+            var self = this;
+            function countNodes(nodes) {
+                var childNodes = [],
+                    len = nodes.length;
+                for (var i = 0; i < len; i++) {
+                    var node = nodes[i];
+                    counter++;
+                    node.nodeType !== "Shape" &&
+                        (childNodes = childNodes.concat(node.getChildren()));
+                    if (node._id === self._id) {
+                        i = len;
+                    }
+                }
+                childNodes.length > 0 &&
+                    childNodes[0].getLevel() <= level &&
+                    countNodes(childNodes);
+            }
+            var level = this.getLevel(),
+                counter = 0;
+            if (this.nodeType !== "Stage") {
+                countNodes(this.getStage().getChildren());
+            }
+            return counter;
+        }
+
+        getLevel() {
+            var level = 0,
+                parent = this.parent;
+            while (parent) {
+                level++;
+                parent = parent.parent;
+            }
+            return level;
+        }
+
+        setPosition() {
+            var xy = Kinetic.Type._getXY([].slice.call(arguments));
+            this.setAttr("x", xy.x);
+            this.setAttr("y", xy.y);
+        }
+
+        getPosition() {
+            var attrs = this.attrs;
+            return {
+                x: attrs.x,
+                y: attrs.y,
+            };
+        }
+
+        getAbsolutePosition() {
+            var transform = this.getAbsoluteTransform(),
+                offset = this.getOffset();
+            transform.translate(offset.x, offset.y);
+            return transform.getTranslation();
+        }
+
+        setAbsolutePosition() {
+            var xy = Kinetic.Type._getXY([].slice.call(arguments)),
+                transformBackup = this._clearTransform();
+            this.attrs.x = transformBackup.x;
+            this.attrs.y = transformBackup.y;
+            delete transformBackup.x;
+            delete transformBackup.y;
+            var absTransform = this.getAbsoluteTransform();
+            absTransform.invert();
+            absTransform.translate(xy.x, xy.y);
+            var newPos = {
+                x: this.attrs.x + absTransform.getTranslation().x,
+                y: this.attrs.y + absTransform.getTranslation().y,
+            };
+            this.setPosition(newPos.x, newPos.y);
+            this._setTransform(transformBackup);
+        }
+
+        move() {
+            var xy = Kinetic.Type._getXY([].slice.call(arguments)),
+                x = this.getX(),
+                y = this.getY();
+            xy.x !== undefined && (x += xy.x);
+            xy.y !== undefined && (y += xy.y);
+            this.setPosition(x, y);
+        }
+
+        _eachAncestorReverse(callback, includeSelf) {
+            var ancestors = [],
+                parent = this.getParent();
+            includeSelf && ancestors.unshift(this);
+            while (parent) {
+                ancestors.unshift(parent);
+                parent = parent.parent;
+            }
+            var len = ancestors.length;
+            for (var i = 0; i < len; i++) {
+                callback(ancestors[i]);
+            }
+        }
+
+        rotate(theta) {
+            this.setRotation(this.getRotation() + theta);
+        }
+
+        rotateDeg(thetaDeg) {
+            this.setRotation(
+                this.getRotation() + Kinetic.Type._degToRad(thetaDeg),
+            );
+        }
+
+        moveToTop() {
+            var idx = this.index;
+            this.parent.children.splice(idx, 1);
+            this.parent.children.push(this);
+            this.parent._setChildrenIndices();
+            return true;
+        }
+
+        moveUp() {
+            var idx = this.index,
+                len = this.parent.getChildren().length;
+            if (idx < len - 1) {
+                this.parent.children.splice(idx, 1);
+                this.parent.children.splice(idx + 1, 0, this);
+                this.parent._setChildrenIndices();
+                return true;
+            }
+        }
+
+        moveDown() {
+            var idx = this.index;
+            if (idx > 0) {
+                this.parent.children.splice(idx, 1);
+                this.parent.children.splice(idx - 1, 0, this);
+                this.parent._setChildrenIndices();
+                return true;
+            }
+        }
+
+        moveToBottom() {
+            var idx = this.index;
+            if (idx > 0) {
+                this.parent.children.splice(idx, 1);
+                this.parent.children.unshift(this);
+                this.parent._setChildrenIndices();
+                return true;
+            }
+        }
+
+        setZIndex(idx) {
+            var currentIdx = this.index;
+            this.parent.children.splice(currentIdx, 1);
+            this.parent.children.splice(idx, 0, this);
+            this.parent._setChildrenIndices();
+        }
+
+        getAbsoluteOpacity() {
+            var opacity = this.getOpacity();
+            return (
+                this.getParent() &&
+                    (opacity *= this.getParent().getAbsoluteOpacity()),
+                opacity
+            );
+        }
+
+        moveTo(newParent) {
+            this.remove();
+            newParent.add(this);
+        }
+
+        toObject() {
+            var typeHelper = Kinetic.Type,
+                obj = {},
+                attrs = this.attrs;
+            obj.attrs = {};
+            for (var key in attrs) {
+                var val = attrs[key];
+                !typeHelper._isFunction(val) &&
+                    !typeHelper._isElement(val) &&
+                    (!typeHelper._isObject(val) ||
+                        !typeHelper._hasMethods(val)) &&
+                    (obj.attrs[key] = val);
+            }
+            obj.nodeType = this.nodeType;
+            obj.shapeType = this.shapeType;
+            return obj;
+        }
+
+        toJSON() {
+            return JSON.stringify(this.toObject());
+        }
+
+        getParent() {
+            return this.parent;
+        }
+
+        getLayer() {
+            return this.getParent().getLayer();
+        }
+
+        getStage() {
+            return this.getParent() ? this.getParent().getStage() : undefined;
+        }
+
+        simulate(eventType, evt) {
+            this._handleEvent(eventType, evt || {});
+        }
+
+        fire(eventType, evt) {
+            this._executeHandlers(eventType, evt || {});
+        }
+
+        getAbsoluteTransform() {
+            var transform = new Kinetic.Transform();
+            this._eachAncestorReverse(function (ancestor) {
+                var t = ancestor.getTransform();
+                transform.multiply(t);
+            }, true);
+            return transform;
+        }
+
+        getTransform() {
+            var transform = new Kinetic.Transform(),
+                attrs = this.attrs,
+                x = attrs.x,
+                y = attrs.y,
+                rotation = attrs.rotation,
+                scale = attrs.scale,
+                scaleX = scale.x,
+                scaleY = scale.y,
+                offset = attrs.offset,
+                offsetX = offset.x,
+                offsetY = offset.y;
+            (x !== 0 || y !== 0) && transform.translate(x, y);
+            rotation !== 0 && transform.rotate(rotation);
+            (scaleX !== 1 || scaleY !== 1) && transform.scale(scaleX, scaleY);
+            (offsetX !== 0 || offsetY !== 0) &&
+                transform.translate(-1 * offsetX, -1 * offsetY);
+            return transform;
+        }
+
+        clone(config) {
+            var ctorName = this.shapeType || this.nodeType,
+                cloned = new Kinetic[ctorName](this.attrs);
+            for (var ev in this.eventListeners) {
+                var handlers = this.eventListeners[ev],
+                    len = handlers.length;
+                for (var i = 0; i < len; i++) {
+                    var item = handlers[i];
+                    item.name.indexOf("kinetic") < 0 &&
+                        (cloned.eventListeners[ev] ||
+                            (cloned.eventListeners[ev] = []),
+                        cloned.eventListeners[ev].push(item));
+                }
+            }
+            cloned.setAttrs(config);
+            return cloned;
+        }
+
+        toDataURL(config) {
+            config = config || {};
+            var mimeType = config.mimeType || null,
+                quality = config.quality || null,
+                canvas,
+                context,
+                x = config.x || 0,
+                y = config.y || 0;
+            config.width && config.height
+                ? (canvas = new Kinetic.SceneCanvas(
+                      config.width,
+                      config.height,
+                      1,
+                  ))
+                : ((canvas = this.getStage().bufferCanvas), canvas.clear());
+            context = canvas.getContext();
+            context.save();
+            (x || y) && context.translate(-1 * x, -1 * y);
+            this.drawScene(canvas);
+            context.restore();
+            return canvas.toDataURL(mimeType, quality);
+        }
+
+        toImage(config) {
+            Kinetic.Type._getImage(this.toDataURL(config), function (img) {
+                config.callback(img);
+            });
+        }
+
+        setSize() {
+            var size = Kinetic.Type._getSize(
+                Array.prototype.slice.call(arguments),
+            );
+            this.setWidth(size.width);
+            this.setHeight(size.height);
+        }
+
+        getSize() {
+            return {
+                width: this.getWidth(),
+                height: this.getHeight(),
+            };
+        }
+
+        getWidth() {
+            return this.attrs.width || 0;
+        }
+
+        getHeight() {
+            return this.attrs.height || 0;
+        }
+
+        _get(selector) {
+            return this.nodeType === selector ? [this] : [];
+        }
+
+        _off(baseEvent, ns) {
+            for (var i = 0; i < this.eventListeners[baseEvent].length; i++) {
+                if (this.eventListeners[baseEvent][i].name === ns) {
+                    this.eventListeners[baseEvent].splice(i, 1);
+                    if (this.eventListeners[baseEvent].length === 0) {
+                        delete this.eventListeners[baseEvent];
+                        break;
+                    }
+                    i--;
+                }
+            }
+        }
+
+        _clearTransform() {
+            var attrs = this.attrs,
+                scale = attrs.scale,
+                offset = attrs.offset,
+                backup = {
+                    x: attrs.x,
+                    y: attrs.y,
+                    rotation: attrs.rotation,
+                    scale: {
+                        x: scale.x,
+                        y: scale.y,
+                    },
+                    offset: {
+                        x: offset.x,
+                        y: offset.y,
+                    },
+                };
+            this.attrs.x = 0;
+            this.attrs.y = 0;
+            this.attrs.rotation = 0;
+            this.attrs.scale = {
+                x: 1,
+                y: 1,
+            };
+            this.attrs.offset = {
+                x: 0,
+                y: 0,
+            };
+            return backup;
+        }
+
+        _setTransform(backup) {
+            for (var key in backup) {
+                this.attrs[key] = backup[key];
+            }
+        }
+
+        _fireBeforeChangeEvent(attr, oldVal, newVal) {
+            this._handleEvent("before" + attr.toUpperCase() + "Change", {
+                oldVal: oldVal,
+                newVal: newVal,
+            });
+        }
+
+        _fireChangeEvent(attr, oldVal, newVal) {
+            this._handleEvent(attr + "Change", {
+                oldVal: oldVal,
+                newVal: newVal,
+            });
+        }
+
+        setId(newId) {
+            var id = this.getId(),
+                global = Kinetic.Global;
+            global._removeId(id);
+            global._addId(this, newId);
+            this.setAttr("id", newId);
+        }
+
+        setName(newName) {
+            var name = this.getName(),
+                global = Kinetic.Global;
+            global._removeName(name, this._id);
+            global._addName(this, newName);
+            this.setAttr("name", newName);
+        }
+
+        setAttr(key, val) {
+            if (val !== undefined) {
+                var oldVal = this.attrs[key];
+                this._fireBeforeChangeEvent(key, oldVal, val);
+                this.attrs[key] = val;
+                this._fireChangeEvent(key, oldVal, val);
+            }
+        }
+
+        _handleEvent(eventType, evt, nsParent) {
+            evt && this.nodeType === "Shape" && (evt.shape = this);
+            var listeners = this.eventListeners,
+                shouldFire = true;
+            if (
+                eventType === "mouseenter" &&
+                nsParent &&
+                this._id === nsParent._id
+            ) {
+                shouldFire = false;
+            } else if (
+                eventType === "mouseleave" &&
+                nsParent &&
+                this._id === nsParent._id
+            ) {
+                shouldFire = false;
+            }
+            if (shouldFire) {
+                listeners[eventType] && this.fire(eventType, evt);
+                if (evt && !evt.cancelBubble && this.parent) {
+                    if (nsParent && nsParent.parent) {
+                        this._handleEvent.call(
+                            this.parent,
+                            eventType,
+                            evt,
+                            nsParent.parent,
+                        );
+                    } else {
+                        this._handleEvent.call(this.parent, eventType, evt);
+                    }
+                }
+            }
+        }
+
+        _executeHandlers(eventType, evt) {
+            var list = this.eventListeners[eventType],
+                len = list.length;
+            for (var i = 0; i < len; i++) {
+                list[i].handler.apply(this, [evt]);
+            }
+        }
+
+        isListening() {
+            return this.getListening();
+        }
+
+        isVisible() {
+            return this.getVisible();
+        }
+
+        static addSetters(constructor, a) {
             var b = a.length;
             for (var c = 0; c < b; c++) {
                 var d = a[c];
                 this._addSetter(constructor, d);
             }
-        }),
-        (Kinetic.Node.addPointSetters = function (constructor, a) {
+        }
+
+        static addPointSetters(constructor, a) {
             var b = a.length;
             for (var c = 0; c < b; c++) {
                 var d = a[c];
                 this._addPointSetter(constructor, d);
             }
-        }),
-        (Kinetic.Node.addRotationSetters = function (constructor, a) {
+        }
+
+        static addRotationSetters(constructor, a) {
             var b = a.length;
             for (var c = 0; c < b; c++) {
                 var d = a[c];
                 this._addRotationSetter(constructor, d);
             }
-        }),
-        (Kinetic.Node.addGetters = function (constructor, a) {
+        }
+
+        static addGetters(constructor, a) {
             var b = a.length;
             for (var c = 0; c < b; c++) {
                 var d = a[c];
                 this._addGetter(constructor, d);
             }
-        }),
-        (Kinetic.Node.addRotationGetters = function (constructor, a) {
+        }
+
+        static addRotationGetters(constructor, a) {
             var b = a.length;
             for (var c = 0; c < b; c++) {
                 var d = a[c];
                 this._addRotationGetter(constructor, d);
             }
-        }),
-        (Kinetic.Node.addGettersSetters = function (constructor, a) {
-            (this.addSetters(constructor, a), this.addGetters(constructor, a));
-        }),
-        (Kinetic.Node.addPointGettersSetters = function (constructor, a) {
-            (this.addPointSetters(constructor, a),
-                this.addGetters(constructor, a));
-        }),
-        (Kinetic.Node.addRotationGettersSetters = function (constructor, a) {
-            (this.addRotationSetters(constructor, a),
-                this.addRotationGetters(constructor, a));
-        }),
-        (Kinetic.Node._addSetter = function (constructor, a) {
-            var b = this,
-                c = "set" + a.charAt(0).toUpperCase() + a.slice(1);
+        }
+
+        static addGettersSetters(constructor, a) {
+            this.addSetters(constructor, a);
+            this.addGetters(constructor, a);
+        }
+
+        static addPointGettersSetters(constructor, a) {
+            this.addPointSetters(constructor, a);
+            this.addGetters(constructor, a);
+        }
+
+        static addRotationGettersSetters(constructor, a) {
+            this.addRotationSetters(constructor, a);
+            this.addRotationGetters(constructor, a);
+        }
+
+        static _addSetter(constructor, a) {
+            var c = "set" + a.charAt(0).toUpperCase() + a.slice(1);
             constructor.prototype[c] = function (b) {
                 this.setAttr(a, b);
             };
-        }),
-        (Kinetic.Node._addPointSetter = function (constructor, a) {
-            var b = this,
-                c = "set" + a.charAt(0).toUpperCase() + a.slice(1);
+        }
+
+        static _addPointSetter(constructor, a) {
+            var c = "set" + a.charAt(0).toUpperCase() + a.slice(1);
             constructor.prototype[c] = function () {
                 var b = Kinetic.Type._getXY([].slice.call(arguments));
                 (b && b.x === undefined && (b.x = this.attrs[a].x),
                     b && b.y === undefined && (b.y = this.attrs[a].y),
                     this.setAttr(a, b));
             };
-        }),
-        (Kinetic.Node._addRotationSetter = function (constructor, a) {
-            var b = this,
-                c = "set" + a.charAt(0).toUpperCase() + a.slice(1);
-            ((constructor.prototype[c] = function (b) {
+        }
+
+        static _addRotationSetter(constructor, a) {
+            var c = "set" + a.charAt(0).toUpperCase() + a.slice(1);
+            constructor.prototype[c] = function (b) {
                 this.setAttr(a, b);
-            }),
-                (constructor.prototype[c + "Deg"] = function (b) {
-                    this.setAttr(a, Kinetic.Type._degToRad(b));
-                }));
-        }),
-        (Kinetic.Node._addGetter = function (constructor, a) {
-            var b = this,
-                c = "get" + a.charAt(0).toUpperCase() + a.slice(1);
+            };
+            constructor.prototype[c + "Deg"] = function (b) {
+                this.setAttr(a, Kinetic.Type._degToRad(b));
+            };
+        }
+
+        static _addGetter(constructor, a) {
+            var c = "get" + a.charAt(0).toUpperCase() + a.slice(1);
             constructor.prototype[c] = function (b) {
                 return this.attrs[a];
             };
-        }),
-        (Kinetic.Node._addRotationGetter = function (constructor, a) {
-            var b = this,
-                c = "get" + a.charAt(0).toUpperCase() + a.slice(1);
-            ((constructor.prototype[c] = function () {
+        }
+
+        static _addRotationGetter(constructor, a) {
+            var c = "get" + a.charAt(0).toUpperCase() + a.slice(1);
+            constructor.prototype[c] = function () {
                 return this.attrs[a];
-            }),
-                (constructor.prototype[c + "Deg"] = function () {
-                    return Kinetic.Type._radToDeg(this.attrs[a]);
-                }));
-        }),
-        (Kinetic.Node.create = function (a, b) {
+            };
+            constructor.prototype[c + "Deg"] = function () {
+                return Kinetic.Type._radToDeg(this.attrs[a]);
+            };
+        }
+
+        static create(a, b) {
             return this._createNode(JSON.parse(a), b);
-        }),
-        (Kinetic.Node._createNode = function (a, b) {
+        }
+
+        static _createNode(a, b) {
             var c;
             (a.nodeType === "Shape"
                 ? a.shapeType === undefined
@@ -1211,20 +1362,20 @@ var Kinetic = {};
                     d.add(this._createNode(a.children[f]));
             }
             return d;
-        }),
-        Kinetic.Node.addGettersSetters(Kinetic.Node, ["x", "y", "opacity"]),
-        Kinetic.Node.addGetters(Kinetic.Node, ["name", "id"]),
-        Kinetic.Node.addRotationGettersSetters(Kinetic.Node, ["rotation"]),
-        Kinetic.Node.addPointGettersSetters(Kinetic.Node, ["scale", "offset"]),
-        Kinetic.Node.addSetters(Kinetic.Node, [
-            "width",
-            "height",
-            "listening",
-            "visible",
-        ]),
-        (Kinetic.Node.prototype.isListening =
-            Kinetic.Node.prototype.getListening),
-        (Kinetic.Node.prototype.isVisible = Kinetic.Node.prototype.getVisible));
+        }
+    };
+
+    Kinetic.Node.addGettersSetters(Kinetic.Node, ["x", "y", "opacity"]);
+    Kinetic.Node.addGetters(Kinetic.Node, ["name", "id"]);
+    Kinetic.Node.addRotationGettersSetters(Kinetic.Node, ["rotation"]);
+    Kinetic.Node.addPointGettersSetters(Kinetic.Node, ["scale", "offset"]);
+    Kinetic.Node.addSetters(Kinetic.Node, [
+        "width",
+        "height",
+        "listening",
+        "visible",
+    ]);
+
     var a = ["on", "off"];
     for (var b = 0; b < 2; b++)
         (function (b) {
@@ -1236,134 +1387,162 @@ var Kinetic = {};
         })(b);
 })();
 (function () {
-    ((Kinetic.Container = function (a) {
-        this._containerInit(a);
-    }),
-        (Kinetic.Container.prototype = {
-            _containerInit: function (a) {
-                ((this.children = []), Kinetic.Node.call(this, a));
-            },
-            getChildren: function () {
-                return this.children;
-            },
-            removeChildren: function () {
-                while (this.children.length > 0) this.children[0].remove();
-            },
-            add: function (a) {
-                var b = Kinetic.Global,
-                    c = this.children;
-                return (
-                    (a.index = c.length),
-                    (a.parent = this),
-                    c.push(a),
-                    this
-                );
-            },
-            get: function (a) {
-                var b = new Kinetic.Collection();
-                if (a.charAt(0) === "#") {
-                    var c = this._getNodeById(a.slice(1));
-                    c && b.push(c);
-                } else if (a.charAt(0) === ".") {
-                    var d = this._getNodesByName(a.slice(1));
-                    Kinetic.Collection.apply(b, d);
-                } else {
-                    var e = [],
-                        f = this.getChildren(),
-                        g = f.length;
-                    for (var h = 0; h < g; h++) e = e.concat(f[h]._get(a));
-                    Kinetic.Collection.apply(b, e);
+    Kinetic.Container = class extends Kinetic.Node {
+        constructor(config) {
+            super(config);
+            this._containerInit(config);
+        }
+
+        _containerInit(config) {
+            this.children = [];
+        }
+
+        getChildren() {
+            return this.children;
+        }
+
+        removeChildren() {
+            while (this.children.length > 0) {
+                this.children[0].remove();
+            }
+        }
+
+        add(child) {
+            var children = this.children;
+            child.index = children.length;
+            child.parent = this;
+            children.push(child);
+            return this;
+        }
+
+        get(selector) {
+            var collection = new Kinetic.Collection();
+            if (selector.charAt(0) === "#") {
+                var node = this._getNodeById(selector.slice(1));
+                node && collection.push(node);
+            } else if (selector.charAt(0) === ".") {
+                var nodes = this._getNodesByName(selector.slice(1));
+                Kinetic.Collection.apply(collection, nodes);
+            } else {
+                var result = [],
+                    children = this.getChildren(),
+                    len = children.length;
+                for (var i = 0; i < len; i++) {
+                    result = result.concat(children[i]._get(selector));
                 }
-                return b;
-            },
-            _getNodeById: function (a) {
-                var b = this.getStage(),
-                    c = Kinetic.Global,
-                    d = c.ids[a];
-                return d !== undefined && this.isAncestorOf(d) ? d : null;
-            },
-            _getNodesByName: function (a) {
-                var b = Kinetic.Global,
-                    c = b.names[a] || [];
-                return this._getDescendants(c);
-            },
-            _get: function (a) {
-                var b = Kinetic.Node.prototype._get.call(this, a),
-                    c = this.getChildren(),
-                    d = c.length;
-                for (var e = 0; e < d; e++) b = b.concat(c[e]._get(a));
-                return b;
-            },
-            toObject: function () {
-                var a = Kinetic.Node.prototype.toObject.call(this);
-                a.children = [];
-                var b = this.getChildren(),
-                    c = b.length;
-                for (var d = 0; d < c; d++) {
-                    var e = b[d];
-                    a.children.push(e.toObject());
+                Kinetic.Collection.apply(collection, result);
+            }
+            return collection;
+        }
+
+        _getNodeById(id) {
+            var global = Kinetic.Global,
+                node = global.ids[id];
+            return node !== undefined && this.isAncestorOf(node) ? node : null;
+        }
+
+        _getNodesByName(name) {
+            var global = Kinetic.Global,
+                nodes = global.names[name] || [];
+            return this._getDescendants(nodes);
+        }
+
+        _get(selector) {
+            var result = super._get(selector),
+                children = this.getChildren(),
+                len = children.length;
+            for (var i = 0; i < len; i++) {
+                result = result.concat(children[i]._get(selector));
+            }
+            return result;
+        }
+
+        toObject() {
+            var obj = super.toObject();
+            obj.children = [];
+            var children = this.getChildren(),
+                len = children.length;
+            for (var i = 0; i < len; i++) {
+                var child = children[i];
+                obj.children.push(child.toObject());
+            }
+            return obj;
+        }
+
+        _getDescendants(list) {
+            var descendants = [],
+                len = list.length;
+            for (var i = 0; i < len; i++) {
+                var node = list[i];
+                this.isAncestorOf(node) && descendants.push(node);
+            }
+            return descendants;
+        }
+
+        isAncestorOf(node) {
+            var parent = node.getParent();
+            while (parent) {
+                if (parent._id === this._id) return true;
+                parent = parent.getParent();
+            }
+            return false;
+        }
+
+        clone(config) {
+            var cloned = super.clone(config);
+            for (var key in this.children) {
+                cloned.add(this.children[key].clone());
+            }
+            return cloned;
+        }
+
+        getIntersections() {
+            var xy = Kinetic.Type._getXY(Array.prototype.slice.call(arguments)),
+                intersections = [],
+                shapes = this.get("Shape"),
+                len = shapes.length;
+            for (var i = 0; i < len; i++) {
+                var shape = shapes[i];
+                shape.isVisible() &&
+                    shape.intersects(xy) &&
+                    intersections.push(shape);
+            }
+            return intersections;
+        }
+
+        _setChildrenIndices() {
+            var children = this.children,
+                len = children.length;
+            for (var i = 0; i < len; i++) {
+                children[i].index = i;
+            }
+        }
+
+        draw() {
+            this.drawScene();
+            this.drawHit();
+        }
+
+        drawScene(canvas) {
+            if (this.isVisible()) {
+                var children = this.children,
+                    len = children.length;
+                for (var i = 0; i < len; i++) {
+                    children[i].drawScene(canvas);
                 }
-                return a;
-            },
-            _getDescendants: function (a) {
-                var b = [],
-                    c = a.length;
-                for (var d = 0; d < c; d++) {
-                    var e = a[d];
-                    this.isAncestorOf(e) && b.push(e);
+            }
+        }
+
+        drawHit() {
+            if (this.isVisible() && this.isListening()) {
+                var children = this.children,
+                    len = children.length;
+                for (var i = 0; i < len; i++) {
+                    children[i].drawHit();
                 }
-                return b;
-            },
-            isAncestorOf: function (a) {
-                var b = a.getParent();
-                while (b) {
-                    if (b._id === this._id) return !0;
-                    b = b.getParent();
-                }
-                return !1;
-            },
-            clone: function (a) {
-                var b = Kinetic.Node.prototype.clone.call(this, a);
-                for (var c in this.children) b.add(this.children[c].clone());
-                return b;
-            },
-            getIntersections: function () {
-                var a = Kinetic.Type._getXY(
-                        Array.prototype.slice.call(arguments),
-                    ),
-                    b = [],
-                    c = this.get("Shape"),
-                    d = c.length;
-                for (var e = 0; e < d; e++) {
-                    var f = c[e];
-                    f.isVisible() && f.intersects(a) && b.push(f);
-                }
-                return b;
-            },
-            _setChildrenIndices: function () {
-                var a = this.children,
-                    b = a.length;
-                for (var c = 0; c < b; c++) a[c].index = c;
-            },
-            draw: function () {
-                (this.drawScene(), this.drawHit());
-            },
-            drawScene: function (a) {
-                if (this.isVisible()) {
-                    var b = this.children,
-                        c = b.length;
-                    for (var d = 0; d < c; d++) b[d].drawScene(a);
-                }
-            },
-            drawHit: function () {
-                if (this.isVisible() && this.isListening()) {
-                    var a = this.children,
-                        b = a.length;
-                    for (var c = 0; c < b; c++) a[c].drawHit();
-                }
-            },
-        }),
-        Kinetic.Global.extend(Kinetic.Container, Kinetic.Node));
+            }
+        }
+    };
 })();
 (function () {
     function a(a) {
@@ -1381,719 +1560,812 @@ var Kinetic = {};
     function d(a) {
         a.stroke();
     }
-    ((Kinetic.Shape = function (a) {
-        this._initShape(a);
-    }),
-        (Kinetic.Shape.prototype = {
-            _initShape: function (e) {
-                (this.setDefaultAttrs({
-                    fillEnabled: !0,
-                    strokeEnabled: !0,
-                    shadowEnabled: !0,
-                    dashArrayEnabled: !0,
-                    fillPriority: "color",
-                }),
-                    (this.nodeType = "Shape"),
-                    (this._fillFunc = a),
-                    (this._strokeFunc = b),
-                    (this._fillFuncHit = c),
-                    (this._strokeFuncHit = d));
-                var f = Kinetic.Global.shapes,
-                    g;
-                for (;;) {
-                    g = Kinetic.Type._getRandomColorKey();
-                    if (g && !(g in f)) break;
-                }
-                ((this.colorKey = g),
-                    (f[g] = this),
-                    Kinetic.Node.call(this, e));
-            },
-            getContext: function () {
-                return this.getLayer().getContext();
-            },
-            getCanvas: function () {
-                return this.getLayer().getCanvas();
-            },
-            hasShadow: function () {
-                return !!(
-                    this.getShadowColor() ||
-                    this.getShadowBlur() ||
-                    this.getShadowOffset()
-                );
-            },
-            hasFill: function () {
-                return !!(
-                    this.getFill() ||
-                    this.getFillPatternImage() ||
-                    this.getFillLinearGradientStartPoint() ||
-                    this.getFillRadialGradientStartPoint()
-                );
-            },
-            _get: function (a) {
-                return this.nodeType === a || this.shapeType === a
-                    ? [this]
-                    : [];
-            },
-            intersects: function () {
-                var a = Kinetic.Type._getXY(
-                        Array.prototype.slice.call(arguments),
-                    ),
-                    b = this.getStage(),
-                    c = b.hitCanvas;
-                (c.clear(), this.drawScene(c));
-                var d = c.context.getImageData(
-                    Math.round(a.x),
-                    Math.round(a.y),
-                    1,
-                    1,
-                ).data;
-                return d[3] > 0;
-            },
-            enableFill: function () {
-                this.setAttr("fillEnabled", !0);
-            },
-            disableFill: function () {
-                this.setAttr("fillEnabled", !1);
-            },
-            enableStroke: function () {
-                this.setAttr("strokeEnabled", !0);
-            },
-            disableStroke: function () {
-                this.setAttr("strokeEnabled", !1);
-            },
-            enableShadow: function () {
-                this.setAttr("shadowEnabled", !0);
-            },
-            disableShadow: function () {
-                this.setAttr("shadowEnabled", !1);
-            },
-            enableDashArray: function () {
-                this.setAttr("dashArrayEnabled", !0);
-            },
-            disableDashArray: function () {
-                this.setAttr("dashArrayEnabled", !1);
-            },
-            remove: function () {
-                (Kinetic.Node.prototype.remove.call(this),
-                    delete Kinetic.Global.shapes[this.colorKey]);
-            },
-            drawScene: function (a) {
-                var b = this.attrs,
-                    c = b.drawFunc,
-                    a = a || this.getLayer().getCanvas(),
-                    d = a.getContext();
-                c &&
-                    this.isVisible() &&
-                    (d.save(),
-                    a._applyOpacity(this),
-                    a._applyLineJoin(this),
-                    a._applyAncestorTransforms(this),
-                    c.call(this, a),
-                    d.restore());
-            },
-            drawHit: function () {
-                var a = this.attrs,
-                    b = a.drawHitFunc || a.drawFunc,
-                    c = this.getLayer().hitCanvas,
-                    d = c.getContext();
-                b &&
-                    this.isVisible() &&
-                    this.isListening() &&
-                    (d.save(),
-                    c._applyLineJoin(this),
-                    c._applyAncestorTransforms(this),
-                    b.call(this, c),
-                    d.restore());
-            },
-            _setDrawFuncs: function () {
-                (!this.attrs.drawFunc &&
-                    this.drawFunc &&
-                    this.setDrawFunc(this.drawFunc),
-                    !this.attrs.drawHitFunc &&
-                        this.drawHitFunc &&
-                        this.setDrawHitFunc(this.drawHitFunc));
-            },
-        }),
-        Kinetic.Global.extend(Kinetic.Shape, Kinetic.Node),
-        Kinetic.Node.addGettersSetters(Kinetic.Shape, [
-            "stroke",
-            "lineJoin",
-            "lineCap",
-            "strokeWidth",
-            "drawFunc",
-            "drawHitFunc",
-            "dashArray",
-            "shadowColor",
-            "shadowBlur",
-            "shadowOpacity",
-            "fillPatternImage",
-            "fill",
-            "fillPatternX",
-            "fillPatternY",
-            "fillLinearGradientColorStops",
-            "fillRadialGradientStartRadius",
-            "fillRadialGradientEndRadius",
-            "fillRadialGradientColorStops",
-            "fillPatternRepeat",
-            "fillEnabled",
-            "strokeEnabled",
-            "shadowEnabled",
-            "dashArrayEnabled",
-            "fillPriority",
-        ]),
-        Kinetic.Node.addPointGettersSetters(Kinetic.Shape, [
-            "fillPatternOffset",
-            "fillPatternScale",
-            "fillLinearGradientStartPoint",
-            "fillLinearGradientEndPoint",
-            "fillRadialGradientStartPoint",
-            "fillRadialGradientEndPoint",
-            "shadowOffset",
-        ]),
-        Kinetic.Node.addRotationGettersSetters(Kinetic.Shape, [
-            "fillPatternRotation",
-        ]));
+
+    Kinetic.Shape = class extends Kinetic.Node {
+        constructor(config) {
+            super(config);
+            this._initShape(config);
+        }
+
+        _initShape(config) {
+            this.setDefaultAttrs({
+                fillEnabled: true,
+                strokeEnabled: true,
+                shadowEnabled: true,
+                dashArrayEnabled: true,
+                fillPriority: "color",
+            });
+            this.nodeType = "Shape";
+            this._fillFunc = a;
+            this._strokeFunc = b;
+            this._fillFuncHit = c;
+            this._strokeFuncHit = d;
+            var shapes = Kinetic.Global.shapes,
+                colorKey;
+            for (;;) {
+                colorKey = Kinetic.Type._getRandomColorKey();
+                if (colorKey && !(colorKey in shapes)) break;
+            }
+            this.colorKey = colorKey;
+            shapes[colorKey] = this;
+        }
+
+        getContext() {
+            return this.getLayer().getContext();
+        }
+
+        getCanvas() {
+            return this.getLayer().getCanvas();
+        }
+
+        hasShadow() {
+            return !!(
+                this.getShadowColor() ||
+                this.getShadowBlur() ||
+                this.getShadowOffset()
+            );
+        }
+
+        hasFill() {
+            return !!(
+                this.getFill() ||
+                this.getFillPatternImage() ||
+                this.getFillLinearGradientStartPoint() ||
+                this.getFillRadialGradientStartPoint()
+            );
+        }
+
+        _get(selector) {
+            return this.nodeType === selector || this.shapeType === selector
+                ? [this]
+                : [];
+        }
+
+        intersects() {
+            var xy = Kinetic.Type._getXY(Array.prototype.slice.call(arguments)),
+                stage = this.getStage(),
+                hitCanvas = stage.hitCanvas;
+            hitCanvas.clear();
+            this.drawScene(hitCanvas);
+            var pixel = hitCanvas.context.getImageData(
+                Math.round(xy.x),
+                Math.round(xy.y),
+                1,
+                1,
+            ).data;
+            return pixel[3] > 0;
+        }
+
+        enableFill() {
+            this.setAttr("fillEnabled", true);
+        }
+
+        disableFill() {
+            this.setAttr("fillEnabled", false);
+        }
+
+        enableStroke() {
+            this.setAttr("strokeEnabled", true);
+        }
+
+        disableStroke() {
+            this.setAttr("strokeEnabled", false);
+        }
+
+        enableShadow() {
+            this.setAttr("shadowEnabled", true);
+        }
+
+        disableShadow() {
+            this.setAttr("shadowEnabled", false);
+        }
+
+        enableDashArray() {
+            this.setAttr("dashArrayEnabled", true);
+        }
+
+        disableDashArray() {
+            this.setAttr("dashArrayEnabled", false);
+        }
+
+        remove() {
+            super.remove();
+            delete Kinetic.Global.shapes[this.colorKey];
+        }
+
+        drawScene(canvas) {
+            var attrs = this.attrs,
+                drawFunc = attrs.drawFunc,
+                targetCanvas = canvas || this.getLayer().getCanvas(),
+                context = targetCanvas.getContext();
+            drawFunc &&
+                this.isVisible() &&
+                (context.save(),
+                targetCanvas._applyOpacity(this),
+                targetCanvas._applyLineJoin(this),
+                targetCanvas._applyAncestorTransforms(this),
+                drawFunc.call(this, targetCanvas),
+                context.restore());
+        }
+
+        drawHit() {
+            var attrs = this.attrs,
+                drawHitFunc = attrs.drawHitFunc || attrs.drawFunc,
+                hitCanvas = this.getLayer().hitCanvas,
+                context = hitCanvas.getContext();
+            drawHitFunc &&
+                this.isVisible() &&
+                this.isListening() &&
+                (context.save(),
+                hitCanvas._applyLineJoin(this),
+                hitCanvas._applyAncestorTransforms(this),
+                drawHitFunc.call(this, hitCanvas),
+                context.restore());
+        }
+
+        _setDrawFuncs() {
+            (!this.attrs.drawFunc &&
+                this.drawFunc &&
+                this.setDrawFunc(this.drawFunc),
+                !this.attrs.drawHitFunc &&
+                    this.drawHitFunc &&
+                    this.setDrawHitFunc(this.drawHitFunc));
+        }
+    };
+
+    Kinetic.Node.addGettersSetters(Kinetic.Shape, [
+        "stroke",
+        "lineJoin",
+        "lineCap",
+        "strokeWidth",
+        "drawFunc",
+        "drawHitFunc",
+        "dashArray",
+        "shadowColor",
+        "shadowBlur",
+        "shadowOpacity",
+        "fillPatternImage",
+        "fill",
+        "fillPatternX",
+        "fillPatternY",
+        "fillLinearGradientColorStops",
+        "fillRadialGradientStartRadius",
+        "fillRadialGradientEndRadius",
+        "fillRadialGradientColorStops",
+        "fillPatternRepeat",
+        "fillEnabled",
+        "strokeEnabled",
+        "shadowEnabled",
+        "dashArrayEnabled",
+        "fillPriority",
+    ]);
+    Kinetic.Node.addPointGettersSetters(Kinetic.Shape, [
+        "fillPatternOffset",
+        "fillPatternScale",
+        "fillLinearGradientStartPoint",
+        "fillLinearGradientEndPoint",
+        "fillRadialGradientStartPoint",
+        "fillRadialGradientEndPoint",
+        "shadowOffset",
+    ]);
+    Kinetic.Node.addRotationGettersSetters(Kinetic.Shape, [
+        "fillPatternRotation",
+    ]);
 })();
 (function () {
-    ((Kinetic.Stage = function (a) {
-        this._initStage(a);
-    }),
-        (Kinetic.Stage.prototype = {
-            _initStage: function (a) {
-                var b = Kinetic.DD;
-                (this.setDefaultAttrs({
-                    width: 400,
-                    height: 200,
-                }),
-                    Kinetic.Container.call(this, a),
-                    this._setStageDefaultProperties(),
-                    (this._id = Kinetic.Global.idCounter++),
-                    this._buildDOM(),
-                    this._bindContentEvents(),
-                    Kinetic.Global.stages.push(this),
-                    b && b._initDragLayer(this));
-            },
-            setContainer: function (a) {
-                (typeof a == "string" && (a = document.getElementById(a)),
-                    this.setAttr("container", a));
-            },
-            setHeight: function (a) {
-                (Kinetic.Node.prototype.setHeight.call(this, a),
-                    this._resizeDOM());
-            },
-            setWidth: function (a) {
-                (Kinetic.Node.prototype.setWidth.call(this, a),
-                    this._resizeDOM());
-            },
-            clear: function () {
-                var a = this.children;
-                for (var b = 0; b < a.length; b++) a[b].clear();
-            },
-            remove: function () {
-                var a = this.content;
-                (Kinetic.Node.prototype.remove.call(this),
-                    a &&
-                        Kinetic.Type._isInDocument(a) &&
-                        this.attrs.container.removeChild(a));
-            },
-            reset: function () {
-                (this.removeChildren(),
-                    this._setStageDefaultProperties(),
-                    this.setAttrs(this.defaultNodeAttrs));
-            },
-            getMousePosition: function () {
-                return this.mousePos;
-            },
-            getTouchPosition: function () {
-                return this.touchPos;
-            },
-            getUserPosition: function () {
-                return this.getTouchPosition() || this.getMousePosition();
-            },
-            getStage: function () {
-                return this;
-            },
-            getContent: function () {
-                return this.content;
-            },
-            toDataURL: function (a) {
-                function i(d) {
-                    var e = h[d],
-                        j = e.toDataURL(),
-                        k = new Image();
-                    ((k.onload = function () {
-                        (g.drawImage(k, 0, 0),
-                            d < h.length - 1
-                                ? i(d + 1)
-                                : a.callback(f.toDataURL(b, c)));
-                    }),
-                        (k.src = j));
-                }
-                a = a || {};
-                var b = a.mimeType || null,
-                    c = a.quality || null,
-                    d = a.x || 0,
-                    e = a.y || 0,
-                    f = new Kinetic.SceneCanvas(
-                        a.width || this.getWidth(),
-                        a.height || this.getHeight(),
-                    ),
-                    g = f.getContext(),
-                    h = this.children;
-                ((d || e) && g.translate(-1 * d, -1 * e), i(0));
-            },
-            toImage: function (a) {
-                var b = a.callback;
-                ((a.callback = function (a) {
-                    Kinetic.Type._getImage(a, function (a) {
-                        b(a);
-                    });
-                }),
-                    this.toDataURL(a));
-            },
-            getIntersection: function (a) {
-                var b,
-                    c = this.getChildren();
-                for (var d = c.length - 1; d >= 0; d--) {
-                    var e = c[d];
-                    if (e.isVisible() && e.isListening()) {
-                        var f = e.hitCanvas.context.getImageData(
-                            Math.round(a.x),
-                            Math.round(a.y),
-                            1,
-                            1,
-                        ).data;
-                        if (f[3] === 255) {
-                            var g = Kinetic.Type._rgbToHex(f[0], f[1], f[2]);
-                            return (
-                                (b = Kinetic.Global.shapes[g]),
-                                {
-                                    shape: b,
-                                    pixel: f,
-                                }
-                            );
-                        }
-                        if (f[0] > 0 || f[1] > 0 || f[2] > 0 || f[3] > 0)
-                            return {
-                                pixel: f,
-                            };
+    Kinetic.Stage = class extends Kinetic.Container {
+        constructor(config) {
+            super(config);
+            this._initStage(config);
+        }
+
+        _initStage(config) {
+            var dd = Kinetic.DD;
+            this.setDefaultAttrs({
+                width: 400,
+                height: 200,
+            });
+            this._setStageDefaultProperties();
+            this._id = Kinetic.Global.idCounter++;
+            this._buildDOM();
+            this._bindContentEvents();
+            Kinetic.Global.stages.push(this);
+            dd && dd._initDragLayer(this);
+        }
+
+        setContainer(container) {
+            if (typeof container === "string") {
+                container = document.getElementById(container);
+            }
+            this.setAttr("container", container);
+        }
+
+        setHeight(height) {
+            super.setHeight(height);
+            this._resizeDOM();
+        }
+
+        setWidth(width) {
+            super.setWidth(width);
+            this._resizeDOM();
+        }
+
+        clear() {
+            var children = this.children,
+                len = children.length;
+            for (var i = 0; i < len; i++) {
+                children[i].clear();
+            }
+        }
+
+        remove() {
+            var content = this.content;
+            super.remove();
+            content &&
+                Kinetic.Type._isInDocument(content) &&
+                this.attrs.container.removeChild(content);
+        }
+
+        reset() {
+            this.removeChildren();
+            this._setStageDefaultProperties();
+            this.setAttrs(this.defaultNodeAttrs);
+        }
+
+        getMousePosition() {
+            return this.mousePos;
+        }
+
+        getTouchPosition() {
+            return this.touchPos;
+        }
+
+        getUserPosition() {
+            return this.getTouchPosition() || this.getMousePosition();
+        }
+
+        getStage() {
+            return this;
+        }
+
+        getContent() {
+            return this.content;
+        }
+
+        toDataURL(config) {
+            var self = this;
+            function loadAndDrawImage(idx) {
+                var layer = layers[idx],
+                    url = layer.toDataURL(),
+                    img = new Image();
+                img.onload = function () {
+                    ctx.drawImage(img, 0, 0);
+                    if (idx < layers.length - 1) {
+                        loadAndDrawImage(idx + 1);
+                    } else {
+                        config.callback(canvas.toDataURL(mimeType, quality));
+                    }
+                };
+                img.src = url;
+            }
+            config = config || {};
+            var mimeType = config.mimeType || null,
+                quality = config.quality || null,
+                x = config.x || 0,
+                y = config.y || 0,
+                canvas = new Kinetic.SceneCanvas(
+                    config.width || this.getWidth(),
+                    config.height || this.getHeight(),
+                ),
+                ctx = canvas.getContext(),
+                layers = this.children;
+            (x || y) && ctx.translate(-1 * x, -1 * y);
+            loadAndDrawImage(0);
+        }
+
+        toImage(config) {
+            var callback = config.callback;
+            config.callback = function (url) {
+                Kinetic.Type._getImage(url, function (img) {
+                    callback(img);
+                });
+            };
+            this.toDataURL(config);
+        }
+
+        getIntersection(xy) {
+            var children = this.getChildren(),
+                len = children.length;
+            for (var i = len - 1; i >= 0; i--) {
+                var layer = children[i];
+                if (layer.isVisible() && layer.isListening()) {
+                    var pixel = layer.hitCanvas.context.getImageData(
+                        Math.round(xy.x),
+                        Math.round(xy.y),
+                        1,
+                        1,
+                    ).data;
+                    if (pixel[3] === 255) {
+                        var shape =
+                            Kinetic.Global.shapes[
+                                Kinetic.Type._rgbToHex(
+                                    pixel[0],
+                                    pixel[1],
+                                    pixel[2],
+                                )
+                            ];
+                        return {
+                            shape: shape,
+                            pixel: pixel,
+                        };
+                    }
+                    if (
+                        pixel[0] > 0 ||
+                        pixel[1] > 0 ||
+                        pixel[2] > 0 ||
+                        pixel[3] > 0
+                    ) {
+                        return {
+                            pixel: pixel,
+                        };
                     }
                 }
-                return null;
-            },
-            _resizeDOM: function () {
-                if (this.content) {
-                    var a = this.attrs.width,
-                        b = this.attrs.height;
-                    ((this.content.style.width = a + "px"),
-                        (this.content.style.height = b + "px"),
-                        this.bufferCanvas.setSize(a, b, 1),
-                        this.hitCanvas.setSize(a, b));
-                    var c = this.children;
-                    for (var d = 0; d < c.length; d++) {
-                        var e = c[d];
-                        (e.getCanvas().setSize(a, b),
-                            e.hitCanvas.setSize(a, b),
-                            e.draw());
-                    }
+            }
+            return null;
+        }
+
+        _resizeDOM() {
+            if (this.content) {
+                var w = this.attrs.width,
+                    h = this.attrs.height;
+                this.content.style.width = w + "px";
+                this.content.style.height = h + "px";
+                this.bufferCanvas.setSize(w, h, 1);
+                this.hitCanvas.setSize(w, h);
+                var children = this.children,
+                    len = children.length;
+                for (var i = 0; i < len; i++) {
+                    var layer = children[i];
+                    layer.getCanvas().setSize(w, h);
+                    layer.hitCanvas.setSize(w, h);
+                    layer.draw();
                 }
-            },
-            add: function (a) {
-                return (
-                    Kinetic.Container.prototype.add.call(this, a),
-                    a.canvas.setSize(this.attrs.width, this.attrs.height),
-                    a.hitCanvas.setSize(this.attrs.width, this.attrs.height),
-                    a.draw(),
-                    this.content.appendChild(a.canvas.element),
-                    this
-                );
-            },
-            getDragLayer: function () {
-                return this.dragLayer;
-            },
-            _setUserPosition: function (a) {
-                (a || (a = window.event),
-                    this._setMousePosition(a),
-                    this._setTouchPosition(a));
-            },
-            _bindContentEvents: function () {
-                var a = Kinetic.Global,
-                    b = this,
-                    c = [
-                        "mousedown",
-                        "mousemove",
-                        "mouseup",
-                        "mouseout",
-                        "touchstart",
-                        "touchmove",
-                        "touchend",
-                    ];
-                for (var d = 0; d < c.length; d++) {
-                    var e = c[d];
-                    (function () {
-                        var a = e;
-                        b.content.addEventListener(
-                            a,
-                            function (c) {
-                                b["_" + a](c);
-                            },
-                            !1,
-                        );
-                    })();
-                }
-            },
-            _mouseout: function (a) {
-                this._setUserPosition(a);
-                var b = Kinetic.DD,
-                    c = this.targetShape;
-                (c &&
-                    (!b || !b.moving) &&
-                    (c._handleEvent("mouseout", a),
-                    c._handleEvent("mouseleave", a),
-                    (this.targetShape = null)),
-                    (this.mousePos = undefined));
-            },
-            _mousemove: function (a) {
-                this._setUserPosition(a);
-                var b = Kinetic.DD,
-                    c = this.getIntersection(this.getUserPosition());
-                if (c) {
-                    var d = c.shape;
-                    d &&
-                        ((!!b && !!b.moving) ||
-                        c.pixel[3] !== 255 ||
-                        (!!this.targetShape && this.targetShape._id === d._id)
-                            ? d._handleEvent("mousemove", a)
-                            : (this.targetShape &&
-                                  (this.targetShape._handleEvent(
-                                      "mouseout",
-                                      a,
-                                      d,
-                                  ),
-                                  this.targetShape._handleEvent(
-                                      "mouseleave",
-                                      a,
-                                      d,
-                                  )),
-                              d._handleEvent("mouseover", a, this.targetShape),
-                              d._handleEvent("mouseenter", a, this.targetShape),
-                              (this.targetShape = d)));
-                } else
-                    this.targetShape &&
-                        (!b || !b.moving) &&
-                        (this.targetShape._handleEvent("mouseout", a),
-                        this.targetShape._handleEvent("mouseleave", a),
-                        (this.targetShape = null));
-                b && b._drag(a);
-            },
-            _mousedown: function (a) {
-                var b,
-                    c = Kinetic.DD;
-                (this._setUserPosition(a),
-                    (b = this.getIntersection(this.getUserPosition())));
-                if (b && b.shape) {
-                    var d = b.shape;
-                    ((this.clickStart = !0), d._handleEvent("mousedown", a));
-                }
-                c && this.attrs.draggable && !c.node && this._startDrag(a);
-            },
-            _mouseup: function (a) {
-                this._setUserPosition(a);
-                var b = this,
-                    c = Kinetic.DD,
-                    d = this.getIntersection(this.getUserPosition());
-                if (d && d.shape) {
-                    var e = d.shape;
-                    (e._handleEvent("mouseup", a),
-                        this.clickStart &&
-                            (!c || !c.moving || !c.node) &&
-                            (e._handleEvent("click", a),
-                            this.inDoubleClickWindow &&
-                                e._handleEvent("dblclick", a),
-                            (this.inDoubleClickWindow = !0),
-                            setTimeout(function () {
-                                b.inDoubleClickWindow = !1;
-                            }, this.dblClickWindow)));
-                }
-                this.clickStart = !1;
-            },
-            _touchstart: function (a) {
-                var b,
-                    c = Kinetic.DD;
-                (this._setUserPosition(a),
-                    a.preventDefault(),
-                    (b = this.getIntersection(this.getUserPosition())));
-                if (b && b.shape) {
-                    var d = b.shape;
-                    ((this.tapStart = !0), d._handleEvent("touchstart", a));
-                }
-                c && this.attrs.draggable && !c.node && this._startDrag(a);
-            },
-            _touchend: function (a) {
-                this._setUserPosition(a);
-                var b = this,
-                    c = Kinetic.DD,
-                    d = this.getIntersection(this.getUserPosition());
-                if (d && d.shape) {
-                    var e = d.shape;
-                    (e._handleEvent("touchend", a),
-                        this.tapStart &&
-                            (!c || !c.moving || !c.node) &&
-                            (e._handleEvent("tap", a),
-                            this.inDoubleClickWindow &&
-                                e._handleEvent("dbltap", a),
-                            (this.inDoubleClickWindow = !0),
-                            setTimeout(function () {
-                                b.inDoubleClickWindow = !1;
-                            }, this.dblClickWindow)));
-                }
-                this.tapStart = !1;
-            },
-            _touchmove: function (a) {
-                this._setUserPosition(a);
-                var b = Kinetic.DD;
-                a.preventDefault();
-                var c = this.getIntersection(this.getUserPosition());
-                if (c && c.shape) {
-                    var d = c.shape;
-                    d._handleEvent("touchmove", a);
-                }
-                b && b._drag(a);
-            },
-            _setMousePosition: function (a) {
-                var b = a.clientX - this._getContentPosition().left,
-                    c = a.clientY - this._getContentPosition().top;
-                this.mousePos = {
-                    x: b,
-                    y: c,
+            }
+        }
+
+        add(layer) {
+            super.add(layer);
+            layer.canvas.setSize(this.attrs.width, this.attrs.height);
+            layer.hitCanvas.setSize(this.attrs.width, this.attrs.height);
+            layer.draw();
+            this.content.appendChild(layer.canvas.element);
+            return this;
+        }
+
+        getDragLayer() {
+            return this.dragLayer;
+        }
+
+        _setUserPosition(evt) {
+            evt = evt || window.event;
+            this._setMousePosition(evt);
+            this._setTouchPosition(evt);
+        }
+
+        _bindContentEvents() {
+            var self = this,
+                events = [
+                    "mousedown",
+                    "mousemove",
+                    "mouseup",
+                    "mouseout",
+                    "touchstart",
+                    "touchmove",
+                    "touchend",
+                ],
+                len = events.length;
+            for (var i = 0; i < len; i++) {
+                var ev = events[i];
+                (function () {
+                    var eventName = ev;
+                    self.content.addEventListener(
+                        eventName,
+                        function (e) {
+                            self["_" + eventName](e);
+                        },
+                        false,
+                    );
+                })();
+            }
+        }
+
+        _mouseout(evt) {
+            this._setUserPosition(evt);
+            var dd = Kinetic.DD,
+                target = this.targetShape;
+            target &&
+                (!dd || !dd.moving) &&
+                (target._handleEvent("mouseout", evt),
+                target._handleEvent("mouseleave", evt),
+                (this.targetShape = null));
+            this.mousePos = undefined;
+        }
+
+        _mousemove(evt) {
+            this._setUserPosition(evt);
+            var dd = Kinetic.DD,
+                intersection = this.getIntersection(this.getUserPosition());
+            if (intersection) {
+                var shape = intersection.shape;
+                shape &&
+                    ((dd && dd.moving) ||
+                    intersection.pixel[3] !== 255 ||
+                    (this.targetShape && this.targetShape._id === shape._id)
+                        ? shape._handleEvent("mousemove", evt)
+                        : (this.targetShape &&
+                              (this.targetShape._handleEvent(
+                                  "mouseout",
+                                  evt,
+                                  shape,
+                              ),
+                              this.targetShape._handleEvent(
+                                  "mouseleave",
+                                  evt,
+                                  shape,
+                              )),
+                          shape._handleEvent(
+                              "mouseover",
+                              evt,
+                              this.targetShape,
+                          ),
+                          shape._handleEvent(
+                              "mouseenter",
+                              evt,
+                              this.targetShape,
+                          ),
+                          (this.targetShape = shape)));
+            } else {
+                this.targetShape &&
+                    (!dd || !dd.moving) &&
+                    (this.targetShape._handleEvent("mouseout", evt),
+                    this.targetShape._handleEvent("mouseleave", evt),
+                    (this.targetShape = null));
+            }
+            dd && dd._drag(evt);
+        }
+
+        _mousedown(evt) {
+            var dd = Kinetic.DD;
+            this._setUserPosition(evt);
+            var intersection = this.getIntersection(this.getUserPosition());
+            if (intersection && intersection.shape) {
+                var shape = intersection.shape;
+                this.clickStart = true;
+                shape._handleEvent("mousedown", evt);
+            }
+            dd && this.attrs.draggable && !dd.node && this._startDrag(evt);
+        }
+
+        _mouseup(evt) {
+            this._setUserPosition(evt);
+            var self = this,
+                dd = Kinetic.DD,
+                intersection = this.getIntersection(this.getUserPosition());
+            if (intersection && intersection.shape) {
+                var shape = intersection.shape;
+                shape._handleEvent("mouseup", evt);
+                this.clickStart &&
+                    (!dd || !dd.moving || !dd.node) &&
+                    (shape._handleEvent("click", evt),
+                    this.inDoubleClickWindow &&
+                        shape._handleEvent("dblclick", evt),
+                    (this.inDoubleClickWindow = true),
+                    setTimeout(function () {
+                        self.inDoubleClickWindow = false;
+                    }, this.dblClickWindow));
+            }
+            this.clickStart = false;
+        }
+
+        _touchstart(evt) {
+            var dd = Kinetic.DD;
+            this._setUserPosition(evt);
+            evt.preventDefault();
+            var intersection = this.getIntersection(this.getUserPosition());
+            if (intersection && intersection.shape) {
+                var shape = intersection.shape;
+                this.tapStart = true;
+                shape._handleEvent("touchstart", evt);
+            }
+            dd && this.attrs.draggable && !dd.node && this._startDrag(evt);
+        }
+
+        _touchend(evt) {
+            this._setUserPosition(evt);
+            var self = this,
+                dd = Kinetic.DD,
+                intersection = this.getIntersection(this.getUserPosition());
+            if (intersection && intersection.shape) {
+                var shape = intersection.shape;
+                shape._handleEvent("touchend", evt);
+                this.tapStart &&
+                    (!dd || !dd.moving || !dd.node) &&
+                    (shape._handleEvent("tap", evt),
+                    this.inDoubleClickWindow &&
+                        shape._handleEvent("dbltap", evt),
+                    (this.inDoubleClickWindow = true),
+                    setTimeout(function () {
+                        self.inDoubleClickWindow = false;
+                    }, this.dblClickWindow));
+            }
+            this.tapStart = false;
+        }
+
+        _touchmove(evt) {
+            this._setUserPosition(evt);
+            var dd = Kinetic.DD;
+            evt.preventDefault();
+            var intersection = this.getIntersection(this.getUserPosition());
+            if (intersection && intersection.shape) {
+                var shape = intersection.shape;
+                shape._handleEvent("touchmove", evt);
+            }
+            dd && dd._drag(evt);
+        }
+
+        _setMousePosition(evt) {
+            var x = evt.clientX - this._getContentPosition().left,
+                y = evt.clientY - this._getContentPosition().top;
+            this.mousePos = {
+                x: x,
+                y: y,
+            };
+        }
+
+        _setTouchPosition(evt) {
+            if (evt.touches !== undefined && evt.touches.length === 1) {
+                var touch = evt.touches[0],
+                    x = touch.clientX - this._getContentPosition().left,
+                    y = touch.clientY - this._getContentPosition().top;
+                this.touchPos = {
+                    x: x,
+                    y: y,
                 };
-            },
-            _setTouchPosition: function (a) {
-                if (a.touches !== undefined && a.touches.length === 1) {
-                    var b = a.touches[0],
-                        c = b.clientX - this._getContentPosition().left,
-                        d = b.clientY - this._getContentPosition().top;
-                    this.touchPos = {
-                        x: c,
-                        y: d,
-                    };
-                }
-            },
-            _getContentPosition: function () {
-                var a = this.content.getBoundingClientRect();
-                return {
-                    top: a.top,
-                    left: a.left,
-                };
-            },
-            _buildDOM: function () {
-                ((this.content = document.createElement("div")),
-                    (this.content.style.position = "relative"),
-                    (this.content.style.display = "inline-block"),
-                    (this.content.className = "kineticjs-content"),
-                    this.attrs.container.appendChild(this.content),
-                    (this.bufferCanvas = new Kinetic.SceneCanvas()),
-                    (this.hitCanvas = new Kinetic.HitCanvas()),
-                    this._resizeDOM());
-            },
-            _onContent: function (a, b) {
-                var c = a.split(" ");
-                for (var d = 0; d < c.length; d++) {
-                    var e = c[d];
-                    this.content.addEventListener(e, b, !1);
-                }
-            },
-            _setStageDefaultProperties: function () {
-                ((this.nodeType = "Stage"),
-                    (this.dblClickWindow = 400),
-                    (this.targetShape = null),
-                    (this.mousePos = undefined),
-                    (this.clickStart = !1),
-                    (this.touchPos = undefined),
-                    (this.tapStart = !1));
-            },
-        }),
-        Kinetic.Global.extend(Kinetic.Stage, Kinetic.Container),
-        Kinetic.Node.addGetters(Kinetic.Stage, ["container"]));
+            }
+        }
+
+        _getContentPosition() {
+            var rect = this.content.getBoundingClientRect();
+            return {
+                top: rect.top,
+                left: rect.left,
+            };
+        }
+
+        _buildDOM() {
+            this.content = document.createElement("div");
+            this.content.style.position = "relative";
+            this.content.style.display = "inline-block";
+            this.content.className = "kineticjs-content";
+            this.attrs.container.appendChild(this.content);
+            this.bufferCanvas = new Kinetic.SceneCanvas();
+            this.hitCanvas = new Kinetic.HitCanvas();
+            this._resizeDOM();
+        }
+
+        _onContent(evtStr, handler) {
+            var events = evtStr.split(" "),
+                len = events.length;
+            for (var i = 0; i < len; i++) {
+                var ev = events[i];
+                this.content.addEventListener(ev, handler, false);
+            }
+        }
+
+        _setStageDefaultProperties() {
+            this.nodeType = "Stage";
+            this.dblClickWindow = 400;
+            this.targetShape = null;
+            this.mousePos = undefined;
+            this.clickStart = false;
+            this.touchPos = undefined;
+            this.tapStart = false;
+        }
+    };
+
+    Kinetic.Node.addGetters(Kinetic.Stage, ["container"]);
 })();
 (function () {
-    ((Kinetic.Layer = function (a) {
-        this._initLayer(a);
-    }),
-        (Kinetic.Layer.prototype = {
-            _initLayer: function (a) {
-                (this.setDefaultAttrs({
-                    clearBeforeDraw: !0,
-                }),
-                    (this.nodeType = "Layer"),
-                    (this.beforeDrawFunc = undefined),
-                    (this.afterDrawFunc = undefined),
-                    (this.canvas = new Kinetic.SceneCanvas()),
-                    (this.canvas.getElement().style.position = "absolute"),
-                    (this.hitCanvas = new Kinetic.HitCanvas()),
-                    Kinetic.Container.call(this, a));
-            },
-            draw: function () {
-                var a = this.getContext();
-                (this.beforeDrawFunc !== undefined &&
-                    this.beforeDrawFunc.call(this),
-                    Kinetic.Container.prototype.draw.call(this),
-                    this.afterDrawFunc !== undefined &&
-                        this.afterDrawFunc.call(this));
-            },
-            drawHit: function () {
-                (this.hitCanvas.clear(),
-                    Kinetic.Container.prototype.drawHit.call(this));
-            },
-            drawScene: function (a) {
-                ((a = a || this.getCanvas()),
-                    this.attrs.clearBeforeDraw && a.clear(),
-                    Kinetic.Container.prototype.drawScene.call(this, a));
-            },
-            toDataURL: function (a) {
-                a = a || {};
-                var b = a.mimeType || null,
-                    c = a.quality || null,
-                    d,
-                    e,
-                    f = a.x || 0,
-                    g = a.y || 0;
-                return a.width || a.height || a.x || a.y
-                    ? Kinetic.Node.prototype.toDataURL.call(this, a)
-                    : this.getCanvas().toDataURL(b, c);
-            },
-            beforeDraw: function (a) {
-                this.beforeDrawFunc = a;
-            },
-            afterDraw: function (a) {
-                this.afterDrawFunc = a;
-            },
-            getCanvas: function () {
-                return this.canvas;
-            },
-            getContext: function () {
-                return this.canvas.context;
-            },
-            clear: function () {
-                this.getCanvas().clear();
-            },
-            setVisible: function (a) {
-                (Kinetic.Node.prototype.setVisible.call(this, a),
-                    a
-                        ? ((this.canvas.element.style.display = "block"),
-                          (this.hitCanvas.element.style.display = "block"))
-                        : ((this.canvas.element.style.display = "none"),
-                          (this.hitCanvas.element.style.display = "none")));
-            },
-            setZIndex: function (a) {
-                Kinetic.Node.prototype.setZIndex.call(this, a);
-                var b = this.getStage();
-                b &&
-                    (b.content.removeChild(this.canvas.element),
-                    a < b.getChildren().length - 1
-                        ? b.content.insertBefore(
+    Kinetic.Layer = class extends Kinetic.Container {
+        constructor(config) {
+            super(config);
+            this._initLayer(config);
+        }
+
+        _initLayer(config) {
+            this.setDefaultAttrs({
+                clearBeforeDraw: true,
+            });
+            this.nodeType = "Layer";
+            this.beforeDrawFunc = undefined;
+            this.afterDrawFunc = undefined;
+            this.canvas = new Kinetic.SceneCanvas();
+            this.canvas.getElement().style.position = "absolute";
+            this.hitCanvas = new Kinetic.HitCanvas();
+        }
+
+        draw() {
+            var ctx = this.getContext();
+            this.beforeDrawFunc !== undefined && this.beforeDrawFunc.call(this);
+            super.draw();
+            this.afterDrawFunc !== undefined && this.afterDrawFunc.call(this);
+        }
+
+        drawHit() {
+            this.hitCanvas.clear();
+            super.drawHit();
+        }
+
+        drawScene(canvas) {
+            var targetCanvas = canvas || this.getCanvas();
+            this.attrs.clearBeforeDraw && targetCanvas.clear();
+            super.drawScene(targetCanvas);
+        }
+
+        toDataURL(config) {
+            config = config || {};
+            var mimeType = config.mimeType || null,
+                quality = config.quality || null;
+            return config.width || config.height || config.x || config.y
+                ? super.toDataURL(config)
+                : this.getCanvas().toDataURL(mimeType, quality);
+        }
+
+        beforeDraw(handler) {
+            this.beforeDrawFunc = handler;
+        }
+
+        afterDraw(handler) {
+            this.afterDrawFunc = handler;
+        }
+
+        getCanvas() {
+            return this.canvas;
+        }
+
+        getContext() {
+            return this.canvas.context;
+        }
+
+        clear() {
+            this.getCanvas().clear();
+        }
+
+        setVisible(visible) {
+            super.setVisible(visible);
+            if (visible) {
+                this.canvas.element.style.display = "block";
+                this.hitCanvas.element.style.display = "block";
+            } else {
+                this.canvas.element.style.display = "none";
+                this.hitCanvas.element.style.display = "none";
+            }
+        }
+
+        setZIndex(idx) {
+            super.setZIndex(idx);
+            var stage = this.getStage();
+            if (stage) {
+                stage.content.removeChild(this.canvas.element);
+                idx < stage.getChildren().length - 1
+                    ? stage.content.insertBefore(
+                          this.canvas.element,
+                          stage.getChildren()[idx + 1].canvas.element,
+                      )
+                    : stage.content.appendChild(this.canvas.element);
+            }
+        }
+
+        moveToTop() {
+            super.moveToTop();
+            var stage = this.getStage();
+            stage &&
+                (stage.content.removeChild(this.canvas.element),
+                stage.content.appendChild(this.canvas.element));
+        }
+
+        moveUp() {
+            if (super.moveUp()) {
+                var stage = this.getStage();
+                stage &&
+                    (stage.content.removeChild(this.canvas.element),
+                    this.index < stage.getChildren().length - 1
+                        ? stage.content.insertBefore(
                               this.canvas.element,
-                              b.getChildren()[a + 1].canvas.element,
+                              stage.getChildren()[this.index + 1].canvas
+                                  .element,
                           )
-                        : b.content.appendChild(this.canvas.element));
-            },
-            moveToTop: function () {
-                Kinetic.Node.prototype.moveToTop.call(this);
-                var a = this.getStage();
-                a &&
-                    (a.content.removeChild(this.canvas.element),
-                    a.content.appendChild(this.canvas.element));
-            },
-            moveUp: function () {
-                if (Kinetic.Node.prototype.moveUp.call(this)) {
-                    var a = this.getStage();
-                    a &&
-                        (a.content.removeChild(this.canvas.element),
-                        this.index < a.getChildren().length - 1
-                            ? a.content.insertBefore(
-                                  this.canvas.element,
-                                  a.getChildren()[this.index + 1].canvas
-                                      .element,
-                              )
-                            : a.content.appendChild(this.canvas.element));
+                        : stage.content.appendChild(this.canvas.element));
+            }
+        }
+
+        moveDown() {
+            if (super.moveDown()) {
+                var stage = this.getStage();
+                if (stage) {
+                    var children = stage.getChildren();
+                    stage.content.removeChild(this.canvas.element);
+                    stage.content.insertBefore(
+                        this.canvas.element,
+                        children[this.index + 1].canvas.element,
+                    );
                 }
-            },
-            moveDown: function () {
-                if (Kinetic.Node.prototype.moveDown.call(this)) {
-                    var a = this.getStage();
-                    if (a) {
-                        var b = a.getChildren();
-                        (a.content.removeChild(this.canvas.element),
-                            a.content.insertBefore(
-                                this.canvas.element,
-                                b[this.index + 1].canvas.element,
-                            ));
-                    }
+            }
+        }
+
+        moveToBottom() {
+            if (super.moveToBottom()) {
+                var stage = this.getStage();
+                if (stage) {
+                    var children = stage.getChildren();
+                    stage.content.removeChild(this.canvas.element);
+                    stage.content.insertBefore(
+                        this.canvas.element,
+                        children[1].canvas.element,
+                    );
                 }
-            },
-            moveToBottom: function () {
-                if (Kinetic.Node.prototype.moveToBottom.call(this)) {
-                    var a = this.getStage();
-                    if (a) {
-                        var b = a.getChildren();
-                        (a.content.removeChild(this.canvas.element),
-                            a.content.insertBefore(
-                                this.canvas.element,
-                                b[1].canvas.element,
-                            ));
-                    }
-                }
-            },
-            getLayer: function () {
-                return this;
-            },
-            remove: function () {
-                var a = this.getStage(),
-                    b = this.canvas,
-                    c = b.element;
-                (Kinetic.Node.prototype.remove.call(this),
-                    a &&
-                        b &&
-                        Kinetic.Type._isInDocument(c) &&
-                        a.content.removeChild(c));
-            },
-        }),
-        Kinetic.Global.extend(Kinetic.Layer, Kinetic.Container),
-        Kinetic.Node.addGettersSetters(Kinetic.Layer, ["clearBeforeDraw"]));
+            }
+        }
+
+        getLayer() {
+            return this;
+        }
+
+        remove() {
+            var stage = this.getStage(),
+                canvas = this.canvas,
+                element = canvas.element;
+            super.remove();
+            stage &&
+                canvas &&
+                Kinetic.Type._isInDocument(element) &&
+                stage.content.removeChild(element);
+        }
+    };
+
+    Kinetic.Node.addGettersSetters(Kinetic.Layer, ["clearBeforeDraw"]);
 })();
 (function () {
     // --- Group ---
-    Kinetic.Group = function (config) {
-        this._initGroup(config);
-    };
-
-    Kinetic.Group.prototype = {
-        _initGroup: function (config) {
+    Kinetic.Group = class extends Kinetic.Container {
+        constructor(config) {
+            super(config);
+            this._initGroup(config);
+        }
+        _initGroup(config) {
             this.nodeType = "Group";
-            Kinetic.Container.call(this, config);
-        },
+        }
     };
-
-    Kinetic.Global.extend(Kinetic.Group, Kinetic.Container);
 })();
 (function () {
     // --- Rect ---
-    Kinetic.Rect = function (config) {
-        this._initRect(config);
-    };
+    Kinetic.Rect = class extends Kinetic.Shape {
+        constructor(config) {
+            super(config);
+            this._initRect(config);
+        }
 
-    Kinetic.Rect.prototype = {
-        _initRect: function (config) {
+        _initRect(config) {
             this.setDefaultAttrs({
                 width: 0,
                 height: 0,
                 cornerRadius: 0,
             });
-            Kinetic.Shape.call(this, config);
             this.shapeType = "Rect";
             this._setDrawFuncs();
-        },
-        drawFunc: function (canvas) {
+        }
+
+        drawFunc(canvas) {
             var context = canvas.getContext();
             context.beginPath();
 
@@ -2144,10 +2416,9 @@ var Kinetic = {};
             }
             context.closePath();
             canvas.fillStroke(this);
-        },
+        }
     };
 
-    Kinetic.Global.extend(Kinetic.Rect, Kinetic.Shape);
     Kinetic.Node.addGettersSetters(Kinetic.Rect, ["cornerRadius"]);
 })();
 (function () {
@@ -2188,243 +2459,249 @@ var Kinetic = {};
             "height",
         ],
         u = t.length;
-    ((Kinetic.Text = function (a) {
-        this._initText(a);
-    }),
-        (Kinetic.Text.prototype = {
-            _initText: function (d) {
-                var f = this;
-                (this.setDefaultAttrs({
-                    fontFamily: b,
-                    text: h,
-                    fontSize: 12,
-                    align: i,
-                    verticalAlign: m,
-                    fontStyle: p,
-                    padding: 0,
-                    width: a,
-                    height: a,
-                    lineHeight: 1,
-                }),
-                    (this.dummyCanvas = document.createElement(c)),
-                    Kinetic.Shape.call(this, d),
-                    (this._fillFunc = v),
-                    (this._strokeFunc = w),
-                    (this.shapeType = l),
-                    this._setDrawFuncs());
-                for (var g = 0; g < u; g++) this.on(t[g] + e, f._setTextData);
-                this._setTextData();
-            },
-            drawFunc: function (a) {
-                var b = a.getContext(),
-                    c = this.getPadding(),
-                    e = this.getFontStyle(),
-                    f = this.getFontSize(),
-                    g = this.getFontFamily(),
-                    h = this.getTextHeight(),
-                    j = this.getLineHeight() * h,
-                    k = this.textArr,
-                    l = k.length,
-                    m = this.getWidth();
-                ((b.font = e + r + f + q + g),
-                    (b.textBaseline = o),
-                    (b.textAlign = i),
-                    b.save(),
-                    b.translate(c, 0),
-                    b.translate(0, c + h / 2));
-                for (var n = 0; n < l; n++) {
-                    var p = k[n],
-                        t = p.text,
-                        u = p.width;
-                    (b.save(),
-                        this.getAlign() === s
-                            ? b.translate(m - u - c * 2, 0)
-                            : this.getAlign() === d &&
-                              b.translate((m - u - c * 2) / 2, 0),
-                        (this.partialText = t),
-                        a.fillStroke(this),
-                        b.restore(),
-                        b.translate(0, j));
+    Kinetic.Text = class extends Kinetic.Shape {
+        constructor(config) {
+            super(config);
+            this._initText(config);
+        }
+
+        _initText(config) {
+            var self = this;
+            this.setDefaultAttrs({
+                fontFamily: b,
+                text: h,
+                fontSize: 12,
+                align: i,
+                verticalAlign: m,
+                fontStyle: p,
+                padding: 0,
+                width: a,
+                height: a,
+                lineHeight: 1,
+            });
+            this.dummyCanvas = document.createElement(c);
+            this._fillFunc = v;
+            this._strokeFunc = w;
+            this.shapeType = l;
+            this._setDrawFuncs();
+            for (var gIndex = 0; gIndex < u; gIndex++) {
+                this.on(t[gIndex] + e, self._setTextData);
+            }
+            this._setTextData();
+        }
+
+        drawFunc(canvas) {
+            var context = canvas.getContext(),
+                padding = this.getPadding(),
+                fontStyle = this.getFontStyle(),
+                fontSize = this.getFontSize(),
+                fontFamily = this.getFontFamily(),
+                textHeight = this.getTextHeight(),
+                lineHeight = this.getLineHeight() * textHeight,
+                textArr = this.textArr,
+                len = textArr.length,
+                width = this.getWidth();
+
+            context.font = fontStyle + " " + fontSize + "px " + fontFamily;
+            context.textBaseline = o;
+            context.textAlign = i;
+            context.save();
+            context.translate(padding, 0);
+            context.translate(0, padding + textHeight / 2);
+
+            for (var n = 0; n < len; n++) {
+                var pNode = textArr[n],
+                    lineText = pNode.text,
+                    lineWidth = pNode.width;
+
+                context.save();
+                if (this.getAlign() === s) {
+                    context.translate(width - lineWidth - padding * 2, 0);
+                } else if (this.getAlign() === d) {
+                    context.translate((width - lineWidth - padding * 2) / 2, 0);
                 }
-                b.restore();
-            },
-            drawHitFunc: function (a) {
-                var b = a.getContext(),
-                    c = this.getWidth(),
-                    d = this.getHeight();
-                (b.beginPath(),
-                    b.rect(0, 0, c, d),
-                    b.closePath(),
-                    a.fillStroke(this));
-            },
-            setText: function (a) {
-                var b = Kinetic.Type._isString(a) ? a : a.toString();
-                this.setAttr(k, b);
-            },
-            getWidth: function () {
-                return this.attrs.width === a
-                    ? this.getTextWidth() + this.getPadding() * 2
-                    : this.attrs.width;
-            },
-            getHeight: function () {
-                return this.attrs.height === a
-                    ? this.getTextHeight() *
-                          this.textArr.length *
-                          this.attrs.lineHeight +
-                          this.attrs.padding * 2
-                    : this.attrs.height;
-            },
-            getTextWidth: function () {
-                return this.textWidth;
-            },
-            getTextHeight: function () {
-                return this.textHeight;
-            },
-            _getTextSize: function (a) {
-                var b = this.dummyCanvas,
-                    c = b.getContext(f),
-                    d = this.getFontSize(),
-                    e;
-                return (
-                    c.save(),
-                    (c.font =
-                        this.getFontStyle() + r + d + q + this.getFontFamily()),
-                    (e = c.measureText(a)),
-                    c.restore(),
-                    {
-                        width: e.width,
-                        height: parseInt(d, 10),
+                this.partialText = lineText;
+                canvas.fillStroke(this);
+                context.restore();
+                context.translate(0, lineHeight);
+            }
+            context.restore();
+        }
+
+        drawHitFunc(canvas) {
+            var context = canvas.getContext(),
+                width = this.getWidth(),
+                height = this.getHeight();
+            context.beginPath();
+            context.rect(0, 0, width, height);
+            context.closePath();
+            canvas.fillStroke(this);
+        }
+
+        setText(text) {
+            var textStr = Kinetic.Type._isString(text) ? text : text.toString();
+            this.setAttr(k, textStr);
+        }
+
+        getTextWidth() {
+            return this.textWidth;
+        }
+
+        getTextHeight() {
+            return this.textHeight;
+        }
+
+        _getTextSize(text) {
+            var canvas = this.dummyCanvas,
+                context = canvas.getContext(f),
+                fontSize = this.getFontSize(),
+                metrics;
+            context.save();
+            context.font =
+                this.getFontStyle() +
+                " " +
+                fontSize +
+                "px " +
+                this.getFontFamily();
+            metrics = context.measureText(text);
+            context.restore();
+            return {
+                width: metrics.width,
+                height: parseInt(fontSize, 10),
+            };
+        }
+
+        _getTextSizeSkipContext(text) {
+            var canvas = this.dummyCanvas,
+                context = canvas.getContext("2d"),
+                fontSize = this.getFontSize(),
+                metrics;
+            context.font =
+                this.getFontStyle() +
+                " " +
+                fontSize +
+                "px " +
+                this.getFontFamily();
+            metrics = context.measureText(text);
+            return {
+                width: metrics.width,
+                height: parseInt(fontSize, 10),
+            };
+        }
+
+        _expandTextData(lines) {
+            var len = lines.length,
+                i = 0,
+                lineText = "",
+                expandedLines = [];
+            for (i = 0; i < len; i++) {
+                lineText = lines[i];
+                expandedLines.push({
+                    text: lineText,
+                    width: this._getTextSize(lineText).width,
+                });
+            }
+            return expandedLines;
+        }
+
+        _setTextData() {
+            this.dummyCanvas.getContext("2d").save();
+            var words = this.getText().split(""),
+                lines = [],
+                lineCount = 0,
+                addLine = true,
+                lineHeightPx = 0,
+                padding = this.getPadding();
+            this.textWidth = 0;
+            this.textHeight = this._getTextSizeSkipContext(
+                this.getText(),
+            ).height;
+            lineHeightPx = this.getLineHeight() * this.textHeight;
+
+            while (
+                words.length > 0 &&
+                addLine &&
+                (this.attrs.height === "auto" ||
+                    lineHeightPx * (lineCount + 1) <
+                        this.attrs.height - padding * 2)
+            ) {
+                var wordIndex = 0,
+                    lineText = undefined;
+                addLine = false;
+                while (wordIndex < words.length) {
+                    if (words.indexOf("\n") === wordIndex) {
+                        words.splice(wordIndex, 1);
+                        lineText = words.splice(0, wordIndex).join("");
+                        break;
                     }
-                );
-            },
-            _getTextSizeSkipContext: function (text) {
-                var canvas = this.dummyCanvas,
-                    context = canvas.getContext("2d"),
-                    fontSize = this.getFontSize(),
-                    metrics;
-                return (
-                    (context.font =
-                        this.getFontStyle() +
-                        " " +
-                        fontSize +
-                        "px " +
-                        this.getFontFamily()),
-                    (metrics = context.measureText(text)),
-                    {
-                        width: metrics.width,
-                        height: parseInt(fontSize, 10),
-                    }
-                );
-            },
-            _expandTextData: function (lines) {
-                var len = lines.length,
-                    i = 0,
-                    lineText = "",
-                    expandedLines = [];
-                for (i = 0; i < len; i++) {
-                    lineText = lines[i];
-                    expandedLines.push({
-                        text: lineText,
-                        width: this._getTextSize(lineText).width,
-                    });
-                }
-                return expandedLines;
-            },
-            _setTextData: function () {
-                this.dummyCanvas.getContext("2d").save();
-                var words = this.getText().split(""),
-                    lines = [],
-                    lineCount = 0,
-                    addLine = true,
-                    lineHeightPx = 0,
-                    padding = this.getPadding();
-                ((this.textWidth = 0),
-                    (this.textHeight = this._getTextSizeSkipContext(
-                        this.getText(),
-                    ).height),
-                    (lineHeightPx = this.getLineHeight() * this.textHeight));
-                while (
-                    words.length > 0 &&
-                    addLine &&
-                    (this.attrs.height === "auto" ||
-                        lineHeightPx * (lineCount + 1) <
-                            this.attrs.height - padding * 2)
-                ) {
-                    var wordIndex = 0,
-                        lineText = undefined;
-                    addLine = false;
-                    while (wordIndex < words.length) {
-                        if (words.indexOf("\n") === wordIndex) {
-                            words.splice(wordIndex, 1);
-                            lineText = words.splice(0, wordIndex).join("");
+                    var currentWords = words.slice(0, wordIndex);
+                    if (
+                        this.attrs.width !== "auto" &&
+                        this._getTextSizeSkipContext(currentWords.join(""))
+                            .width >
+                            this.attrs.width - padding * 2
+                    ) {
+                        if (wordIndex == 0) break;
+                        var lastSpace = currentWords.lastIndexOf(" "),
+                            lastNewline = currentWords.lastIndexOf("\n"),
+                            maxBreakIdx = Math.max(lastSpace, lastNewline);
+                        if (maxBreakIdx >= 0) {
+                            lineText = words
+                                .splice(0, 1 + maxBreakIdx)
+                                .join("");
                             break;
                         }
-                        var currentWords = words.slice(0, wordIndex);
-                        if (
-                            this.attrs.width !== "auto" &&
-                            this._getTextSizeSkipContext(currentWords.join(""))
-                                .width >
-                                this.attrs.width - padding * 2
-                        ) {
-                            if (wordIndex == 0) break;
-                            var lastSpace = currentWords.lastIndexOf(" "),
-                                lastNewline = currentWords.lastIndexOf("\n"),
-                                maxBreakIdx = Math.max(lastSpace, lastNewline);
-                            if (maxBreakIdx >= 0) {
-                                lineText = words
-                                    .splice(0, 1 + maxBreakIdx)
-                                    .join("");
-                                break;
-                            }
-                            lineText = words.splice(0, wordIndex).join("");
-                            break;
-                        }
-                        (wordIndex++,
-                            wordIndex === words.length &&
-                                (lineText = words
-                                    .splice(0, wordIndex)
-                                    .join("")));
+                        lineText = words.splice(0, wordIndex).join("");
+                        break;
                     }
-                    ((this.textWidth = Math.max(
-                        this.textWidth,
-                        this._getTextSizeSkipContext(lineText).width,
-                    )),
-                        lineText !== undefined &&
-                            (lines.push(lineText), (addLine = true)),
-                        lineCount++);
+                    wordIndex++;
+                    if (wordIndex === words.length) {
+                        lineText = words.splice(0, wordIndex).join("");
+                    }
                 }
-                this.textArr = this._expandTextData(lines);
-                this.dummyCanvas.getContext("2d").restore();
-            },
-        }),
-        Kinetic.Global.extend(Kinetic.Text, Kinetic.Shape),
-        Kinetic.Node.addGettersSetters(Kinetic.Text, [
-            "fontFamily",
-            "fontSize",
-            "fontStyle",
-            "padding",
-            "align",
-            "lineHeight",
-        ]),
-        Kinetic.Node.addGetters(Kinetic.Text, [k]));
+                this.textWidth = Math.max(
+                    this.textWidth,
+                    this._getTextSizeSkipContext(lineText).width,
+                );
+                if (lineText !== undefined) {
+                    lines.push(lineText);
+                    addLine = true;
+                }
+                lineCount++;
+            }
+            this.textArr = this._expandTextData(lines);
+            this.dummyCanvas.getContext("2d").restore();
+        }
+    };
+
+    Kinetic.Node.addGettersSetters(Kinetic.Text, [
+        "fontFamily",
+        "fontSize",
+        "fontStyle",
+        "padding",
+        "align",
+        "lineHeight",
+    ]);
+    Kinetic.Node.addGetters(Kinetic.Text, [k]);
 })();
 (function () {
     // --- Line ---
-    Kinetic.Line = function (config) {
-        this._initLine(config);
-    };
+    Kinetic.Line = class extends Kinetic.Shape {
+        constructor(config) {
+            super(config);
+            this._initLine(config);
+        }
 
-    Kinetic.Line.prototype = {
-        _initLine: function (config) {
+        _initLine(config) {
             this.setDefaultAttrs({
                 points: [],
                 lineCap: "butt",
             });
-            Kinetic.Shape.call(this, config);
             this.shapeType = "Line";
             this._setDrawFuncs();
-        },
-        drawFunc: function (canvas) {
+        }
+
+        drawFunc(canvas) {
             var points = this.getPoints(),
                 length = points.length,
                 context = canvas.getContext();
@@ -2435,10 +2712,11 @@ var Kinetic = {};
                 context.lineTo(point.x, point.y);
             }
             canvas.stroke(this);
-        },
-        setPoints: function (points) {
+        }
+
+        setPoints(points) {
             this.setAttr("points", Kinetic.Type._getPoints(points));
-        },
+        }
     };
 
     Kinetic.Global.extend(Kinetic.Line, Kinetic.Shape);
