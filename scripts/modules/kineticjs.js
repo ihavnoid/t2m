@@ -648,7 +648,9 @@ var Kinetic = {};
 (function () {
     Kinetic.Node = class {
         constructor(config) {
-            this._nodeInit(config);
+            if (this.constructor === Kinetic.Node) {
+                this._nodeInit(config);
+            }
         }
 
         _nodeInit(config) {
@@ -1390,11 +1392,14 @@ var Kinetic = {};
     Kinetic.Container = class extends Kinetic.Node {
         constructor(config) {
             super(config);
-            this._containerInit(config);
+            if (this.constructor === Kinetic.Container) {
+                this._containerInit(config);
+            }
         }
 
         _containerInit(config) {
             this.children = [];
+            this._nodeInit(config);
         }
 
         getChildren() {
@@ -1564,7 +1569,9 @@ var Kinetic = {};
     Kinetic.Shape = class extends Kinetic.Node {
         constructor(config) {
             super(config);
-            this._initShape(config);
+            if (this.constructor === Kinetic.Shape) {
+                this._initShape(config);
+            }
         }
 
         _initShape(config) {
@@ -1588,6 +1595,8 @@ var Kinetic = {};
             }
             this.colorKey = colorKey;
             shapes[colorKey] = this;
+
+            this._nodeInit(config);
         }
 
         getContext() {
@@ -1756,7 +1765,9 @@ var Kinetic = {};
     Kinetic.Stage = class extends Kinetic.Container {
         constructor(config) {
             super(config);
-            this._initStage(config);
+            if (this.constructor === Kinetic.Stage) {
+                this._initStage(config);
+            }
         }
 
         _initStage(config) {
@@ -1765,6 +1776,7 @@ var Kinetic = {};
                 width: 400,
                 height: 200,
             });
+            this._containerInit(config);
             this._setStageDefaultProperties();
             this._id = Kinetic.Global.idCounter++;
             this._buildDOM();
@@ -2179,7 +2191,9 @@ var Kinetic = {};
     Kinetic.Layer = class extends Kinetic.Container {
         constructor(config) {
             super(config);
-            this._initLayer(config);
+            if (this.constructor === Kinetic.Layer) {
+                this._initLayer(config);
+            }
         }
 
         _initLayer(config) {
@@ -2192,6 +2206,7 @@ var Kinetic = {};
             this.canvas = new Kinetic.SceneCanvas();
             this.canvas.getElement().style.position = "absolute";
             this.hitCanvas = new Kinetic.HitCanvas();
+            this._containerInit(config);
         }
 
         draw() {
@@ -2340,10 +2355,13 @@ var Kinetic = {};
     Kinetic.Group = class extends Kinetic.Container {
         constructor(config) {
             super(config);
-            this._initGroup(config);
+            if (this.constructor === Kinetic.Group) {
+                this._initGroup(config);
+            }
         }
         _initGroup(config) {
             this.nodeType = "Group";
+            this._containerInit(config);
         }
     };
 })();
@@ -2352,7 +2370,9 @@ var Kinetic = {};
     Kinetic.Rect = class extends Kinetic.Shape {
         constructor(config) {
             super(config);
-            this._initRect(config);
+            if (this.constructor === Kinetic.Rect) {
+                this._initRect(config);
+            }
         }
 
         _initRect(config) {
@@ -2361,6 +2381,7 @@ var Kinetic = {};
                 height: 0,
                 cornerRadius: 0,
             });
+            this._initShape(config);
             this.shapeType = "Rect";
             this._setDrawFuncs();
         }
@@ -2462,7 +2483,9 @@ var Kinetic = {};
     Kinetic.Text = class extends Kinetic.Shape {
         constructor(config) {
             super(config);
-            this._initText(config);
+            if (this.constructor === Kinetic.Text) {
+                this._initText(config);
+            }
         }
 
         _initText(config) {
@@ -2480,6 +2503,7 @@ var Kinetic = {};
                 lineHeight: 1,
             });
             this.dummyCanvas = document.createElement(c);
+            this._initShape(config);
             this._fillFunc = v;
             this._strokeFunc = w;
             this.shapeType = l;
@@ -2672,6 +2696,21 @@ var Kinetic = {};
             this.textArr = this._expandTextData(lines);
             this.dummyCanvas.getContext("2d").restore();
         }
+
+        getWidth() {
+            return this.attrs.width === a
+                ? this.getTextWidth() + this.getPadding() * 2
+                : this.attrs.width;
+        }
+
+        getHeight() {
+            return this.attrs.height === a
+                ? this.getTextHeight() *
+                      this.textArr.length *
+                      this.attrs.lineHeight +
+                      this.attrs.padding * 2
+                : this.attrs.height;
+        }
     };
 
     Kinetic.Node.addGettersSetters(Kinetic.Text, [
@@ -2689,7 +2728,9 @@ var Kinetic = {};
     Kinetic.Line = class extends Kinetic.Shape {
         constructor(config) {
             super(config);
-            this._initLine(config);
+            if (this.constructor === Kinetic.Line) {
+                this._initLine(config);
+            }
         }
 
         _initLine(config) {
@@ -2697,6 +2738,7 @@ var Kinetic = {};
                 points: [],
                 lineCap: "butt",
             });
+            this._initShape(config);
             this.shapeType = "Line";
             this._setDrawFuncs();
         }
