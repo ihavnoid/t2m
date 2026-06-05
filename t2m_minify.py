@@ -1,5 +1,5 @@
 import sys
-import requests
+import subprocess
 import re
 
 all_files = [
@@ -28,11 +28,27 @@ for fn in all_files:
     content = open(fn).read()
     # Strip ES module imports and exports for simple concatenation
     content = re.sub(r'^import\s+.*?;$', '', content, flags=re.MULTILINE)
+    content = re.sub(r'^export\s+default\s+.*?;$', '', content, flags=re.MULTILINE)
+    content = re.sub(r'^export\s+\{.*?\};$', '', content, flags=re.MULTILINE)
     content = re.sub(r'^export\s+', '', content, flags=re.MULTILINE)
     f += content + "\n"
 
-response = requests.post('https://www.toptal.com/developers/javascript-minifier/api/raw', data=dict(input=f)).text
+# Minify the code locally using terser
+process = subprocess.Popen(
+    ["npx", "terser", "--compress", "--mangle"],
+    stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    text=True,
+    encoding="utf-8"
+)
+stdout, stderr = process.communicate(input=f)
 
-fout = open("t2m.min.js", "w")
-fout.write("{}".format(response))
+if process.returncode != 0:
+    print("Minification failed:", stderr, file=sys.stderr)
+    sys.exit(process.returncode)
+
+fout = open("t2m.min.js", "w", encoding="utf-8")
+fout.write(stdout)
+fout.close()
 
