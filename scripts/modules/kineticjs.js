@@ -2062,54 +2062,93 @@ var Kinetic = {};
         Kinetic.Node.addGettersSetters(Kinetic.Layer, ["clearBeforeDraw"]));
 })();
 (function () {
-    ((Kinetic.Group = function (a) {
-        this._initGroup(a);
-    }),
-        (Kinetic.Group.prototype = {
-            _initGroup: function (a) {
-                ((this.nodeType = "Group"), Kinetic.Container.call(this, a));
-            },
-        }),
-        Kinetic.Global.extend(Kinetic.Group, Kinetic.Container));
+    // --- Group ---
+    Kinetic.Group = function (config) {
+        this._initGroup(config);
+    };
+
+    Kinetic.Group.prototype = {
+        _initGroup: function (config) {
+            this.nodeType = "Group";
+            Kinetic.Container.call(this, config);
+        },
+    };
+
+    Kinetic.Global.extend(Kinetic.Group, Kinetic.Container);
 })();
 (function () {
-    ((Kinetic.Rect = function (a) {
-        this._initRect(a);
-    }),
-        (Kinetic.Rect.prototype = {
-            _initRect: function (a) {
-                (this.setDefaultAttrs({
-                    width: 0,
-                    height: 0,
-                    cornerRadius: 0,
-                }),
-                    Kinetic.Shape.call(this, a),
-                    (this.shapeType = "Rect"),
-                    this._setDrawFuncs());
-            },
-            drawFunc: function (a) {
-                var b = a.getContext();
-                b.beginPath();
-                var c = this.getCornerRadius(),
-                    d = this.getWidth(),
-                    e = this.getHeight();
-                (c === 0
-                    ? b.rect(0, 0, d, e)
-                    : (b.moveTo(c, 0),
-                      b.lineTo(d - c, 0),
-                      b.arc(d - c, c, c, (Math.PI * 3) / 2, 0, !1),
-                      b.lineTo(d, e - c),
-                      b.arc(d - c, e - c, c, 0, Math.PI / 2, !1),
-                      b.lineTo(c, e),
-                      b.arc(c, e - c, c, Math.PI / 2, Math.PI, !1),
-                      b.lineTo(0, c),
-                      b.arc(c, c, c, Math.PI, (Math.PI * 3) / 2, !1)),
-                    b.closePath(),
-                    a.fillStroke(this));
-            },
-        }),
-        Kinetic.Global.extend(Kinetic.Rect, Kinetic.Shape),
-        Kinetic.Node.addGettersSetters(Kinetic.Rect, ["cornerRadius"]));
+    // --- Rect ---
+    Kinetic.Rect = function (config) {
+        this._initRect(config);
+    };
+
+    Kinetic.Rect.prototype = {
+        _initRect: function (config) {
+            this.setDefaultAttrs({
+                width: 0,
+                height: 0,
+                cornerRadius: 0,
+            });
+            Kinetic.Shape.call(this, config);
+            this.shapeType = "Rect";
+            this._setDrawFuncs();
+        },
+        drawFunc: function (canvas) {
+            var context = canvas.getContext();
+            context.beginPath();
+
+            var cornerRadius = this.getCornerRadius(),
+                width = this.getWidth(),
+                height = this.getHeight();
+
+            if (cornerRadius === 0) {
+                context.rect(0, 0, width, height);
+            } else {
+                context.moveTo(cornerRadius, 0);
+                context.lineTo(width - cornerRadius, 0);
+                context.arc(
+                    width - cornerRadius,
+                    cornerRadius,
+                    cornerRadius,
+                    (Math.PI * 3) / 2,
+                    0,
+                    false,
+                );
+                context.lineTo(width, height - cornerRadius);
+                context.arc(
+                    width - cornerRadius,
+                    height - cornerRadius,
+                    cornerRadius,
+                    0,
+                    Math.PI / 2,
+                    false,
+                );
+                context.lineTo(cornerRadius, height);
+                context.arc(
+                    cornerRadius,
+                    height - cornerRadius,
+                    cornerRadius,
+                    Math.PI / 2,
+                    Math.PI,
+                    false,
+                );
+                context.lineTo(0, cornerRadius);
+                context.arc(
+                    cornerRadius,
+                    cornerRadius,
+                    cornerRadius,
+                    Math.PI,
+                    (Math.PI * 3) / 2,
+                    false,
+                );
+            }
+            context.closePath();
+            canvas.fillStroke(this);
+        },
+    };
+
+    Kinetic.Global.extend(Kinetic.Rect, Kinetic.Shape);
+    Kinetic.Node.addGettersSetters(Kinetic.Rect, ["cornerRadius"]);
 })();
 (function () {
     function v(a) {
@@ -2258,40 +2297,45 @@ var Kinetic = {};
                     }
                 );
             },
-            _getTextSizeSkipContext: function (a) {
-                var b = this.dummyCanvas,
-                    c = b.getContext(f),
-                    d = this.getFontSize(),
-                    e;
+            _getTextSizeSkipContext: function (text) {
+                var canvas = this.dummyCanvas,
+                    context = canvas.getContext("2d"),
+                    fontSize = this.getFontSize(),
+                    metrics;
                 return (
-                    (c.font =
-                        this.getFontStyle() + r + d + q + this.getFontFamily()),
-                    (e = c.measureText(a)),
+                    (context.font =
+                        this.getFontStyle() +
+                        " " +
+                        fontSize +
+                        "px " +
+                        this.getFontFamily()),
+                    (metrics = context.measureText(text)),
                     {
-                        width: e.width,
-                        height: parseInt(d, 10),
+                        width: metrics.width,
+                        height: parseInt(fontSize, 10),
                     }
                 );
             },
-            _expandTextData: function (a) {
-                var b = a.length,
-                    n = 0,
-                    text = h,
-                    newArr = [];
-                for (n = 0; n < b; n++)
-                    ((text = a[n]),
-                        newArr.push({
-                            text: text,
-                            width: this._getTextSize(text).width,
-                        }));
-                return newArr;
+            _expandTextData: function (lines) {
+                var len = lines.length,
+                    i = 0,
+                    lineText = "",
+                    expandedLines = [];
+                for (i = 0; i < len; i++) {
+                    lineText = lines[i];
+                    expandedLines.push({
+                        text: lineText,
+                        width: this._getTextSize(lineText).width,
+                    });
+                }
+                return expandedLines;
             },
             _setTextData: function () {
                 this.dummyCanvas.getContext("2d").save();
-                var b = this.getText().split(h),
-                    c = [],
-                    d = 0,
-                    addLine = !0,
+                var words = this.getText().split(""),
+                    lines = [],
+                    lineCount = 0,
+                    addLine = true,
                     lineHeightPx = 0,
                     padding = this.getPadding();
                 ((this.textWidth = 0),
@@ -2300,47 +2344,56 @@ var Kinetic = {};
                     ).height),
                     (lineHeightPx = this.getLineHeight() * this.textHeight));
                 while (
-                    b.length > 0 &&
+                    words.length > 0 &&
                     addLine &&
-                    (this.attrs.height === a ||
-                        lineHeightPx * (d + 1) <
+                    (this.attrs.height === undefined ||
+                        lineHeightPx * (lineCount + 1) <
                             this.attrs.height - padding * 2)
                 ) {
-                    var e = 0,
-                        f = undefined;
-                    addLine = !1;
-                    while (e < b.length) {
-                        if (b.indexOf(j) === e) {
-                            (b.splice(e, 1), (f = b.splice(0, e).join(h)));
+                    var wordIndex = 0,
+                        lineText = undefined;
+                    addLine = false;
+                    while (wordIndex < words.length) {
+                        if (words.indexOf("\n") === wordIndex) {
+                            words.splice(wordIndex, 1);
+                            lineText = words.splice(0, wordIndex).join("");
                             break;
                         }
-                        var i = b.slice(0, e);
+                        var currentWords = words.slice(0, wordIndex);
                         if (
-                            this.attrs.width !== a &&
-                            this._getTextSizeSkipContext(i.join(h)).width >
+                            this.attrs.width !== undefined &&
+                            this._getTextSizeSkipContext(currentWords.join(""))
+                                .width >
                                 this.attrs.width - padding * 2
                         ) {
-                            if (e == 0) break;
-                            var k = i.lastIndexOf(r),
-                                l = i.lastIndexOf(g),
-                                m = Math.max(k, l);
-                            if (m >= 0) {
-                                f = b.splice(0, 1 + m).join(h);
+                            if (wordIndex == 0) break;
+                            var lastSpace = currentWords.lastIndexOf(" "),
+                                lastNewline = currentWords.lastIndexOf("\n"),
+                                maxBreakIdx = Math.max(lastSpace, lastNewline);
+                            if (maxBreakIdx >= 0) {
+                                lineText = words
+                                    .splice(0, 1 + maxBreakIdx)
+                                    .join("");
                                 break;
                             }
-                            f = b.splice(0, e).join(h);
+                            lineText = words.splice(0, wordIndex).join("");
                             break;
                         }
-                        (e++, e === b.length && (f = b.splice(0, e).join(h)));
+                        (wordIndex++,
+                            wordIndex === words.length &&
+                                (lineText = words
+                                    .splice(0, wordIndex)
+                                    .join("")));
                     }
                     ((this.textWidth = Math.max(
                         this.textWidth,
-                        this._getTextSizeSkipContext(f).width,
+                        this._getTextSizeSkipContext(lineText).width,
                     )),
-                        f !== undefined && (c.push(f), (addLine = !0)),
-                        d++);
+                        lineText !== undefined &&
+                            (lines.push(lineText), (addLine = true)),
+                        lineCount++);
                 }
-                this.textArr = this._expandTextData(c);
+                this.textArr = this._expandTextData(lines);
                 this.dummyCanvas.getContext("2d").restore();
             },
         }),
@@ -2356,36 +2409,40 @@ var Kinetic = {};
         Kinetic.Node.addGetters(Kinetic.Text, [k]));
 })();
 (function () {
-    ((Kinetic.Line = function (a) {
-        this._initLine(a);
-    }),
-        (Kinetic.Line.prototype = {
-            _initLine: function (a) {
-                (this.setDefaultAttrs({
-                    points: [],
-                    lineCap: "butt",
-                }),
-                    Kinetic.Shape.call(this, a),
-                    (this.shapeType = "Line"),
-                    this._setDrawFuncs());
-            },
-            drawFunc: function (a) {
-                var b = this.getPoints(),
-                    c = b.length,
-                    d = a.getContext();
-                (d.beginPath(), d.moveTo(b[0].x, b[0].y));
-                for (var e = 1; e < c; e++) {
-                    var f = b[e];
-                    d.lineTo(f.x, f.y);
-                }
-                a.stroke(this);
-            },
-            setPoints: function (a) {
-                this.setAttr("points", Kinetic.Type._getPoints(a));
-            },
-        }),
-        Kinetic.Global.extend(Kinetic.Line, Kinetic.Shape),
-        Kinetic.Node.addGetters(Kinetic.Line, ["points"]));
+    // --- Line ---
+    Kinetic.Line = function (config) {
+        this._initLine(config);
+    };
+
+    Kinetic.Line.prototype = {
+        _initLine: function (config) {
+            this.setDefaultAttrs({
+                points: [],
+                lineCap: "butt",
+            });
+            Kinetic.Shape.call(this, config);
+            this.shapeType = "Line";
+            this._setDrawFuncs();
+        },
+        drawFunc: function (canvas) {
+            var points = this.getPoints(),
+                length = points.length,
+                context = canvas.getContext();
+            context.beginPath();
+            context.moveTo(points[0].x, points[0].y);
+            for (var i = 1; i < length; i++) {
+                var point = points[i];
+                context.lineTo(point.x, point.y);
+            }
+            canvas.stroke(this);
+        },
+        setPoints: function (points) {
+            this.setAttr("points", Kinetic.Type._getPoints(points));
+        },
+    };
+
+    Kinetic.Global.extend(Kinetic.Line, Kinetic.Shape);
+    Kinetic.Node.addGetters(Kinetic.Line, ["points"]);
 })();
 
 export default Kinetic;
