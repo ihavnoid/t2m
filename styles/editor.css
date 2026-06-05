@@ -5,7 +5,7 @@
     background-color: #f0f0f0;
     position: fixed;
     left: 0;
-    top: 50px;
+    top: var(--navbar-height);
     overflow: hidden;
 }
 

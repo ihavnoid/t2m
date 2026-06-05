@@ -1,3 +1,7 @@
+:root {
+    --navbar-height: 50px;
+}
+
 html,
 body {
     margin: 0;
@@ -16,10 +20,11 @@ body {
 
 #pane-container {
     /* 100% minus the height of the navbar */
-    height: calc(var(--visual-viewport-height, 100%) - 50px);
+    height: calc(var(--visual-viewport-height, 100%) - var(--navbar-height));
     width: 100%;
     overflow: hidden;
 }
+
 
 .modal-container {
     width: 100%;
@@ -86,12 +91,7 @@ form .form-group + .form-group {
 
 .form-group {
     width: 100%;
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-orient: horizontal;
-    -webkit-box-direction: normal;
-    -ms-flex-direction: row;
     flex-direction: row;
 }
 
@@ -104,15 +104,10 @@ form .control-label {
     width: 10em;
     min-width: 5em;
     color: #333;
-    -webkit-box-flex: 0.5;
-    -ms-flex: 0.5;
     flex: 0.5;
 }
 
 form label {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
     min-width: 0;
 }
@@ -120,8 +115,6 @@ form label {
 form input[type="text"],
 form input[type="number"] {
     display: flex;
-    -webkit-box-flex: 1;
-    -ms-flex: 1;
     flex: 1;
     margin-right: 3em;
     border-radius: 3px;
@@ -145,8 +138,6 @@ form .minicolors-swatch {
 
 .checkbox-control {
     display: flex;
-    -webkit-box-flex: 1;
-    -ms-flex: 1;
     flex: 1;
     margin-right: 3em;
     min-width: 0;
@@ -171,8 +162,6 @@ form input[type="checkbox"] + label {
 form select {
     min-width: 0;
     display: inline-block;
-    -webkit-box-flex: 1;
-    -ms-flex: 1;
     flex: 1;
     margin-right: 3em;
     border-radius: 3px;
@@ -184,9 +173,6 @@ form select {
 }
 
 .no-selection {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
 }
 

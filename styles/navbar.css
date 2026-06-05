@@ -36,7 +36,7 @@
     float: right;
     color: white;
     padding-right: 15px;
-    line-height: 50px;
+    line-height: var(--navbar-height);
     text-decoration: none;
 }
 
@@ -159,7 +159,8 @@
         border: none;
         color: white;
         font-size: 24px;
-        height: 50px;
+    height: var(--navbar-height);
+
         width: 50px;
         cursor: pointer;
         outline: none;
@@ -176,11 +177,11 @@
         background-color: #424242;
         width: 100%;
         position: absolute;
-        top: 50px;
+        top: var(--navbar-height);
         left: 0;
         z-index: 9999;
         border-bottom: 2px solid #333;
-        max-height: calc(100vh - 50px);
+        max-height: calc(100vh - var(--navbar-height));
         overflow-y: auto;
     }
 

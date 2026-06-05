@@ -3,7 +3,7 @@
     width: 50%;
     display: inline;
     position: fixed;
-    top: 50px;
+    top: var(--navbar-height);
     right: 0;
     overflow: hidden;
 }
