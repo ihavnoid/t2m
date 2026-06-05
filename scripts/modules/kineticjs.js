@@ -595,7 +595,8 @@ var Kinetic = {};
     }),
         (Kinetic.Collection.prototype = new Array()),
         (Kinetic.Collection.prototype.apply = function (a) {
-            ((args = [].slice.call(arguments)), args.shift());
+            var args = [].slice.call(arguments);
+            args.shift();
             for (var b = 0; b < this.length; b++)
                 Kinetic.Type._isFunction(this[b][a]) &&
                     this[b][a].apply(this[b], args);
@@ -682,7 +683,7 @@ var Kinetic = {};
                     this.children[0].destroy();
                 (d._removeId(this.getId()),
                     d._removeName(this.getName(), this._id),
-                    c && c.node && c.node._id === this._id && node._endDrag(),
+                    c && c.node && c.node._id === this._id && c.node._endDrag(),
                     this.trans && this.trans.stop(),
                     this.remove());
             },
@@ -2273,8 +2274,10 @@ var Kinetic = {};
                 );
             },
             _expandTextData: function (a) {
-                var b = a.length;
-                ((n = 0), (text = h), (newArr = []));
+                var b = a.length,
+                    n = 0,
+                    text = h,
+                    newArr = [];
                 for (n = 0; n < b; n++)
                     ((text = a[n]),
                         newArr.push({
@@ -2287,11 +2290,11 @@ var Kinetic = {};
                 this.dummyCanvas.getContext("2d").save();
                 var b = this.getText().split(h),
                     c = [],
-                    d = 0;
-                ((addLine = !0),
-                    (lineHeightPx = 0),
-                    (padding = this.getPadding()),
-                    (this.textWidth = 0),
+                    d = 0,
+                    addLine = !0,
+                    lineHeightPx = 0,
+                    padding = this.getPadding();
+                ((this.textWidth = 0),
                     (this.textHeight = this._getTextSizeSkipContext(
                         this.getText(),
                     ).height),
