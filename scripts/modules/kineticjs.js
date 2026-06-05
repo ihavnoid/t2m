@@ -2346,7 +2346,7 @@ var Kinetic = {};
                 while (
                     words.length > 0 &&
                     addLine &&
-                    (this.attrs.height === undefined ||
+                    (this.attrs.height === "auto" ||
                         lineHeightPx * (lineCount + 1) <
                             this.attrs.height - padding * 2)
                 ) {
@@ -2361,7 +2361,7 @@ var Kinetic = {};
                         }
                         var currentWords = words.slice(0, wordIndex);
                         if (
-                            this.attrs.width !== undefined &&
+                            this.attrs.width !== "auto" &&
                             this._getTextSizeSkipContext(currentWords.join(""))
                                 .width >
                                 this.attrs.width - padding * 2
