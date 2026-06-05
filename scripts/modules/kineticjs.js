@@ -603,24 +603,21 @@ Kinetic.Transform = class {
         return this.m;
     }
 };
-Kinetic.Collection = function (...args) {
-    this.length = args.length;
-    for (let i = 0; i < args.length; i++) {
-        this[i] = args[i];
+Kinetic.Collection = class extends Array {
+    constructor(...args) {
+        super(...args);
     }
-    return this;
-};
-Kinetic.Collection.prototype = new Array();
-Kinetic.Collection.prototype.apply = function (action, ...args) {
-    for (var b = 0; b < this.length; b++) {
-        if (Kinetic.Type._isFunction(this[b][action])) {
-            this[b][action](...args);
+    apply(action, ...args) {
+        for (var b = 0; b < this.length; b++) {
+            if (Kinetic.Type._isFunction(this[b][action])) {
+                this[b][action](...args);
+            }
         }
     }
-};
-Kinetic.Collection.prototype.each = function (callback) {
-    for (var b = 0; b < this.length; b++) {
-        callback.call(this[b], b, this[b]);
+    each(callback) {
+        for (var b = 0; b < this.length; b++) {
+            callback.call(this[b], b, this[b]);
+        }
     }
 };
 Kinetic.Node = class {
@@ -1387,7 +1384,7 @@ Kinetic.Container = class extends Kinetic.Node {
             node && collection.push(node);
         } else if (selector.charAt(0) === ".") {
             var nodes = this._getNodesByName(selector.slice(1));
-            Kinetic.Collection.apply(collection, nodes);
+            collection.push(...nodes);
         } else {
             var result = [],
                 children = this.getChildren(),
@@ -1395,7 +1392,7 @@ Kinetic.Container = class extends Kinetic.Node {
             for (var i = 0; i < len; i++) {
                 result = result.concat(children[i]._get(selector));
             }
-            Kinetic.Collection.apply(collection, result);
+            collection.push(...result);
         }
         return collection;
     }
