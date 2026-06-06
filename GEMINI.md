@@ -46,6 +46,7 @@ Foundational mandates and architectural patterns for the t2m project.
 - **Testing**:
   ... - **Frontend**: Use Vitest for unit tests in `tests/`. - **Backend**: Use the CLI-based Vitest suite in `tests/backend.test.js`.
 - **Validation**: Always run the relevant test suite after making changes. Verification is the only path to finality.
+- **Commits**: Edits should be committed after each modification, using meaningful, descriptive commit messages.
 
 ## Key Constants & Constraints
 

@@ -37,8 +37,33 @@ class EditorPane {
     _initListeners() {
         this.on("dblclick", (ev) => {
             if (ev.target.tagName === "IMG") {
-                imageDrawer.open(ev.target.src, (url) => {
-                    ev.target.src = url;
+                const targetImg = ev.target;
+                const allImgs = Array.from(this.el.querySelectorAll("img"));
+                const imgIndex = allImgs.indexOf(targetImg);
+
+                imageDrawer.open(targetImg.src, (url) => {
+                    // Assert that the targetImg is still attached to the document body.
+                    // This assertion fails if any background/physics simulation or user interaction
+                    // mutated and rebuilt the DOM tree while the image editor modal was open.
+                    // FUTURE AGENTS: You may remove or relax this assertion if a feature is introduced
+                    // that genuinely requires/expects DOM mutations while the image editor is active.
+                    const doc = this.selfWindow.document;
+                    console.assert(
+                        doc.body.contains(targetImg),
+                        "DOM was mutated and targetImg was detached while the image drawer was active!",
+                    );
+
+                    targetImg.src = url;
+                    if (imgIndex !== -1) {
+                        const currentImgs = this.el.querySelectorAll("img");
+                        const currentTargetImg = currentImgs[imgIndex];
+                        if (
+                            currentTargetImg &&
+                            currentTargetImg !== targetImg
+                        ) {
+                            currentTargetImg.src = url;
+                        }
+                    }
                     if (this.refresh()) {
                         if (this.observerFunc) this.observerFunc();
                     }
@@ -1144,10 +1169,13 @@ class EditorPane {
 
         // 3. Tokenization Phase: Convert meaningful HTML elements into internal command tokens
         const imgs = [];
-        t = t.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (m, src) => {
-            imgs.push(src);
-            return `\0i${imgs.length - 1}\0`; // \0iX\0 = Image token
-        });
+        t = t.replace(
+            /<img[^>]*src=["']?([^"'\s>]+)["']?[^>]*>/gi,
+            (m, src) => {
+                imgs.push(src);
+                return `\0i${imgs.length - 1}\0`; // \0iX\0 = Image token
+            },
+        );
 
         const links = [];
         t = t.replace(
@@ -1396,10 +1424,13 @@ class EditorPane {
 
             // Temporarily tokenize images and links to avoid interfering with text manipulation
             const imgs = [];
-            tp = tp.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (m, src) => {
-                imgs.push(src);
-                return `\0i${imgs.length - 1}\0`;
-            });
+            tp = tp.replace(
+                /<img[^>]*src=["']?([^"'\s>]+)["']?[^>]*>/gi,
+                (m, src) => {
+                    imgs.push(src);
+                    return `\0i${imgs.length - 1}\0`;
+                },
+            );
 
             const links = [];
             tp = tp.replace(

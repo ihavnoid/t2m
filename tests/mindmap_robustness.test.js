@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mindmap } from "../scripts/modules/mindmap.js";
 
 describe("Mindmap Parser robustnes", () => {
@@ -123,5 +123,53 @@ describe("Mindmap Parser robustnes", () => {
         expect(nodeA.data.label).toBe("A");
         expect(nodeA.x).toBe(50);
         expect(mindmap.engine.nodes[1].data.label).toBe("B"); // New node
+    });
+
+    describe("Blocked Interaction during Image Drawer Active", () => {
+        beforeEach(() => {
+            global.window.imageDrawer = { isActive: true };
+        });
+
+        afterEach(() => {
+            delete global.window.imageDrawer;
+        });
+
+        it("should not execute stagePanHandler when imageDrawer is active", () => {
+            const mockEngine = mindmap.createEngine("stageHolder", {});
+            mindmap.engine = mockEngine;
+
+            const spyGetTouchPos = vi.spyOn(mockEngine, "_getTouchPos");
+
+            // Invoke stagePanHandler
+            mockEngine._stagePanHandler(new MouseEvent("mousemove"));
+
+            // It should have returned early without executing _getTouchPos
+            expect(spyGetTouchPos).not.toHaveBeenCalled();
+        });
+
+        it("should not execute tick or redraw in simulation when imageDrawer is active", () => {
+            const mockEngine = mindmap.createEngine("stageHolder", {});
+            mindmap.engine = mockEngine;
+
+            const spyRedraw = vi.spyOn(mockEngine, "redraw");
+
+            mockEngine.runSimulation();
+
+            // Trigger simulation tick callback
+            const tickCall = global.d3.on.mock.calls.find(
+                (call) => call[0] === "tick",
+            );
+            expect(tickCall).toBeDefined();
+
+            const tickCallback = tickCall[1];
+
+            // Clear the initial call to redraw made during createSimulation/runSimulation
+            spyRedraw.mockClear();
+
+            tickCallback();
+
+            // It should have returned early without executing redraw
+            expect(spyRedraw).not.toHaveBeenCalled();
+        });
     });
 });

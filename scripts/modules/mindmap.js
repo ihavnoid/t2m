@@ -62,6 +62,8 @@ class Mindmap {
             stageEl.addEventListener(
                 "wheel",
                 (event) => {
+                    if (window.imageDrawer && window.imageDrawer.isActive)
+                        return;
                     event.preventDefault();
                     this.engine.zoom(-event.deltaY);
                 },
@@ -72,6 +74,7 @@ class Mindmap {
         // Pinch-to-Zoom Support
         let lastDist = 0;
         $stage.on("touchstart", (ev) => {
+            if (window.imageDrawer && window.imageDrawer.isActive) return;
             if (ev.originalEvent.touches.length === 2) {
                 const t1 = ev.originalEvent.touches[0];
                 const t2 = ev.originalEvent.touches[1];
@@ -80,6 +83,7 @@ class Mindmap {
         });
 
         $stage.on("touchmove", (ev) => {
+            if (window.imageDrawer && window.imageDrawer.isActive) return;
             if (ev.originalEvent.touches.length === 2) {
                 ev.preventDefault(); // Prevent browser zoom/scroll
                 const t1 = ev.originalEvent.touches[0];
@@ -102,6 +106,7 @@ class Mindmap {
         });
 
         $stage.on("touchend", (ev) => {
+            if (window.imageDrawer && window.imageDrawer.isActive) return;
             if (ev.originalEvent.touches.length < 2) {
                 lastDist = 0;
             }
@@ -450,6 +455,7 @@ class MindmapEngine {
 
         // Native event handler for stage panning and node dragging
         this._stagePanHandler = (ev) => {
+            if (window.imageDrawer && window.imageDrawer.isActive) return;
             const { pageX, pageY } = this._getTouchPos(ev);
 
             if (this.isDraggingStage) {
@@ -532,6 +538,7 @@ class MindmapEngine {
         window.addEventListener("mousemove", this._stagePanHandler);
 
         $(stageEl).on("touchstart mousedown", (event) => {
+            if (window.imageDrawer && window.imageDrawer.isActive) return;
             this.shiftKey = event.shiftKey;
             const { pageX, pageY } = this._getTouchPos(event);
             const hitNode = getHitNode(pageX, pageY);
@@ -581,6 +588,7 @@ class MindmapEngine {
         });
 
         $(window).on("mouseup touchend", (event) => {
+            if (window.imageDrawer && window.imageDrawer.isActive) return;
             if (this.longPressTimer) {
                 clearTimeout(this.longPressTimer);
                 this.longPressTimer = null;
@@ -763,6 +771,7 @@ class MindmapEngine {
     runSimulation() {
         this.simulation = this.createSimulation(1.0);
         this.simulation.on("tick", () => {
+            if (window.imageDrawer && window.imageDrawer.isActive) return;
             const alpha = this.simulation.alpha();
             if (0.011 > alpha) this.simulation.alpha(0.8 * alpha);
             if (alpha < 0.02) {

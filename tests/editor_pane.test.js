@@ -180,4 +180,34 @@ describe("EditorPane Module - Coordinate Updates", () => {
             editorPane.markCaretPos.mockRestore();
         });
     });
+
+    describe("Image Editing and cleanupHTML Integration", () => {
+        it("should return true from refresh and update processed text when an image is edited", async () => {
+            const initialHtml =
+                '<ul><li>Node text <img src="images/old_image.png"></li></ul>';
+            editorPane.set(initialHtml);
+
+            // Verify initial state
+            expect(editorPane.getProcessed()).toContain("images/old_image.png");
+
+            // Mock observerFunc
+            const mockObserver = vi.fn();
+            editorPane.observe(mockObserver);
+
+            // Find the image element
+            const img = editorPane.el.querySelector("img");
+            expect(img).not.toBeNull();
+
+            // Simulate the double click callback
+            img.src = "images/new_image.png";
+
+            const success = editorPane.refresh();
+
+            expect(success).toBe(true);
+            expect(editorPane.getProcessed()).toContain("images/new_image.png");
+            expect(editorPane.getProcessed()).not.toContain(
+                "images/old_image.png",
+            );
+        });
+    });
 });
