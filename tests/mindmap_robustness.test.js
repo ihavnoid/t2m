@@ -171,5 +171,28 @@ describe("Mindmap Parser robustnes", () => {
             // It should have returned early without executing redraw
             expect(spyRedraw).not.toHaveBeenCalled();
         });
+
+        it("should return early in stagePanHandler when not dragging and event target is outside stageEl", () => {
+            const mockEngine = mindmap.createEngine("stageHolder", {});
+            mindmap.engine = mockEngine;
+
+            const spyGetTouchPos = vi.spyOn(mockEngine, "_getTouchPos");
+
+            // Mock imageDrawer inactive
+            global.window.imageDrawer = { isActive: false };
+
+            // Create a fake target element that is NOT inside stageEl
+            const externalDiv = document.createElement("div");
+            const event = new MouseEvent("mousemove", { bubbles: true });
+            Object.defineProperty(event, "target", {
+                value: externalDiv,
+                enumerable: true,
+            });
+
+            mockEngine._stagePanHandler(event);
+
+            // It should have returned early because externalDiv is not within stageEl
+            expect(spyGetTouchPos).not.toHaveBeenCalled();
+        });
     });
 });

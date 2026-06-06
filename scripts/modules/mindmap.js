@@ -456,6 +456,13 @@ class MindmapEngine {
         // Native event handler for stage panning and node dragging
         this._stagePanHandler = (ev) => {
             if (window.imageDrawer && window.imageDrawer.isActive) return;
+            if (
+                !this.isDraggingStage &&
+                this.draggedNodes.length === 0 &&
+                !stageEl.contains(ev.target)
+            ) {
+                return;
+            }
             const { pageX, pageY } = this._getTouchPos(ev);
 
             if (this.isDraggingStage) {
