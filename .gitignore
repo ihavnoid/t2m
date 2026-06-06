@@ -2,6 +2,7 @@
 config.json
 *.db
 *.log
+t2m.min.js
 
 # Node.js
 node_modules/
@@ -54,3 +55,6 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# images uploaded
+images/
