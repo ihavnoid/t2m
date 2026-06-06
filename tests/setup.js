@@ -136,10 +136,3 @@ global.d3 = {
     distanceMax: vi.fn().mockReturnThis(),
 };
 
-// Mock difflib
-global.difflib = {
-    stringAsLines: vi.fn((s) => s.split("\n")),
-    SequenceMatcher: vi.fn().mockImplementation(() => ({
-        get_opcodes: vi.fn().mockReturnValue([]),
-    })),
-};
