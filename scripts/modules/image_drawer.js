@@ -30,6 +30,7 @@ class ImageDrawer {
         this.currentThickness = 5;
         this.zoomLevel = 1.0;
         this.pendingClipart = null; // { unicode, size }
+        this.pendingText = null; // { text, size }
         this.pendingPaste = null; // Image object
         this.isActive = false;
         this.boundWindow = null;
@@ -61,6 +62,7 @@ class ImageDrawer {
         if (!this.initializedDocs.has(this.doc)) {
             this._initToolbar();
             this._initClipart();
+            this._initText();
             this._initResizing();
             this._initCanvasEvents();
             this.initializedDocs.add(this.doc);
@@ -110,13 +112,19 @@ class ImageDrawer {
 
     _initToolbar() {
         const d = this.doc;
-        const bind = (id, fn) =>
-            d.getElementById(id).addEventListener("click", fn);
+        const bind = (id, fn) => {
+            const el = d.getElementById(id);
+            if (el) el.addEventListener("click", fn);
+        };
 
         bind("draw-tool-pen", () => this.setTool("pen"));
         bind("draw-tool-eraser", () => this.setTool("eraser"));
         bind("draw-tool-clipart", (e) => {
             this._toggleClipartPanel();
+            e.stopPropagation();
+        });
+        bind("draw-tool-text", (e) => {
+            this._toggleTextPanel();
             e.stopPropagation();
         });
         bind("draw-tool-undo", () => this.undo());
@@ -132,9 +140,12 @@ class ImageDrawer {
             btn.addEventListener("click", () => this.close());
         });
 
-        d.getElementById("close-help").addEventListener("click", () => {
-            this._toggleHelpPanel(false);
-        });
+        const closeHelp = d.getElementById("close-help");
+        if (closeHelp) {
+            closeHelp.addEventListener("click", () => {
+                this._toggleHelpPanel(false);
+            });
+        }
 
         // Color Picker
         d.querySelectorAll(".color-swatch").forEach((swatch) => {
@@ -242,6 +253,43 @@ class ImageDrawer {
         });
     }
 
+    _initText() {
+        const d = this.doc;
+        const panel = d.getElementById("draw-text-panel");
+        const backdrop = d.getElementById("draw-text-backdrop");
+        if (!panel || !backdrop) return;
+
+        // Isolate panel clicks
+        [panel, backdrop].forEach((el) => {
+            if (!el) return;
+            el.addEventListener("mousedown", (e) => e.stopPropagation());
+            el.addEventListener("click", (e) => e.stopPropagation());
+        });
+
+        const closeBtn = d.getElementById("close-draw-text");
+        if (closeBtn) {
+            closeBtn.addEventListener("click", () => {
+                this._toggleTextPanel(false);
+            });
+        }
+
+        const applyBtn = d.getElementById("draw-text-apply");
+        if (applyBtn) {
+            applyBtn.addEventListener("click", () => {
+                const textInput = d.getElementById("draw-text-input");
+                const sizeInput = d.getElementById("draw-text-size");
+                const text = textInput ? textInput.value : "";
+                const size = sizeInput ? parseInt(sizeInput.value) || 24 : 24;
+                if (text.trim() === "") {
+                    return;
+                }
+                this.pendingText = { text, size };
+                this.setTool("text");
+                this._toggleTextPanel(false);
+            });
+        }
+    }
+
     _toggleHelpPanel(force) {
         const panel = this.doc.getElementById("draw-help-panel");
         if (!panel) return;
@@ -249,6 +297,10 @@ class ImageDrawer {
         const show =
             force !== undefined ? force : panel.style.display === "none";
         panel.style.display = show ? "flex" : "none";
+        if (show) {
+            this._toggleClipartPanel(false);
+            this._toggleTextPanel(false);
+        }
     }
 
     _toggleClipartPanel(force) {
@@ -260,6 +312,27 @@ class ImageDrawer {
             force !== undefined ? force : panel.style.display === "none";
         panel.style.display = show ? "flex" : "none";
         backdrop.style.display = show ? "block" : "none";
+        if (show) {
+            this._toggleTextPanel(false);
+            this._toggleHelpPanel(false);
+        }
+    }
+
+    _toggleTextPanel(force) {
+        const panel = this.doc.getElementById("draw-text-panel");
+        const backdrop = this.doc.getElementById("draw-text-backdrop");
+        if (!panel || !backdrop) return;
+
+        const show =
+            force !== undefined ? force : panel.style.display === "none";
+        panel.style.display = show ? "flex" : "none";
+        backdrop.style.display = show ? "block" : "none";
+
+        if (show) {
+            this._toggleClipartPanel(false);
+            this._toggleHelpPanel(false);
+            this.doc.getElementById("draw-text-input").focus();
+        }
     }
 
     _initResizing() {
@@ -519,22 +592,20 @@ class ImageDrawer {
     setTool(tool) {
         const d = this.doc;
         this.currentTool = tool;
-        d.getElementById("draw-tool-pen").classList.toggle(
-            "active",
-            tool === "pen",
-        );
-        d.getElementById("draw-tool-eraser").classList.toggle(
-            "active",
-            tool === "eraser",
-        );
-        d.getElementById("draw-tool-clipart").classList.toggle(
-            "active",
-            tool === "clipart",
-        );
+        const penBtn = d.getElementById("draw-tool-pen");
+        const eraserBtn = d.getElementById("draw-tool-eraser");
+        const clipartBtn = d.getElementById("draw-tool-clipart");
+        const textBtn = d.getElementById("draw-tool-text");
+
+        if (penBtn) penBtn.classList.toggle("active", tool === "pen");
+        if (eraserBtn) eraserBtn.classList.toggle("active", tool === "eraser");
+        if (clipartBtn)
+            clipartBtn.classList.toggle("active", tool === "clipart");
+        if (textBtn) textBtn.classList.toggle("active", tool === "text");
 
         this.canvas.classList.toggle(
             "clipart-tool",
-            tool === "clipart" || tool === "paste",
+            tool === "clipart" || tool === "paste" || tool === "text",
         );
 
         this.context.lineJoin = "round";
@@ -583,6 +654,18 @@ class ImageDrawer {
             this.clearPreview();
             return;
         }
+        if (this.currentTool === "text" && this.pendingText) {
+            this.drawText(
+                this.pendingText.text,
+                this.pendingText.size,
+                pos.x,
+                pos.y,
+            );
+            this.clearPreview();
+            this.setTool("pen");
+            this.pendingText = null;
+            return;
+        }
 
         this.isDrawing = true;
         this.lastPos = pos;
@@ -612,6 +695,26 @@ class ImageDrawer {
         this.context.textAlign = "center";
         this.context.textBaseline = "middle";
         this.context.fillText(unicode, x, y);
+        this.context.restore();
+        this.saveSnapshot();
+    }
+
+    drawText(text, size, x, y) {
+        this.context.save();
+        this.context.font = `${size}px sans-serif`;
+        this.context.fillStyle = this.currentColor;
+        this.context.textAlign = "center";
+        this.context.textBaseline = "middle";
+
+        const lines = text.split("\n");
+        const lineHeight = size * 1.2;
+        const totalHeight = lineHeight * (lines.length - 1);
+        const startY = y - totalHeight / 2;
+
+        lines.forEach((line, index) => {
+            this.context.fillText(line, x, startY + index * lineHeight);
+        });
+
         this.context.restore();
         this.saveSnapshot();
     }
@@ -652,6 +755,28 @@ class ImageDrawer {
             this.previewContext.textAlign = "center";
             this.previewContext.textBaseline = "middle";
             this.previewContext.fillText(unicode, pos.x, pos.y);
+            this.previewContext.restore();
+        } else if (this.currentTool === "text" && this.pendingText) {
+            const { text, size } = this.pendingText;
+            this.previewContext.save();
+            this.previewContext.globalAlpha = 0.5;
+            this.previewContext.font = `${size}px sans-serif`;
+            this.previewContext.fillStyle = this.currentColor;
+            this.previewContext.textAlign = "center";
+            this.previewContext.textBaseline = "middle";
+
+            const lines = text.split("\n");
+            const lineHeight = size * 1.2;
+            const totalHeight = lineHeight * (lines.length - 1);
+            const startY = pos.y - totalHeight / 2;
+
+            lines.forEach((line, index) => {
+                this.previewContext.fillText(
+                    line,
+                    pos.x,
+                    startY + index * lineHeight,
+                );
+            });
             this.previewContext.restore();
         }
     }
@@ -830,6 +955,7 @@ class ImageDrawer {
                 const d = this.doc;
                 d.getElementById("drawing-modal").classList.remove("active");
                 this._toggleClipartPanel(false);
+                this._toggleTextPanel(false);
                 this._toggleHelpPanel(false);
                 this.clearPreview();
             }

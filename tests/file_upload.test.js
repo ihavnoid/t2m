@@ -11,7 +11,7 @@ describe("File Upload Module", () => {
 
     it("successfully uploads an image and returns the URL", async () => {
         const mockUrl = "images/abc123hash.png";
-        
+
         // Mock fetch response
         global.fetch = vi.fn().mockResolvedValue({
             ok: true,
@@ -21,7 +21,10 @@ describe("File Upload Module", () => {
         const result = await uploadImage("base64data");
 
         expect(result).toBe(mockUrl);
-        expect(global.fetch).toHaveBeenCalledWith("p/image_upload.php", expect.any(Object));
+        expect(global.fetch).toHaveBeenCalledWith(
+            "p/image_upload.php",
+            expect.any(Object),
+        );
     });
 
     it("throws an error and alerts the user when the upload fails", async () => {
@@ -31,8 +34,12 @@ describe("File Upload Module", () => {
             statusText: "Internal Server Error",
         });
 
-        await expect(uploadImage("base64data")).rejects.toThrow("Upload failed: Internal Server Error");
-        expect(global.alert).toHaveBeenCalledWith(expect.stringContaining("Failed to upload image"));
+        await expect(uploadImage("base64data")).rejects.toThrow(
+            "Upload failed: Internal Server Error",
+        );
+        expect(global.alert).toHaveBeenCalledWith(
+            expect.stringContaining("Failed to upload image"),
+        );
     });
 
     it("handles server-side error messages correctly", async () => {
@@ -42,7 +49,9 @@ describe("File Upload Module", () => {
             json: async () => ({ error: "Invalid file type" }),
         });
 
-        await expect(uploadImage("base64data")).rejects.toThrow("Invalid file type");
+        await expect(uploadImage("base64data")).rejects.toThrow(
+            "Invalid file type",
+        );
     });
 
     it("manages the upload overlay visibility during the process", async () => {

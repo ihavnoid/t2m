@@ -310,7 +310,8 @@
     border-radius: 4px;
 }
 
-.clipart-header #close-clipart {
+.clipart-header #close-clipart,
+.clipart-header #close-draw-text {
     background: none;
     border: none;
     font-size: 1.5rem;
@@ -319,7 +320,8 @@
     color: var(--text-color-muted);
 }
 
-.clipart-header #close-clipart:hover {
+.clipart-header #close-clipart:hover,
+.clipart-header #close-draw-text:hover {
     color: var(--text-color-dark);
 }
 

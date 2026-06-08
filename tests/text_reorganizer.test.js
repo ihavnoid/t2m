@@ -15,7 +15,12 @@ describe("TextReorganizer Heuristic (Dynamic Stack)", () => {
             textReorganizer.detectDepth("   Level 1", "Root", 0, context),
         ).toBe(1);
         expect(
-            textReorganizer.detectDepth("    Level 2", "   Level 1", 1, context),
+            textReorganizer.detectDepth(
+                "    Level 2",
+                "   Level 1",
+                1,
+                context,
+            ),
         ).toBe(2);
         expect(
             textReorganizer.detectDepth(
@@ -38,25 +43,31 @@ describe("TextReorganizer Heuristic (Dynamic Stack)", () => {
     it("Edge Case: Empty or Whitespace Lines", () => {
         expect(textReorganizer.cleanLines("")).toEqual([]);
         expect(textReorganizer.cleanLines("\n\n  \n")).toEqual([]);
-        expect(textReorganizer.cleanLines("Line 1\n\nLine 2")).toEqual(["Line 1", "Line 2"]);
+        expect(textReorganizer.cleanLines("Line 1\n\nLine 2")).toEqual([
+            "Line 1",
+            "Line 2",
+        ]);
     });
 
     it("Edge Case: Extreme Indentation (Performance/Stress)", () => {
         const massiveIndent = " ".repeat(1000) + "Deep Node";
-        expect(textReorganizer.detectDepth(massiveIndent, "Root", 0, context)).toBeGreaterThan(0);
+        expect(
+            textReorganizer.detectDepth(massiveIndent, "Root", 0, context),
+        ).toBeGreaterThan(0);
     });
 
     it("Edge Case: Mixed Tabs and Spaces", () => {
         // Tab (4) + 2 spaces = 6
         const mixedLine = "\t  Mixed";
-        expect(textReorganizer.detectDepth(mixedLine, "Root", 0, context)).toBeGreaterThan(0);
+        expect(
+            textReorganizer.detectDepth(mixedLine, "Root", 0, context),
+        ).toBeGreaterThan(0);
     });
 
     it("Edge Case: Heavy Punctuation/Separators", () => {
         const separators = ["---", "===", "***", "   "];
         expect(textReorganizer.cleanLines(separators.join("\n"))).toEqual([]);
     });
-
 
     it("6-10: Inconsistent Dedenting (Snapping)", () => {
         textReorganizer.detectDepth("Root", null, 0, context); // Stack [0]
@@ -72,11 +83,16 @@ describe("TextReorganizer Heuristic (Dynamic Stack)", () => {
 
     it("11-15: Tab Support (4 spaces equivalent)", () => {
         expect(textReorganizer.detectDepth("Root", null, 0, context)).toBe(0);
-        expect(textReorganizer.detectDepth("\tTab L1", "Root", 0, context)).toBe(
-            1,
-        );
         expect(
-            textReorganizer.detectDepth("    Spaces L1", "\tTab L1", 1, context),
+            textReorganizer.detectDepth("\tTab L1", "Root", 0, context),
+        ).toBe(1);
+        expect(
+            textReorganizer.detectDepth(
+                "    Spaces L1",
+                "\tTab L1",
+                1,
+                context,
+            ),
         ).toBe(1);
         expect(
             textReorganizer.detectDepth("\t\tTab L2", "Spaces L1", 1, context),
@@ -86,9 +102,9 @@ describe("TextReorganizer Heuristic (Dynamic Stack)", () => {
     it("16-20: Colon Hierarchy Logic", () => {
         expect(textReorganizer.detectDepth("Topic:", null, 0, context)).toBe(0);
         // No indent but previous had colon -> Child (Depth 1)
-        expect(textReorganizer.detectDepth("Subtopic", "Topic:", 0, context)).toBe(
-            1,
-        );
+        expect(
+            textReorganizer.detectDepth("Subtopic", "Topic:", 0, context),
+        ).toBe(1);
         // Indented child
         expect(
             textReorganizer.detectDepth("  Indented:", "Subtopic", 1, context),
@@ -121,15 +137,23 @@ describe("TextReorganizer Heuristic (Dynamic Stack)", () => {
             let currentIndent;
 
             if (goDeeper) {
-                currentIndent = history[history.length - 1].indent + 2 + Math.floor(Math.random() * 5);
+                currentIndent =
+                    history[history.length - 1].indent +
+                    2 +
+                    Math.floor(Math.random() * 5);
             } else {
                 const randomLevel = Math.floor(Math.random() * history.length);
                 currentIndent = history[randomLevel].indent;
             }
 
             const line = " ".repeat(currentIndent) + "Node " + i;
-            const result = textReorganizer.detectDepth(line, prevLine, prevDepth, stackContext);
-            
+            const result = textReorganizer.detectDepth(
+                line,
+                prevLine,
+                prevDepth,
+                stackContext,
+            );
+
             // Basic sanity check: if indent increased, depth must increase.
             if (currentIndent > history[history.length - 1].indent) {
                 expect(result).toBeGreaterThan(prevDepth);
@@ -143,4 +167,3 @@ describe("TextReorganizer Heuristic (Dynamic Stack)", () => {
         }
     });
 });
-

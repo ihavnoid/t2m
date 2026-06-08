@@ -10,6 +10,7 @@
 							<button id="draw-tool-pen" class="active" title="Pen (Black)"><i class="fa-solid fa-pencil"></i></button>
 							<button id="draw-tool-eraser" title="Eraser"><i class="fa-solid fa-eraser"></i></button>
 							<button id="draw-tool-clipart" title="Paste Clipart"><i class="fa-solid fa-icons"></i></button>
+							<button id="draw-tool-text" title="Add Text"><i class="fa-solid fa-font"></i></button>
 							<span class="divider"></span>
 							<div class="color-picker">
 								<button class="color-swatch active" data-color="#000000" style="background-color: #000000;" title="Black"></button>
@@ -98,6 +99,27 @@
 								<button class="clipart-item" data-unicode="f06c" title="Leaf"><i class="fa-solid fa-leaf"></i></button>
 								<button class="clipart-item" data-unicode="f06d" title="Fire"><i class="fa-solid fa-fire"></i></button>
 								<button class="clipart-item" data-unicode="f002" title="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
+							</div>
+						</div>
+
+						<div id="draw-text-backdrop" class="clipart-backdrop" style="display: none;"></div>
+						<div id="draw-text-panel" class="clipart-panel" style="display: none; width: 320px; max-width: 90%;">
+							<div class="clipart-header">
+								<span>Add Text</span>
+								<button id="close-draw-text">&times;</button>
+							</div>
+							<div style="padding: 15px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; background: white; color: black; border-radius: 0 0 8px 8px;">
+								<div style="display: flex; flex-direction: column; gap: 5px;">
+									<label for="draw-text-input" style="font-weight: bold; font-size: 14px; text-align: left;">Text:</label>
+									<textarea id="draw-text-input" rows="4" style="width: 100%; resize: vertical; padding: 6px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; color: black; background-color: white;" placeholder="Type text here..."></textarea>
+								</div>
+								<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+									<label for="draw-text-size" style="font-weight: bold; font-size: 14px;">Font Size (px):</label>
+									<input id="draw-text-size" type="number" value="24" min="8" max="120" style="width: 80px; padding: 6px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; color: black; background-color: white;" />
+								</div>
+								<div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 5px;">
+									<button id="draw-text-apply" style="padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Apply</button>
+								</div>
 							</div>
 						</div>
 

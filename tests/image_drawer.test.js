@@ -26,6 +26,7 @@ describe("ImageDrawer Module", () => {
                     <button class="thickness-swatch active" data-thickness="5"></button>
                 </div>
                 <button id="draw-tool-clipart"></button>
+                <button id="draw-tool-text"></button>
                 <div id="clipart-backdrop" style="display: none;"></div>
                 <div id="clipart-panel" style="display: none;">
                     <div class="clipart-header">
@@ -38,6 +39,13 @@ describe("ImageDrawer Module", () => {
                     <div class="clipart-grid">
                         <button class="clipart-item" data-unicode="\uf118"></button>
                     </div>
+                </div>
+                <div id="draw-text-backdrop" style="display: none;"></div>
+                <div id="draw-text-panel" style="display: none;">
+                    <button id="close-draw-text"></button>
+                    <textarea id="draw-text-input"></textarea>
+                    <input id="draw-text-size" value="24" />
+                    <button id="draw-text-apply"></button>
                 </div>
                 <div id="draw-help-panel" style="display: none;">
                     <button id="close-help"></button>
@@ -299,5 +307,57 @@ describe("ImageDrawer Module", () => {
         // Restore globals
         vi.unstubAllGlobals();
         imageDrawer.win.Image = originalImage;
+    });
+
+    it("should display text modal, set pending text, and stamp it on mouse click", () => {
+        // Initially modal is closed
+        const panel = document.getElementById("draw-text-panel");
+        const backdrop = document.getElementById("draw-text-backdrop");
+        expect(panel.style.display).toBe("none");
+
+        // Open imageDrawer and click text button
+        imageDrawer.open();
+        document.getElementById("draw-tool-text").click();
+
+        // Panel should be shown
+        expect(panel.style.display).toBe("flex");
+        expect(backdrop.style.display).toBe("block");
+
+        // Input text and size, then apply
+        document.getElementById("draw-text-input").value = "Hello\nWorld";
+        document.getElementById("draw-text-size").value = "30";
+        document.getElementById("draw-text-apply").click();
+
+        // Modal should close and tool should be set to "text"
+        expect(panel.style.display).toBe("none");
+        expect(imageDrawer.currentTool).toBe("text");
+        expect(imageDrawer.pendingText).toEqual({
+            text: "Hello\nWorld",
+            size: 30,
+        });
+
+        // Simulate drawing text on click (mousedown)
+        const event = new MouseEvent("mousedown", {
+            clientX: 100,
+            clientY: 100,
+        });
+        imageDrawer.canvas.dispatchEvent(event);
+
+        // Canvas fillText should be called for each line
+        expect(imageDrawer.context.fillText).toHaveBeenCalledWith(
+            "Hello",
+            100,
+            82,
+        );
+        expect(imageDrawer.context.fillText).toHaveBeenCalledWith(
+            "World",
+            100,
+            118,
+        );
+        expect(imageDrawer.history.length).toBe(2);
+
+        // Tool should revert to pen
+        expect(imageDrawer.currentTool).toBe("pen");
+        expect(imageDrawer.pendingText).toBeNull();
     });
 });

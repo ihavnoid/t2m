@@ -11,16 +11,18 @@
 export function cleanLines(text) {
     if (!text) return [];
 
-    return text
-        .split("\n")
-        // Filter out empty lines or lines with only symbols/bullets
-        .filter((line) => {
-            const trimmed = line.trim();
-            if (trimmed.length === 0) return false;
-            // Drop lines that are just separators (---, ===, ***)
-            if (/^[ \-\*\=_]+$/.test(trimmed)) return false;
-            return true;
-        });
+    return (
+        text
+            .split("\n")
+            // Filter out empty lines or lines with only symbols/bullets
+            .filter((line) => {
+                const trimmed = line.trim();
+                if (trimmed.length === 0) return false;
+                // Drop lines that are just separators (---, ===, ***)
+                if (/^[ \-\*\=_]+$/.test(trimmed)) return false;
+                return true;
+            })
+    );
 }
 
 /**
@@ -83,7 +85,9 @@ export function detectDepth(line, prevLine, prevDepth, context = {}) {
         }
         // "Forgiving Snap": If it doesn't match a previous level exactly,
         // treat it as a new level relative to where we landed.
-        if (context.indentStack[context.indentStack.length - 1] < currentIndent) {
+        if (
+            context.indentStack[context.indentStack.length - 1] < currentIndent
+        ) {
             context.indentStack.push(currentIndent);
         }
     }
@@ -163,7 +167,10 @@ export function buildHierarchyHTML(lines, depths) {
 
             if (depth === -1) {
                 // Heuristic comment from plaintext: strip prefixes
-                comment = comment.replace(/^\/\/\s?|^note:\s?|^remark:\s?|^#\s?/i, "");
+                comment = comment.replace(
+                    /^\/\/\s?|^note:\s?|^remark:\s?|^#\s?/i,
+                    "",
+                );
             }
 
             if (stack.length > 0 && stack[stack.length - 1] === "LI") {
@@ -231,18 +238,22 @@ export function buildHierarchyHTML(lines, depths) {
 }
 
 export function escapeHTML(str) {
-    return str.replace(/[&<>"']/g, (m) => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-    }[m]));
+    return str.replace(
+        /[&<>"']/g,
+        (m) =>
+            ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+            })[m],
+    );
 }
 
 /**
  * Main entry point for reformatting a block of text.
- * @param {string} text 
+ * @param {string} text
  * @returns {string} HTML
  */
 export function reformatText(text) {
@@ -256,7 +267,7 @@ export function reformatText(text) {
             lines[i],
             i > 0 ? lines[i - 1] : null,
             i > 0 ? depths[i - 1] : 0,
-            context
+            context,
         );
         depths.push(d);
     }

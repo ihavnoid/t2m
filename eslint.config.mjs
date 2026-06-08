@@ -13,7 +13,7 @@ export default [
                 ...globals.node,
                 Kinetic: "readonly",
                 d3: "readonly",
-                    __serverBase__: "readonly",
+                __serverBase__: "readonly",
                 globals: "readonly",
                 confirm: "readonly",
                 alert: "readonly",

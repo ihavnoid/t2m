@@ -139,8 +139,10 @@ class PaneResizer {
                         this.editorPanePercentage > 0 &&
                         this.editorPanePercentage < 100
                     ) {
-                        this.oldEditorPanePercentage = this.editorPanePercentage;
-                        this.oldViewerPanePercentage = this.viewerPanePercentage;
+                        this.oldEditorPanePercentage =
+                            this.editorPanePercentage;
+                        this.oldViewerPanePercentage =
+                            this.viewerPanePercentage;
                     }
                 }
             });
@@ -158,7 +160,7 @@ class PaneResizer {
         $("#viewer-container").attr("style", "");
 
         // Re-apply visibility for buttons
-        if(this.layoutMode === "horizontal") {
+        if (this.layoutMode === "horizontal") {
             this.$editorCollapseButtonH.css("visibility", "visible");
             this.$viewerCollapseButtonH.css("visibility", "visible");
         } else {
@@ -173,7 +175,11 @@ class PaneResizer {
         );
     }
 
-    resizePanesToPercentage(newEditorPanePercentage, newViewerPanePercentage, force = false) {
+    resizePanesToPercentage(
+        newEditorPanePercentage,
+        newViewerPanePercentage,
+        force = false,
+    ) {
         // Validate sum
         if (
             Math.abs(newEditorPanePercentage + newViewerPanePercentage - 100) >
@@ -204,7 +210,7 @@ class PaneResizer {
                 return this.resizePanesToPercentage(
                     this.editorPanePercentage,
                     this.viewerPanePercentage,
-                    force
+                    force,
                 );
             }
             if (newEditorPanePercentage <= 0) {
@@ -415,7 +421,7 @@ class PaneResizer {
         this.resizePanesToPercentage(
             this.editorPanePercentage,
             this.viewerPanePercentage,
-            true
+            true,
         );
     }
 
@@ -440,7 +446,7 @@ class PaneResizer {
         this.resizePanesToPercentage(
             this.editorPanePercentage,
             this.viewerPanePercentage,
-            true
+            true,
         );
     }
 
@@ -451,7 +457,7 @@ class PaneResizer {
         this.resizePanesToPercentage(
             this.editorPanePercentage,
             this.viewerPanePercentage,
-            true
+            true,
         );
     }
 
@@ -464,7 +470,7 @@ class PaneResizer {
         this.resizePanesToPercentage(
             this.editorPanePercentage,
             this.viewerPanePercentage,
-            true
+            true,
         );
 
         if (window.editorPane && window.editorPane.startFloatMode) {
