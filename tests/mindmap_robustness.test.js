@@ -125,6 +125,28 @@ describe("Mindmap Parser robustnes", () => {
         expect(mindmap.engine.nodes[1].data.label).toBe("B"); // New node
     });
 
+    it("should update comment images of an unchanged prefix node when comment text remains empty", () => {
+        const mockEngine = mindmap.createEngine("stageHolder", {});
+        mindmap.engine = mockEngine;
+
+        // 1. Initial State: Node with empty comment
+        const text1 = "\0-Header\n\0+";
+        mindmap.engine.text2mindmap(text1);
+
+        const node = mindmap.engine.nodes[0];
+        expect(node).toBeDefined();
+        expect(node.data.comment).toBe("");
+        expect(node.data.commentImages).toEqual([]);
+
+        // 2. Update State: Node comment still has empty text but now has an image
+        const text2 = "\0-Header\n\0+\0i[images/foo.png]";
+        mindmap.engine.text2mindmap(text2);
+
+        // Verify the node's commentImages array was updated, despite the comment text still being empty
+        expect(node.data.comment).toBe("");
+        expect(node.data.commentImages).toEqual(["images/foo.png"]);
+    });
+
     describe("Blocked Interaction during Image Drawer Active", () => {
         beforeEach(() => {
             global.window.imageDrawer = { isActive: true };

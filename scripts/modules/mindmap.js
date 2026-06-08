@@ -1359,13 +1359,23 @@ class MindmapEngine {
 
             // 3. Update comments for unchanged prefix nodes
             for (let index = 0; index < prefixLen; index++) {
-                if (this.nodes[index]) {
+                const node = this.nodes[index];
+                if (node) {
                     const rawComment = comments[index] || "";
                     const { cleanText: cleanComment, images: commentImages } =
                         this.mindmap.extractImages(rawComment);
-                    if (this.nodes[index].data.comment != cleanComment.trim()) {
-                        this.nodes[index].data.comment = cleanComment.trim();
-                        this.nodes[index].data.commentImages = commentImages;
+                    const commentChanged =
+                        node.data.comment != cleanComment.trim();
+                    const imagesChanged =
+                        !node.data.commentImages ||
+                        node.data.commentImages.length !==
+                            commentImages.length ||
+                        node.data.commentImages.some(
+                            (img, i) => img !== commentImages[i],
+                        );
+                    if (commentChanged || imagesChanged) {
+                        node.data.comment = cleanComment.trim();
+                        node.data.commentImages = commentImages;
                         modifiedNodesCount++;
                     }
                 }
@@ -1447,7 +1457,16 @@ class MindmapEngine {
                     const rawComment = comments[newIdx] || "";
                     const { cleanText: cleanComment, images: commentImages } =
                         this.mindmap.extractImages(rawComment);
-                    if (node.data.comment != cleanComment.trim()) {
+                    const commentChanged =
+                        node.data.comment != cleanComment.trim();
+                    const imagesChanged =
+                        !node.data.commentImages ||
+                        node.data.commentImages.length !==
+                            commentImages.length ||
+                        node.data.commentImages.some(
+                            (img, i) => img !== commentImages[i],
+                        );
+                    if (commentChanged || imagesChanged) {
                         node.data.comment = cleanComment.trim();
                         node.data.commentImages = commentImages;
                         modifiedNodesCount++;
