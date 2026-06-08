@@ -234,4 +234,70 @@ describe("ImageDrawer Module", () => {
         imageDrawer.close();
         expect(imageDrawer.isActive).toBe(false);
     });
+
+    it("should auto-size canvas and draw image on paste when opening a new canvas", async () => {
+        // Prepare imageDrawer as "new image" mode
+        imageDrawer.open(null, () => {});
+        expect(imageDrawer.isNewImage).toBe(true);
+        expect(imageDrawer.history.length).toBe(1);
+
+        // Mock Image class to execute onload immediately
+        const originalImage = window.Image;
+        const mockImg = {
+            width: 300,
+            height: 250,
+            set src(val) {
+                this._src = val;
+                if (this.onload) {
+                    this.onload();
+                }
+            },
+        };
+        // Stub window.Image inside imageDrawer's window context
+        class MockImage {
+            constructor() {
+                return mockImg;
+            }
+        }
+        imageDrawer.win.Image = MockImage;
+
+        // Mock FileReader
+        class MockFileReader {
+            readAsDataURL(blob) {
+                this.onload({
+                    target: { result: "data:image/png;base64,mock" },
+                });
+            }
+        }
+        vi.stubGlobal("FileReader", MockFileReader);
+
+        // Create a mock paste event
+        const pasteEvent = new Event("paste");
+        pasteEvent.clipboardData = {
+            items: [
+                {
+                    type: "image/png",
+                    getAsFile: () => new Blob(["mock"], { type: "image/png" }),
+                },
+            ],
+        };
+
+        // Dispatch paste event
+        window.dispatchEvent(pasteEvent);
+
+        // Check if canvas was resized and image was drawn
+        expect(imageDrawer.canvas.width).toBe(300);
+        expect(imageDrawer.canvas.height).toBe(250);
+        expect(imageDrawer.context.drawImage).toHaveBeenCalledWith(
+            mockImg,
+            0,
+            0,
+        );
+        expect(imageDrawer.isNewImage).toBe(false);
+        expect(imageDrawer.history.length).toBe(2);
+
+        // Restore globals
+        vi.unstubAllGlobals();
+        imageDrawer.win.Image = originalImage;
+    });
 });

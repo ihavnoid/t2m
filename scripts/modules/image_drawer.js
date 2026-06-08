@@ -353,8 +353,28 @@ class ImageDrawer {
                         reader.onload = (event) => {
                             const img = new this.win.Image();
                             img.onload = () => {
-                                this.pendingPaste = img;
-                                this.setTool("paste");
+                                if (
+                                    this.isNewImage &&
+                                    this.history.length <= 1
+                                ) {
+                                    this._setCanvasSize(
+                                        Math.min(img.width, MAX_WIDTH),
+                                        Math.min(img.height, MAX_HEIGHT),
+                                    );
+                                    this.context.fillStyle = "white";
+                                    this.context.fillRect(
+                                        0,
+                                        0,
+                                        this.canvas.width,
+                                        this.canvas.height,
+                                    );
+                                    this.context.drawImage(img, 0, 0);
+                                    this.saveSnapshot();
+                                    this.isNewImage = false;
+                                } else {
+                                    this.pendingPaste = img;
+                                    this.setTool("paste");
+                                }
                             };
                             img.src = event.target.result;
                         };
@@ -438,6 +458,7 @@ class ImageDrawer {
         this.history = [];
         this.redoHistory = [];
         this.zoomLevel = 1.0;
+        this.isNewImage = !base64Image;
 
         // Determine which window to open the editor in
         let targetWin = window;

@@ -35,6 +35,29 @@ describe("TextReorganizer Heuristic (Dynamic Stack)", () => {
         ).toBe(1);
     });
 
+    it("Edge Case: Empty or Whitespace Lines", () => {
+        expect(textReorganizer.cleanLines("")).toEqual([]);
+        expect(textReorganizer.cleanLines("\n\n  \n")).toEqual([]);
+        expect(textReorganizer.cleanLines("Line 1\n\nLine 2")).toEqual(["Line 1", "Line 2"]);
+    });
+
+    it("Edge Case: Extreme Indentation (Performance/Stress)", () => {
+        const massiveIndent = " ".repeat(1000) + "Deep Node";
+        expect(textReorganizer.detectDepth(massiveIndent, "Root", 0, context)).toBeGreaterThan(0);
+    });
+
+    it("Edge Case: Mixed Tabs and Spaces", () => {
+        // Tab (4) + 2 spaces = 6
+        const mixedLine = "\t  Mixed";
+        expect(textReorganizer.detectDepth(mixedLine, "Root", 0, context)).toBeGreaterThan(0);
+    });
+
+    it("Edge Case: Heavy Punctuation/Separators", () => {
+        const separators = ["---", "===", "***", "   "];
+        expect(textReorganizer.cleanLines(separators.join("\n"))).toEqual([]);
+    });
+
+
     it("6-10: Inconsistent Dedenting (Snapping)", () => {
         textReorganizer.detectDepth("Root", null, 0, context); // Stack [0]
         textReorganizer.detectDepth("     L1", "Root", 0, context); // Stack [0, 5]
