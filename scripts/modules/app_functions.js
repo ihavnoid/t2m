@@ -45,6 +45,7 @@ class AppFunctions {
     }
 
     editUndo() {
+        if (!window.editorPane.isEditable()) return;
         const v = window.settings.undoText();
         if (v == null) {
             return;
@@ -58,6 +59,7 @@ class AppFunctions {
     }
 
     editRedo() {
+        if (!window.editorPane.isEditable()) return;
         const v = window.settings.redoText();
         if (v == null) {
             return;
@@ -71,6 +73,7 @@ class AppFunctions {
     }
 
     freezeNodes() {
+        if (!window.editorPane.isEditable()) return;
         const [start, end] = window.editorPane.findSelectedNodes();
         if (start < 0 || end < 0) return;
 
@@ -97,6 +100,7 @@ class AppFunctions {
     }
 
     unfreezeNodes() {
+        if (!window.editorPane.isEditable()) return;
         const [start, end] = window.editorPane.findSelectedNodes();
         if (start < 0 || end < 0) return;
 
@@ -133,6 +137,7 @@ class AppFunctions {
     }
 
     insertImage() {
+        if (!window.editorPane.isEditable()) return;
         window.imageDrawer.open(null, async (url) => {
             const img = document.createElement("img");
             img.src = url;

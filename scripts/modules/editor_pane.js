@@ -36,6 +36,7 @@ class EditorPane {
 
     _initListeners() {
         this.on("dblclick", (ev) => {
+            if (!this.isEditable()) return;
             if (ev.target.tagName === "IMG") {
                 const targetImg = ev.target;
                 const allImgs = Array.from(this.el.querySelectorAll("img"));
@@ -162,11 +163,13 @@ class EditorPane {
         if (ev.which === 9) {
             // Tab
             ev.preventDefault();
+            if (!this.isEditable()) return;
             this._handleTab(ev.shiftKey);
         }
     }
 
     _handleTab(isShift) {
+        if (!this.isEditable()) return;
         let t = this.markCaretPos(this.el.innerHTML);
         const lines = t.split("\n");
         let p1 = -1,
@@ -223,6 +226,10 @@ class EditorPane {
     }
 
     async _handlePaste(ev) {
+        if (!this.isEditable()) {
+            ev.preventDefault();
+            return;
+        }
         if (imageDrawer.isActive) {
             ev.preventDefault();
             return;

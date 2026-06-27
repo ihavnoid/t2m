@@ -1,5 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { editorPane } from "../scripts/modules/editor_pane.js";
+import { imageDrawer } from "../scripts/modules/image_drawer.js";
+import { appFunctions } from "../scripts/modules/app_functions.js";
+import { settings } from "../scripts/modules/settings.js";
 
 describe("EditorPane Module - Coordinate Updates", () => {
     beforeEach(() => {
@@ -208,6 +211,70 @@ describe("EditorPane Module - Coordinate Updates", () => {
             expect(editorPane.getProcessed()).not.toContain(
                 "images/old_image.png",
             );
+        });
+    });
+
+    describe("Read-Only Mode Constraints", () => {
+        let spyOpen;
+        beforeEach(() => {
+            editorPane.setEditable(false);
+            window.imageDrawer = imageDrawer;
+            window.appFunctions = appFunctions;
+            window.settings = settings;
+            window.editorPane = editorPane;
+            spyOpen = vi.spyOn(imageDrawer, "open").mockImplementation(() => {});
+        });
+
+        afterEach(() => {
+            spyOpen.mockRestore();
+            delete window.imageDrawer;
+            delete window.appFunctions;
+            delete window.settings;
+            delete window.editorPane;
+            editorPane.setEditable(true);
+        });
+
+        it("should not open image editor on double-clicking image in read-only mode", () => {
+            editorPane.el.innerHTML =
+                '<ul><li>Node <img src="images/test.png"></li></ul>';
+            const img = editorPane.el.querySelector("img");
+            const event = new MouseEvent("dblclick", { bubbles: true });
+            img.dispatchEvent(event);
+            expect(spyOpen).not.toHaveBeenCalled();
+        });
+
+        it("should prevent default and return early on paste events in read-only mode", () => {
+            const event = new Event("paste", { bubbles: true });
+            const spyPreventDefault = vi.spyOn(event, "preventDefault");
+            editorPane.el.dispatchEvent(event);
+            expect(spyPreventDefault).toHaveBeenCalled();
+            expect(spyOpen).not.toHaveBeenCalled();
+        });
+
+        it("should ignore Tab keypresses in read-only mode", () => {
+            const event = new KeyboardEvent("keydown", {
+                key: "Tab",
+                bubbles: true,
+            });
+            const spyTab = vi.spyOn(editorPane, "_handleTab");
+            editorPane.el.dispatchEvent(event);
+            expect(spyTab).not.toHaveBeenCalled();
+            spyTab.mockRestore();
+        });
+
+        it("should block AppFunctions edit actions in read-only mode", () => {
+            const spyUndoText = vi.spyOn(window.settings, "undoText");
+            window.appFunctions.editUndo();
+            expect(spyUndoText).not.toHaveBeenCalled();
+            spyUndoText.mockRestore();
+
+            const spyRedoText = vi.spyOn(window.settings, "redoText");
+            window.appFunctions.editRedo();
+            expect(spyRedoText).not.toHaveBeenCalled();
+            spyRedoText.mockRestore();
+
+            window.appFunctions.insertImage();
+            expect(spyOpen).not.toHaveBeenCalled();
         });
     });
 });
