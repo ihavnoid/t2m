@@ -584,6 +584,11 @@ class ImageDrawer {
             d.activeElement.blur();
         }
 
+        const stageHolder = window.document.getElementById("stageHolder");
+        if (stageHolder) {
+            stageHolder.style.pointerEvents = "none";
+        }
+
         d.getElementById("drawing-modal").classList.add("active");
         this.isActive = true;
         this.updateUndoRedoButtons();
@@ -960,6 +965,10 @@ class ImageDrawer {
                 this.clearPreview();
             }
         } catch (e) {}
+        const stageHolder = window.document.getElementById("stageHolder");
+        if (stageHolder) {
+            stageHolder.style.pointerEvents = "";
+        }
         this.onSaveCallback = null;
         this.isActive = false;
     }
